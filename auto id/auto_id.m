@@ -6,74 +6,117 @@ function ids = auto_id(sp, compartment)
 %
 % Erdem
 
-positions=sp.mean;
-D=squareform(pdist(bsxfun(@times,positions,[1 1 4])));
-for j=1:size(sp.color,1)
-    worm_colors{j}=sp.color(:,[1 2 3]);
-    worm_distances{j}=D(j,:);
-    worm_positions{j}=positions(j,:);
-end
 
-
-%% Training ID likelihoods
 params = get_params();
-load([params.mog_folder, '/mog_model_', compartment, '.mat']);
-neurons=N;
-N=length(worm_distances);
-for k=1:N
-    k
-    for j=1:length(mog)
-        try
-            LL(k,j)=nansum(log(pdf(mog{j},[worm_distances{k}((1:N)~=k)' worm_colors{k}((1:N)~=k,:)]))) + log(mvnpdf(worm_colors{k}(k,:),cd{j}.mean,cd{j}.cov));
-        catch
-        end
-    end
+
+% load('/home/mn2822/Desktop/WormAutoID/data/MoG/ruoxi_MP_11_YAa.mat');
+load([params.mog_folder, '/aligned_worms_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
+sigma=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
+
+X=[sp.mean.*[1 1 4] sp.color(:,1:3)]; % Make sure that z-pixels are scaled accordingly
+Phat=zeros(size(M,1),size(X,1));
+for j=1:size(M,3)
+    Y=M(:,:,j);
+    neurons=N;
+    idx=find(~any(isnan(Y),2));
+    neurons(any(isnan(Y),2))=[];
+    Y(any(isnan(Y),2),:)=[];
+    [beta,P,Xhat,cost]=regression_woc(X,Y,sigma,20);
+    Phat(idx,:)=Phat(idx,:)+P;
+    Xmatch=P*Xhat;
+    
+    %% COMMENT THESE OUT IF YOU DONT WANT TO VISUALIZE
+%     figure(1)
+%     subplot(3,1,1)
+%     cla
+%     hold on
+%     for i=1:size(Y,1)
+%         try
+%         plot3(Xmatch(i,1),Xmatch(i,2),Xmatch(i,3),'o','MarkerSize',8,'MarkerFaceColor',Xmatch(i,[4 5 6])./max(Xmatch(:,[4 5 6]),[],1),'MarkerEdgeColor','k');
+%         plot3(Y(i,1),Y(i,2),Y(i,3),'o','MarkerSize',8,'MarkerEdgeColor',sp.color(i,1:3)/max(sp.color(i,1:3)));
+%         catch
+%             continue;
+%         end
+%     end
+%     set(gca,'Color','k');
+%     title('Testing alignment to Training');
+%     drawnow
+%     
+%     subplot(3,1,2)
+%     cla
+%     hold on
+%     for i=1:size(Y,1)
+%         try
+%         plot3(Xmatch(i,1),Xmatch(i,2),Xmatch(i,3),'o','MarkerSize',8,'MarkerFaceColor',Xmatch(i,[4 5 6])./max(Xmatch(:,[4 5 6]),[],1),'MarkerEdgeColor','k');
+%         text(Xmatch(i,1),Xmatch(i,2),Xmatch(i,3),neurons{i},'Color','yellow','FontSize',8);
+%         catch
+%             continue;
+%         end
+%     end
+%     set(gca,'Color','k');
+%     title('Testing (Assignment)')
+%     drawnow
+%     
+%     subplot(3,1,3)
+%     cla
+%     hold on
+%     for i=1:size(Y,1)
+%         plot3(Y(i,1),Y(i,2),Y(i,3),'o','MarkerSize',8,'MarkerEdgeColor',sp.color(i,1:3)/max(sp.color(i,1:3)));
+%         text(Y(i,1),Y(i,2),Y(i,3),neurons{i},'Color','white','FontSize',8);
+%     end
+%     set(gca,'Color','k');
+%     title('Training (Ground truth)')
+%     drawnow
+    
+    
+    
 end
 
-
-%% Linear assignment
-
-[assignments,cost]=munkres(bsxfun(@times,LL,1./nansum(LL,2)));
-
-ids = repmat({''}, size(sp.mean,1),1);
-[rows,cols] = find(assignments);
-ids(rows) = neurons(cols);
-
-
-
-%% Visualize ID's
-
-% figure('units','normalized','outerposition',[0 0 1 1])
-% imagesc(squeeze(max(v(:,:,:,[4 3 1])./max(vec(v(:,:,:,[4 3 1]))),[],3)))
-% hold on
-% for j=1:size(positions,1)
-%     try
-%         k=find(assignments(j,:));
-%         text(positions(j,2),positions(j,1),neurons{k},'Color','white','FontSize',8)
-%     catch
-%         text(positions(j,2),positions(j,1),'X','Color','red','FontSize',8)
+% niter=2000;
+% P = sinkhorn_logspace(LL, niter);
+% 
+% ncandidates = 7;
+% for i=1:size(P,1);
+%     prow = [P(i,:) 1-nansum(P(i,:))];
+%     total_prob(i)=nansum(P(i,:));
+%     [sort_prob,ind_prob] = sort(-prow);
+%     ind_prob(ind_prob==length(prow))=NaN;
+% 
+%     assignment_prob(i)=find(P(i,:)==max(P(i,:)));
+% 
+%     assignment_prob_rank(i,:)=[ind_prob(1:ncandidates)];
+%     assignment_prob_probs(i,:)=[-sort_prob(1:ncandidates)];
+% 
+%     det = find(assignments(i,:));
+%     if(isempty(find(a(i,:))))
+%         det2(i)=NaN;
+%     else
+%         det2(i)=find(a(i,:));;
+%     end
+%     if(isempty(det))
+%         assignment_det(i)=NaN;
+%     else
+%         assignment_det(i)=det;
 %     end
 % end
-% [a,b,c]=fileparts(filenames{i});
-% [a,b,c]=fileparts(a);
-% title(b)
-% export_fig([b '.png']);
 
-%% Color comparison QC
-for k=1:length(rows)
-    
-    match(k,1)=cols(k);
-    match(k,2)=rows(k);
-    Icolor(k,1,[1 2 3])=cd{cols(k)}.mean;
-    Icolor(k,2,[1 2 3])=sp.color(rows(k),[1,2,3]);
-%     Icolor(k,3,[1 2 3])=colors(j,:);
+[m,idx]=max(Phat./sum(Phat,1),[],1);%%Assignments
+idx(isnan(m))=length(N)+1;
+
+N{end+1} = '';
+ids = N(idx);
+
+%% FINAL VISUALIZATION
+figure
+hold on
+for i=1:size(X,1)
+    plot3(X(i,1),X(i,2),X(i,3),'o','MarkerSize',8,'MarkerFaceColor',X(i,[4 5 6])./max(X(:,[4 5 6]),[],1),'MarkerEdgeColor','k');
+    text(X(i,1),X(i,2),X(i,3),N(idx(i)),'Color','white','FontSize',8);
 end
+set(gca,'Color','k')
+title('Testing --- final assignment')
+drawnow
 
-figure
-imagesc(Icolor./max(Icolor,[],1))
-title('Column1: Training color mean, Column 2: matched neuron color readout, Column 3: matched neuron MP color')
-figure
-scatter(Icolor(:,1),Icolor(:,2),'.')
-title('X: Training color mean, Y: matched neuron color')
+
 
 end
