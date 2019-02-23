@@ -1,12 +1,10 @@
-function [ids, ids_prob, cols, rows] = find_ids(compartment, assignment_prob_ranks, assignments, method)
-params = get_params();
+function sp_ids = find_ids(sp)
 
-if strcmp(method, 'mog')
-    load([params.mog_folder, '/mog_model_', compartment, '.mat']);
-else
-    load([params.mog_folder, '/aligned_worms_', compartment, '.mat']);
-end
-neurons = N;
+
+assignment_prob_ranks = sp.assignment_prob_ranks;
+assignments = sp.assignments;
+
+neurons = sp.id_neurons;
 
 ncandidates = size(assignment_prob_ranks, 2);
 ids = repmat({'NaN'}, size(assignments,1),1);
@@ -26,3 +24,9 @@ end
 
 ids(cellfun(@isempty, ids)) = {'NaN'};
 ids_prob(cellfun(@isempty, ids_prob)) = {'NaN'};
+
+sp_ids = sp;
+sp_ids.ids = ids;
+sp_ids.ids_prob = ids_prob;
+sp_ids.cols = cols;
+sp_ids.rows = rows;

@@ -1,10 +1,12 @@
-function [LL] = auto_id(sp, compartment, method)
+function sp_auto_id = auto_id(sp, method)
 % Automatic labeling of previously identified neurons based on mixture of
 % Gaussian model.
 %
 % sp is supervoxel data structure that is output by MP algorithm
 %
 % Erdem
+
+compartment = sp.compartment;
 
 if strcmp(method, 'mog')
 
@@ -72,4 +74,9 @@ else
     LL(isinf(LL))=a-10000;
 end
 
+
+sp_auto_id = sp;
+sp_auto_id.LL = LL;
+sp_auto_id.id_method = method;
+sp_auto_id.id_neurons = neurons;
 end
