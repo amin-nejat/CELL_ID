@@ -22,8 +22,7 @@ if strcmp(method, 'mog')
 
 
     %% Training ID likelihoods
-    params = get_params();
-    load([params.mog_folder, '/mog_model_', compartment, '.mat']);
+    load(['mog_model_', compartment, '.mat']);
     neurons=N;
     N=length(worm_distances);
     for k=1:N
@@ -45,9 +44,8 @@ if strcmp(method, 'mog')
 else
 
 %% RWC Based
-    params = get_params();
 
-    load([params.mog_folder, '/aligned_worms_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
+    load(['aligned_worms_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
     neurons = N;
     sigma=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
 

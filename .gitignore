@@ -170,7 +170,6 @@ octave-workspace
 
 # Unwanted binary files
 *.wav
-*.mat
 *.nc
 *.sofa
 
