@@ -1,8 +1,10 @@
-function [assignments, assignment_det,  assignment_prob_ranks, assignment_prob_probs, rank_uncertain] = compute_assignments(LL);
+function sp_assignments = compute_assignments(sp)
 
 
 
 %% Linear assignment
+
+LL = sp.LL;
 
 [assignments,~]=munkres(-LL);
 
@@ -32,10 +34,11 @@ end
 for i=1:size(P,1)
   ind_det_in_probs = find(assignment_det(i)==assignment_prob_ranks(i,:));
   rest_indices = setdiff([1:ncandidates], ind_det_in_probs);
+  rest_indices = rest_indices(1:ncandidates-1);
   ranks = assignment_prob_ranks(i,:);
   probs = assignment_prob_probs(i,:);
      
-  assignment_prob_ranks(i, 1) = ranks(ind_det_in_probs);
+  assignment_prob_ranks(i, 1) = assignment_det(i);
   assignment_prob_ranks(i, 2:ncandidates)= ranks(rest_indices);
      
 end
@@ -43,3 +46,12 @@ end
 
 [~,rank_uncertain]=sort(assignment_prob_probs(:,1));
 
+sp_assignments = sp;
+
+sp_assignments.assignments = assignments;
+sp_assignments.assignment_det = assignment_det';
+sp_assignments.assignment_prob_ranks = assignment_prob_ranks;
+sp_assignments.assignment_prob_probs = assignment_prob_probs;
+
+rank_uncertain_inv(rank_uncertain) = 1:length(rank_uncertain);
+sp_assignments.rank_uncertain = rank_uncertain_inv';

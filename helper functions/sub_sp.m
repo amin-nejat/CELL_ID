@@ -4,15 +4,15 @@ function subsp = sub_sp(sp, subset)
 % Amin Nejat
 
     subsp = sp;
-        
+    
+    fields = fieldnames(subsp);
+    
     for t = 1: length(sp)
-        subsp(t).mean = sp(t).mean(subset, :);
-        subsp(t).color = sp(t).color(subset, :);
-        subsp(t).cov = sp(t).cov(subset, :, :);
-        try
-            subsp(t).baseline = sp(t).baseline(subset, :);
-        catch
-            subsp(t).baseline = sp(t).baseline;
+        for field_index = 1: size(fields)
+            try
+                subsp(t).(fields{field_index}) = sp(t).(fields{field_index})(subset,:,:,:,:);
+            catch
+            end
         end
     end
     

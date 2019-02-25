@@ -1,10 +1,12 @@
-function [LL] = auto_id(sp, compartment, method)
+function sp_auto_id = auto_id(sp, method)
 % Automatic labeling of previously identified neurons based on mixture of
 % Gaussian model.
 %
 % sp is supervoxel data structure that is output by MP algorithm
 %
 % Erdem
+
+compartment = sp.compartment;
 
 if strcmp(method, 'mog')
 
@@ -20,8 +22,7 @@ if strcmp(method, 'mog')
 
 
     %% Training ID likelihoods
-    params = get_params();
-    load([params.mog_folder, '/mog_model_', compartment, '.mat']);
+    load(['mog_model_', compartment, '.mat']);
     neurons=N;
     N=length(worm_distances);
     for k=1:N
@@ -43,9 +44,8 @@ if strcmp(method, 'mog')
 else
 
 %% RWC Based
-    params = get_params();
 
-    load([params.mog_folder, '/aligned_worms_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
+    load(['aligned_worms_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
     neurons = N;
     sigma=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
 
@@ -72,4 +72,9 @@ else
     LL(isinf(LL))=a-10000;
 end
 
+
+sp_auto_id = sp;
+sp_auto_id.LL = LL;
+sp_auto_id.id_method = method;
+sp_auto_id.id_neurons = neurons;
 end

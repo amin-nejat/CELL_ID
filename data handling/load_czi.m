@@ -64,5 +64,5 @@ function [bbVol, info] = load_czi(imagefile)
     
     bbVol = reshape(thisVol, [size(thisVol, 1), size(thisVol, 2), ch_count, slices, frames]);
     bbVol = permute(bbVol, [1, 2, 4, 3, 5]);
-    bbVol=double(reshape(bbVol,[y x slices 5]));
+    bbVol=double(reshape(bbVol,[y x slices numel(bbVol)/(x*y*slices)]));
 end
