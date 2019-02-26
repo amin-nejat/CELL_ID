@@ -9,7 +9,7 @@ params.mp.default_k = '200';
 
 % !!! ADDED FOR MY OWN CONVENIENCE GET RID OF THIS LATER :)
 if strcmpi('ev', getenv('USER'))
-    params.default_data_directory = '/Users/ev/Documents';
+    params.default_data_directory = '/Users/ev/Documents/Github';
     params.fiji_lib_folder = '/Applications/Fiji.app';
     params.mij_path = '/Users/ev/Documents/Github/CELL_ID/data handling/mij.jar';
 else % Amin's setup.
