@@ -1,4 +1,4 @@
-function sp_auto_id = auto_id(sp, method)
+function auto_id(sp, method)
 % Automatic labeling of previously identified neurons based on mixture of
 % Gaussian model.
 %
@@ -6,16 +6,18 @@ function sp_auto_id = auto_id(sp, method)
 %
 % Erdem
 
-compartment = sp.compartment;
-
-if strcmp(method, 'mog')
+compartment = lower(sp.bodypart);
+positions=sp.get_positions();
+colors = sp.get_colors();
+    
+if strcmp(lower(method), 'mog')
 
 
     %% MoG Based
-    positions=sp.mean;
     D=squareform(pdist(bsxfun(@times,positions,[1 1 4])));
-    for j=1:size(sp.color,1)
-        worm_colors{j}=sp.color(:,[1 2 3]);
+    
+    for j=1:size(colors, 1)
+        worm_colors{j}=colors(:,[1 2 3]);
         worm_distances{j}=D(j,:);
         worm_positions{j}=positions(j,:);
     end
@@ -49,7 +51,7 @@ else
     neurons = N;
     sigma=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
 
-    X=[sp.mean.*[1 1 4] sp.color(:,1:3)]; % Make sure that z-pixels are scaled accordingly
+    X=[positions.*[1 1 4] colors(:,1:3)]; % Make sure that z-pixels are scaled accordingly
     Phat=zeros(size(M,1),size(X,1));
     for j=1:size(M,3)
         Y=M(:,:,j);
@@ -73,8 +75,8 @@ else
 end
 
 
-sp_auto_id = sp;
-sp_auto_id.LL = LL;
-sp_auto_id.id_method = method;
-sp_auto_id.id_neurons = neurons;
+sp.add_meta_data('id_method', method);
+sp.add_meta_data('LL', LL);
+sp.add_meta_data('ids', neurons);
+
 end

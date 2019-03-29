@@ -3,6 +3,15 @@ function unionsp = union_sp(sp1, sp2)
 % Calculating a subset of superpixels.
 %
 % Amin Nejat
+    if isempty(sp1)
+        unionsp = sp2;
+        return;
+    end
+    
+    if isempty(sp2)
+        unionsp = sp1;
+        return;
+    end
 
     unionsp = sp1;
     
