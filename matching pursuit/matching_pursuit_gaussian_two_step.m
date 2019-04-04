@@ -16,8 +16,9 @@ rho = filter_frame(volume, filter);
 
 N = 0;
 
-while N < n_objects
+while N < n_objects && max(rho(:)) > 0.1
     disp(['Object: ', num2str(N)]);
+    max(rho(:)) 
     
     rho_mag = max(rho, [], 4);
     [~, lmidx] = max(rho_mag(:));
@@ -25,7 +26,7 @@ while N < n_objects
     
     bpatch = subcube(volume, [x,y,z], fsize);
     
-    [shape, sp] = fit_gaussian(bpatch, szext, squeeze(rho(x,y,z,:))', fsize, trunc, [x,y,z]);
+    [shape, sp, goodness] = fit_gaussian(bpatch, szext, squeeze(rho(x,y,z,:))', fsize, trunc, [x,y,z]);
     
     fshape = imfilter(shape, filter, 'full');
     residual = placement(szext(1:3), [x,y,z], fshape);
@@ -33,6 +34,7 @@ while N < n_objects
     for ch = 1: size(rho, 4)
         rho(:, :, :, ch) = rho(:, :, :, ch)-residual*sp.color(ch);
     end
+     
     
     if max(eig(squeeze(sp.cov))) > cov_threshold
         supervoxels = union_sp(supervoxels, sp);

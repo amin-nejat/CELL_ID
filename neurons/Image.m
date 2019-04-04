@@ -43,7 +43,7 @@ classdef Image < handle
             color = squeeze(volume(round(position(1)),round(position(2)),round(position(3)),:))';
             bpatch = subcube(volume, round(position), nsz);
             if isKey(obj.meta_data, 'auto_detect') && obj.meta_data('auto_detect')
-                [~, sp] = fit_gaussian(double(bpatch), size(volume), color, nsz, trunc, position);
+                [~, sp, ~] = fit_gaussian(double(bpatch), size(volume), color, nsz, trunc, position);
             else
                 sp = [];
                 sp.mean = position;

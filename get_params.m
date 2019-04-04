@@ -4,7 +4,7 @@ function params = get_params
 % Amin Nejat
 params = [];
 params.mp.default_window = '[13,13,5]';
-params.mp.default_trunc = '90';
+params.mp.default_trunc = '60';
 params.mp.default_k = '180';
 params.mp.max_eig_thresh = '10';
 

@@ -1,4 +1,4 @@
-function [shape, sp] = fit_gaussian(bpatch, szext, colorvec, fsize, trunc, absolute_position)
+function [shape, sp, goodness] = fit_gaussian(bpatch, szext, colorvec, fsize, trunc, absolute_position)
     options = optimoptions('fmincon');
     options.MaxFunEvals = 10000;
     options.MaxIter = 10000;
@@ -85,6 +85,10 @@ function [shape, sp] = fit_gaussian(bpatch, szext, colorvec, fsize, trunc, absol
     subplot(1,3,3)
     image(squeeze(max(bpatch(:,:,:,[4,3,1]) - rec(:,:,:,[4,3,1]), [], 3))/20)
     drawnow
+    
+    
+    reccoef = corrcoef(rec(:), bpatch(:));
+    goodness = reccoef(1,2);
     
     relative_position = (res_fixed_cov(1:3)-x0(1:3))./norm(1:3);
     
