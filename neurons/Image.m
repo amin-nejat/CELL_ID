@@ -91,6 +91,16 @@ classdef Image < handle
             end
         end
         
+        function num = num_neurons(obj)
+            %NUM_NEURONS the number of neurons in the image
+            num = length(obj.neurons);
+        end
+        
+        function num = num_user_id_neurons(obj)
+            %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
+            num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
+        end
+        
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
             annotations = vertcat({obj.neurons.annotation});
