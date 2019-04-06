@@ -16,6 +16,7 @@ classdef NeuroPALImage
     %           gamma = the gamma correction for the image
     %           rotate.horizontal = rotate horizontal?
     %           rotate.vertical = rotate vertical?
+    %           body_part = 'Head', 'Midbody', 'Tail'
     %      neurons = the neurons in the image
 
     
@@ -137,6 +138,7 @@ classdef NeuroPALImage
             prefs.gamma = info.gamma;
             prefs.rotate.horizontal = false;
             prefs.rotate.vertical = false;
+            prefs.body_part = [];
             
             % Save the CZI file to our MAT file format.
             np_file = strrep(czi_file, 'czi', 'mat');
