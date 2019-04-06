@@ -101,6 +101,27 @@ classdef Image < handle
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
         end
         
+        function names = user_id_neuron_names(obj)
+            %USER_ID_NEURON_NAMES get a list of the user ID neuron names
+            names = {};
+            for i = 1:length(obj.neurons)
+                if length(obj.neurons(i).annotation) > 0
+                    names{end+1} = obj.neurons(i).annotation;
+                end
+            end
+        end
+        
+        function neuron = find_user_id_neuron(obj, name)
+            %FIND_USER_ID find a neuron by user ID name
+            neuron = [];
+            for i = 1:length(obj.neurons)
+                if strncmp(name, obj.neurons(i).annotation, length(name))
+                    neuron = obj.neurons(i);
+                    return;
+                end
+            end
+        end
+        
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
             annotations = vertcat({obj.neurons.annotation});
