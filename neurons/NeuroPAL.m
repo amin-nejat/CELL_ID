@@ -29,7 +29,7 @@ classdef NeuroPAL
         function color = getNeuronColor(name)
             %GETNEURONCOLOR Get the neuron's NeuroPAL RGB color.
             color = [];
-            [names, colors] = getColors();
+            [names, colors] = NeuroPAL.getColors();
             i = find(strcmp(names, name), 1);
             if ~isempty(i)
                 color = colors{i};
