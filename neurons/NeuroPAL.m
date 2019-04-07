@@ -100,8 +100,8 @@ classdef NeuroPAL
         
         
         %% Pharyngeal ganglia data.
-        function names = getAnteriorPharynxNeurons()
-            %GETANTERIORPHARYNXNEURONS A list of anterior pharynx neurons.
+        function names = getAnteriorPharynx()
+            %GETANTERIORPHARYNX A list of anterior pharynx neurons.
             persistent neurons;
             if isempty(neurons)
                 ganglia = NeuroPAL.getGanglia();
@@ -112,8 +112,8 @@ classdef NeuroPAL
             names = neurons;
         end
         
-        function names = getPosteriorPharynxNeurons()
-            %GETPOSTERIORPHARYNXNEURONS A list of posterior pharynx neurons.
+        function names = getPosteriorPharynx()
+            %GETPOSTERIORPHARYNX A list of posterior pharynx neurons.
             persistent neurons;
             if isempty(neurons)
                 ganglia = NeuroPAL.getGanglia();
@@ -126,12 +126,188 @@ classdef NeuroPAL
         
         
         %% Head ganglia data.
+       function names = getLeftAnteriorGanglion()
+            %GETLEFTANTERIORGANGLION A list of left anterior ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Anterior Ganglion (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getRightAnteriorGanglion()
+            %GETRIGHTANTERIORGANGLION A list of right anterior ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Anterior Ganglion (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getDorsalGanglion()
+            %GETDORSALGANGLION A list of dorsal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Dorsal Ganglion'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getLeftLateralGanglion()
+            %GETLEFTLATERALGANGLION A list of left lateral ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Lateral Ganglion (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getRightLateralGanglion()
+            %GETRIGHTLATERALGANGLION A list of right lateral ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Lateral Ganglion (Right)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getVentralGanglion()
+            %GETVENTRALGANGLION A list of ventral ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Ventral Ganglion'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        function names = getRetroVesicularGanglion()
+            %GETRETROVESICULARGANGLION A list of retro-vesicular ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Retro-Vesicular Ganglion'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
         
         
         %% Midbody ganglia data.
+        function names = getAnteriorMidbody()
+            %GETANTERIORMIDBODY A list of anterior midbody neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Anterior Midbody'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getCentralMidbody()
+            %GETCENTRALRMIDBODY A list of central midbody neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Central Midbody'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getPosteriorMidbody()
+            %GETPOSTERIORMIDBODY A list of posterior midbody neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Posterior Midbody'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getVentralNerveCord()
+            %GETVENTRALNERVECORD A list of ventral nerve cord neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Ventral Nerve Cord'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
         
         
-        %% Tail ganglia data.
+        %% Tail ganglia data.        
+        function names = getPreAnalGanglion()
+            %GETPREANALGANGLION A list of pre-anal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Pre-Anal Ganglion'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getDorsoRectalGanglion()
+            %GETDORSORECTALGANGLION A list of dorso-rectal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Dorso-Rectal Ganglion'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getLeftLumbarGanglion()
+            %GETLEFTLUMBARGANGLION A list of left lumbar ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Lumbar Ganglion (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getRightLumbarGanglion()
+            %GETRIGHTLUMBARGANGLION A list of right lumbar ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = NeuroPAL.getGanglia();
+                i = find(strcmp(NeuroPAL.getGanglionNames(), ...
+                    'Lumbar Ganglion (Right)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
     end
 end
 
