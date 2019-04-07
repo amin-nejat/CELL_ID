@@ -22,13 +22,14 @@ classdef NeuroPALImage
     
     %% Public methods.
     methods (Static)
-        function [data, info, prefs, neurons] = open(filename)
+        function [data, info, prefs, neurons, np_file] = open(filename)
             %OPEN Open an image in NeuroPAL format.
             %
             %   data = the image data
             %   info = the image information
             %   prefs = the user preferences
             %   neurons = the neurons in the image
+            %   filename = the NeuroPAL format filename
             
             % Initialize the return values.
             %data = [];
@@ -96,8 +97,23 @@ classdef NeuroPALImage
                 return;
             end
             
-            % Setup the NP file data.
+            % Check the image orientation.
             data = image_data.data;
+            data_order = 1:ndims(data);
+            if size(data,1) > size(data,2)
+                
+                % Fix the orientation.
+                data_order(1) = 2;
+                data_order(2) = 1;
+                data = permute(data, data_order);
+                
+                % Reorder the image scale.
+                scale = image_data.scale;
+                image_data.scale(1) = scale(2);
+                image_data.scale(2) = scale(1);
+            end
+            
+            % Setup the NP file data.
             info.scale = image_data.scale * 1000000; % convert to microns
             info.DIC = image_data.dicChannel;
             
@@ -124,7 +140,7 @@ classdef NeuroPALImage
             end
             
             % Determine the gamma.
-            info.gamma = [];
+            info.gamma = 1;
             keys = lower(meta_data.keys);
             gamma_i = find(contains(keys, 'gamma'),1);
             if ~isempty(gamma_i)
