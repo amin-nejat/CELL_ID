@@ -111,7 +111,7 @@ classdef Image < handle
             end
         end
         
-        function neuron = find_user_id_neuron(obj, name)
+        function [neuron, i] = find_user_id_neuron(obj, name)
             %FIND_USER_ID find a neuron by user ID name
             neuron = [];
             for i = 1:length(obj.neurons)
@@ -120,6 +120,7 @@ classdef Image < handle
                     return;
                 end
             end
+            i = [];
         end
         
         function annotations = get_annotations(obj)
