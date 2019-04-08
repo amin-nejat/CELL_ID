@@ -144,7 +144,7 @@ classdef NeuroPAL
             if isempty(neurons)
                 ganglia = NeuroPAL.getGanglia();
                 i = find(strcmp(NeuroPAL.getGanglionNames(), ...
-                    'Anterior Ganglion (Left)'), 1);
+                    'Anterior Ganglion (Right)'), 1);
                 neurons = ganglia(i).neurons;
             end
             names = neurons;
