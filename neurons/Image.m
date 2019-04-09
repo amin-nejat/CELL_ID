@@ -101,11 +101,16 @@ classdef Image < handle
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
         end
         
+        function is_fully_annotated = is_all_annotated(obj)
+            %IS_ALL_ANNOTATED do all neurons have user annotations?
+            is_fully_annotated = obj.num_neurons() == obj.num_user_id_neurons();
+        end
+        
         function names = user_id_neuron_names(obj)
             %USER_ID_NEURON_NAMES get a list of the user ID neuron names
             names = {};
             for i = 1:length(obj.neurons)
-                if length(obj.neurons(i).annotation) > 0
+                if ~isempty(obj.neurons(i).annotation)
                     names{end+1} = obj.neurons(i).annotation;
                 end
             end
@@ -121,6 +126,24 @@ classdef Image < handle
                 end
             end
             i = [];
+        end
+        
+        function [neuron, i] = nearest_unannotated_z(obj, position)
+            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+
+            % Find the unannotated neurons.
+            unIDd_i = arrayfun(@(x) isempty(x.annotation), obj.neurons);
+            positions = round(vertcat(obj.neurons(unIDd_i).position));
+            
+            % Find the nearest unannotated neuron in z.
+            [~, min_z_i] = min(positions(:,3) - position(3));
+            min_z = positions(min_z_i,3);
+            min_z_i = find(positions(:,3) == min_z);
+            
+            % Find the nearest unannotated neuron in (x,y).
+            [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
+            i = min_z_i(min_xy_i);
+            neuron = obj.neurons(i);
         end
         
         function annotations = get_annotations(obj)
