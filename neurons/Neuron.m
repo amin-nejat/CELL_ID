@@ -131,7 +131,7 @@ classdef Neuron < handle
             %neuron according to whether it is selected in the software or
             %not.
             if ~obj.is_selected
-                size = 2;
+                size = 1;
             else
                 size = 4;
             end

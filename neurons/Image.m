@@ -132,17 +132,18 @@ classdef Image < handle
             %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
 
             % Find the unannotated neurons.
-            unIDd_i = arrayfun(@(x) isempty(x.annotation), obj.neurons);
+            position = round(position);
+            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
             positions = round(vertcat(obj.neurons(unIDd_i).position));
             
             % Find the nearest unannotated neuron in z.
-            [~, min_z_i] = min(positions(:,3) - position(3));
+            [~, min_z_i] = min(abs(positions(:,3) - position(3)));
             min_z = positions(min_z_i,3);
             min_z_i = find(positions(:,3) == min_z);
             
             % Find the nearest unannotated neuron in (x,y).
             [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
-            i = min_z_i(min_xy_i);
+            i = unIDd_i(min_z_i(min_xy_i));
             neuron = obj.neurons(i);
         end
         
