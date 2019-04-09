@@ -52,6 +52,23 @@ classdef Neuron < handle
             
         end
         
+        function annotate(obj, name, confidence)
+            % ANNOTATE annotate the neuron.
+            %   name: the neuron name
+            %   confidence: the user confidence
+            
+            % Remove the use annotation.
+            if isempty(name)
+                obj.annotation = '';
+                obj.annotation_confidence = -1;
+                
+            % Annotate the neuron.
+            else
+                obj.annotation = name;
+                obj.annotation_confidence = confidence;
+            end
+        end
+            
         function rotate(obj, rot, sz, newsz)
             %ROTATE rotates the neuron and translates it according to new
             %image space.
