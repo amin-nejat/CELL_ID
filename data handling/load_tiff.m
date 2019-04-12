@@ -3,7 +3,7 @@ function [bbVol, info] = load_tiff(imagefile)
 %
 % Amin Nejat
 params = get_params();
-javaaddpath(params.mij_path)
+addpath(genpath(params.fiji_lib_folder));
 Miji(false);
 MIJ.run('Open...', ['path=[', imagefile, ']']);
 thisVol = MIJ.getCurrentImage;
@@ -37,7 +37,7 @@ switch ext
         info    = imfinfo(imagefile);
 
         try desc = info(1).ImageDescription;
-            names = regexp(desc, 'channels=(?<channels>\d+)\s*', 'names');
+            names = regexp(desc, 'SizeC="(?<channels>\d+)"\s*', 'names');
             try ch_count = str2num(names.channels); catch ch_count = info(1).SamplesPerPixel; end
 
             names = regexp(desc, 'slices=(?<slices>\d+)\s*', 'names');
@@ -58,7 +58,7 @@ if slices == 0
     slices = numel(thisVol)/prod([size(thisVol, 1), size(thisVol, 2), ch_count, frames]);
 end
 
-bbVol = reshape(thisVol, [size(thisVol, 1), size(thisVol, 2), ch_count, slices, frames]);
-bbVol = permute(bbVol, [1, 2, 4, 3, 5]);
+bbVol = reshape(thisVol, [size(thisVol, 1), size(thisVol, 2), slices, ch_count, frames]);
+% bbVol = permute(bbVol, [1, 2, 4, 3, 5]);
 
 end
