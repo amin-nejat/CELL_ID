@@ -104,14 +104,16 @@ classdef Neuron < handle
         function color = get_marker_color(obj)
             %GET_MARKER_COLORS specifies the marker color of the current
             %neuron according to the annotation confidence.
-            if obj.annotation_confidence == 0
-                color = [1,0,0]; % user added neuron but no ID yet or user annotated neuron as “?” (red)
+            if obj.is_selected
+                color = [1,1,1]; % neuron selected (white)
+            elseif obj.annotation_confidence == 0
+                color = [1,0,0]; % user added neuron but no ID yet (red)
             elseif obj.annotation_confidence == 1
-                color = [0,1,0]; % user ID’d neuron as 100% correct (green)
+                color = [0,1,0]; % user ID'd neuron as 100% correct (green)
             elseif obj.annotation_confidence == 0.5
-                color = [1,1,0]; % user ID’d neuron as low probability (yellow)
+                color = [1,1,0]; % user ID'd neuron as low probability (yellow)
             elseif obj.annotation_confidence == -1
-                color = [1,0.5,0]; % model ID’d neuron (orange)
+                color = [1,0.5,0]; % model ID'd neuron (orange)
             end
         end
         
@@ -120,9 +122,9 @@ classdef Neuron < handle
             %neuron according to whether it is selected in the software or
             %not.
             if ~obj.is_selected
-                size = 60;
+                size = 40;
             else
-                size = 180;
+                size = 200;
             end
         end
         
