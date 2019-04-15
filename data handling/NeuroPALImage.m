@@ -94,7 +94,7 @@ classdef NeuroPALImage
             try
                 [image_data, meta_data] = imreadCZI(czi_file);
             catch
-                error('Cannot read: "%s"', czi_file);
+                warning('Cannot read: "%s"', czi_file);
                 return;
             end
             
