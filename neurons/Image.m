@@ -59,6 +59,30 @@ classdef Image < handle
             end
         end
         
+        function rot_image = rotate_X_180(obj, image)
+            %ROTATE_X_180 Rotate the image 180 degrees around the x-axis.
+            %   image: the image to rotate
+            %   rot_image: the image rotated 180 degrees around the x-axis.
+            rot_image = image(:,end:-1:1,end:-1:1,:,:);
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(2) = size(image,2) - position(2);
+                obj.neurons(i).position(3) = size(image,3) - position(3);
+            end
+        end
+        
+        function rot_image = rotate_Y_180(obj, image)
+            %ROTATE_Y_180 Rotate the image 180 degrees around the y-axis.
+            %   image: the image to rotate
+            %   rot_image: the image rotated 180 degrees around the y-axis.
+            rot_image = image(end:-1:1,:,end:-1:1,:,:);
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(1) = size(image,1) - position(1);
+                obj.neurons(i).position(3) = size(image,3) - position(3);
+            end
+        end
+        
         function rot_image = rotate(obj, image, rot)
             %ROT_IMAGE Rotates the image using parameters specified in rot
             %   image: the full image that needs to be rotated
