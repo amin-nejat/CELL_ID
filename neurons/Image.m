@@ -66,8 +66,8 @@ classdef Image < handle
             rot_image = image(:,end:-1:1,end:-1:1,:,:);
             for i=1:length(obj.neurons)
                 position =  obj.neurons(i).position;
-                obj.neurons(i).position(2) = size(image,2) - position(2);
-                obj.neurons(i).position(3) = size(image,3) - position(3);
+                obj.neurons(i).position(2) = size(image,2) - position(2) + 1;
+                obj.neurons(i).position(3) = size(image,3) - position(3) + 1;
             end
         end
         
@@ -78,8 +78,8 @@ classdef Image < handle
             rot_image = image(end:-1:1,:,end:-1:1,:,:);
             for i=1:length(obj.neurons)
                 position =  obj.neurons(i).position;
-                obj.neurons(i).position(1) = size(image,1) - position(1);
-                obj.neurons(i).position(3) = size(image,3) - position(3);
+                obj.neurons(i).position(1) = size(image,1) - position(1) + 1;
+                obj.neurons(i).position(3) = size(image,3) - position(3) + 1;
             end
         end
         
