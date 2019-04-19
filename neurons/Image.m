@@ -160,6 +160,13 @@ classdef Image < handle
             unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
             positions = round(vertcat(obj.neurons(unIDd_i).position));
             
+            % No neurons found.
+            neuron = [];
+            i = [];
+            if isempty(positions)
+                return;
+            end
+            
             % Find the nearest unannotated neuron in z.
             [~, min_z_i] = min(abs(positions(:,3) - position(3)));
             min_z = positions(min_z_i,3);
