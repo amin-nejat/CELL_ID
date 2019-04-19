@@ -8,7 +8,21 @@ classdef NeuroPAL
             is_neuron = ...
                 ~isempty(find(strcmp(name, NeuroPAL.getNeurons()),1));
         end
-                
+             
+        function is_cell = isCell(name)
+            %ISCELL Is this a cell name?
+            
+            % Is this a neuron name?
+            is_cell = ...
+                ~isempty(find(strcmp(name, NeuroPAL.getNeurons()),1));
+            
+            % Is this a non-neuronal name?
+            if ~is_cell
+                is_cell = ...
+                    ~isempty(find(strcmp(name, NeuroPAL.non_neuronal_cells),1));
+            end
+        end
+        
         function name = stripOnOff(name)
             %STRIPONOFF Strip the ON/OFF info from the neuron's name.
             if length(name) > 4 && strcmp(name(1:3), 'AWC')
@@ -308,6 +322,17 @@ classdef NeuroPAL
             end
             names = neurons;
         end
+    end
+    
+    
+    %% Constant properties.
+    properties (Constant)
+        non_neuronal_cells = { ...
+            'AMSOL'
+            'AMSOR'
+            'PHSO1L'
+            'PHSO1R'
+            };
     end
 end
 
