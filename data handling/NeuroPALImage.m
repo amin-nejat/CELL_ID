@@ -37,6 +37,12 @@ classdef NeuroPALImage
             %prefs = [];
             %neurons = [];
             
+            % Is the user accidentally trying to open the ID file?
+            id_file_ext = '_ID.mat';
+            if endsWith(filename, id_file_ext)
+                filename = strrep(filename, id_file_ext, '.mat');
+            end
+            
             % Get the file extension.
             [~, ~, ext] = fileparts(filename);
             if isempty(ext)

@@ -48,7 +48,7 @@ classdef Image < handle
                 sp = [];
                 sp.mean = position;
                 sp.color = color;
-                sp.baseline = [0,0,0];
+                sp.baseline = [0,0,0,0];
                 sp.cov = diag(nsz);
             end
             
