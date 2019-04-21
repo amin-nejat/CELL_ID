@@ -4,11 +4,11 @@ classdef Neuron < handle
     %   A neuron has a position within an image, color, list of potential
     %   IDs, probabilities associated with these IDs, and methods to draw
     %   it within a GUI.
-    
+
     properties (Access = private)
         brain
     end
-    
+
     properties
         position % neuron pixel position (x,y,z)
         color % neuron color (R,G,B,W,...), W = white channel, values=[0-255]
@@ -18,11 +18,12 @@ classdef Neuron < handle
         probabilistic_ids % neuron IDs listed by descending probability
         probabilistic_probs % neuron ID probabilities
         annotation = '' % neuron user selected annotation
+        is_annotation_on = NaN % is the neuron's annotation ON, OFF, or neither (empty)
         annotation_confidence = -1 % user confidence about annotation
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
     end
-    
+
     methods
         function obj = Neuron(superpixel)
             %Neuron Construct an instance of this class.
@@ -33,7 +34,7 @@ classdef Neuron < handle
             obj.color = superpixel.color;
             obj.baseline = superpixel.baseline;
             obj.covariance = squeeze(superpixel.cov);
-            
+
             if isfield(superpixel, 'deterministic_id')
                 obj.deterministic_id = superpixel.deterministic_id{1};
             end
@@ -46,29 +47,34 @@ classdef Neuron < handle
             if isfield(superpixel, 'annotation_confidence')
                 obj.annotation_confidence = superpixel.annotation_confidence;
             end
+            if isfield(superpixel, 'is_annotation_on')
+                obj.is_annotation_on = superpixel.is_annotation_on;
+            end
             if isfield(superpixel, 'probabilistic_probs')
                 obj.probabilistic_probs = superpixel.probabilistic_probs;
             end
-            
+
         end
-        
-        function annotate(obj, name, confidence)
+
+        function annotate(obj, name, confidence, is_on)
             % ANNOTATE annotate the neuron.
             %   name: the neuron name
             %   confidence: the user confidence
-            
-            % Remove the use annotation.
+
+            % Remove the user annotation.
             if isempty(name)
                 obj.annotation = '';
                 obj.annotation_confidence = -1;
-                
+                obj.is_annotation_on = nan;
+
             % Annotate the neuron.
             else
                 obj.annotation = name;
                 obj.annotation_confidence = confidence;
+                obj.is_annotation_on = is_on;
             end
         end
-            
+
         function rotate(obj, rot, sz, newsz)
             %ROTATE rotates the neuron and translates it according to new
             %image space.
@@ -78,17 +84,17 @@ classdef Neuron < handle
             %   before rotation.
             %   newsz: size of the image after rotation used to translate
             %   after rotation.
-            
+
             if isvector(rot)
                 rot_mat = makehgtform('xrotate',rot(1),'yrotate',rot(2),'zrotate',rot(3));
             else
                 rot_mat = rot;
             end
-            
+
             obj.position([2,1,3]) = (obj.position([2,1,3])-((sz([2,1,3])+1)/2))*rot_mat(1:3,1:3)+((newsz([2,1,3])+1)/2);
             obj.covariance([2,1,3],[2,1,3]) = rot_mat(1:3,1:3)*obj.covariance([2,1,3],[2,1,3])*rot_mat(1:3,1:3)';
         end
-        
+
         function addToBrain(obj, b)
             %ADDTOBRAIN Add this neuron to a brain image.
             obj.brain = b;
@@ -100,7 +106,7 @@ classdef Neuron < handle
                 obj.brain.remove(obj);
             end
         end
-        
+
         function color = get_marker_color(obj)
             %GET_MARKER_COLORS specifies the marker color of the current
             %neuron according to the annotation confidence.
@@ -116,7 +122,7 @@ classdef Neuron < handle
                 color = [1,0.5,0]; % model ID'd neuron (orange)
             end
         end
-        
+
         function size = get_marker_size(obj)
             %GET_MARKER_SIZE specifies the marker size of the current
             %neuron according to whether it is selected in the software or
@@ -127,7 +133,7 @@ classdef Neuron < handle
                 size = 200;
             end
         end
-        
+
         function size = get_line_size(obj)
             %GET_MARKER_SIZE specifies the line size of the current
             %neuron according to whether it is selected in the software or
@@ -138,7 +144,7 @@ classdef Neuron < handle
                 size = 4;
             end
         end
-        
+
         function recon = get_3d_reconstruction(obj,nsz,trunc)
             %GET_3D_RECONSTRUCTION reconstructs the 3D colored shape of the
             %current neuron according to its properties.
@@ -153,6 +159,6 @@ classdef Neuron < handle
                 zeros(size(obj.color)), ... % baseline std
                 trunc); % truncation
         end
-        
+
     end
 end
