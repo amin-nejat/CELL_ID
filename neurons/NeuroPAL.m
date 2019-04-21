@@ -8,14 +8,65 @@ classdef NeuroPAL
             is_neuron = ...
                 ~isempty(find(strcmp(name, NeuroPAL.getNeurons()),1));
         end
-                
-        function name = stripOnOff(name)
+
+        function is_cell = isCell(name)
+            %ISCELL Is this a cell name?
+
+            % Is this AWC?
+            %is_cell = NeuroPAL.isAWC(name);
+            is_cell = false;
+
+            % Is this another neuron's name?
+            if ~is_cell
+                is_cell = ...
+                    ~isempty(find(strcmp(name, NeuroPAL.getNeurons()),1));
+            end
+
+            % Is this a non-neuronal name?
+            if ~is_cell
+                is_cell = ...
+                    ~isempty(find(strcmp(name, NeuroPAL.non_neuronal_cells),1));
+            end
+        end
+
+        function is_AWC = isAWC(name)
+            %ISAWC Is this neuron's name an acceptable form of AWC?
+
+            % Does the neuron's name start with AWC?
+            is_AWC = false;
+            if length(name) > 3 && strcmp(name(1:3), 'AWC')
+                if name(4) == 'L' || name(4) == 'R'
+
+                    % AWCL/R.
+                    if length(name) == 4
+                        is_AWC = true;
+
+                    % AWCL/R-ON/OFF
+                    elseif strcmp(name(5:end), '-OFF') || ...
+                           strcmp(name(5:end), '-ON')
+                    end
+                end
+            end
+        end
+
+        function [name, is_on] = stripOnOff(name)
             %STRIPONOFF Strip the ON/OFF info from the neuron's name.
+            is_on = nan;
             if length(name) > 4 && strcmp(name(1:3), 'AWC')
+
+                % Is the neuron ON or OFF?
+                switch name(5:end)
+                    case '-OFF'
+                        is_on = false;
+                    case '-ON'
+                        is_on = true;
+                end
+
+                % Strip the name of ON/OF.
                 name = name(1:4);
             end
         end
-        
+
         function names = neuronStartsWith(str)
             %NEURONSTARTSWITH Which neurons start with this string?
             names = [];
@@ -25,7 +76,7 @@ classdef NeuroPAL
                 names = neurons(i);
             end
         end
-        
+
         function color = getNeuronColor(name)
             %GETNEURONCOLOR Get the neuron's NeuroPAL RGB color.
             color = [];
@@ -35,7 +86,7 @@ classdef NeuroPAL
                 color = colors{i};
             end
         end
-        
+
 
         %% Neuron data.
         function [names, colors] = getColors()
@@ -52,7 +103,7 @@ classdef NeuroPAL
             names = names_data;
             colors = colors_data;
         end
-        
+
         function neurons = getNeurons()
             %GETNEURONS Get a list of neurons.
             persistent neurons_data;
@@ -62,7 +113,7 @@ classdef NeuroPAL
             end
             neurons = neurons_data;
         end
-        
+
         function classes = getClasses()
             %GETCLASSES Get a list of neuron classes.
             persistent classes_data;
@@ -72,8 +123,8 @@ classdef NeuroPAL
             end
             classes = neurons_data;
         end
-        
-        
+
+
         %% Ganglia data.
         function ganglia = getGanglia()
             %GETGANGLIA Get a list of ganglia info.
@@ -87,7 +138,7 @@ classdef NeuroPAL
             end
             ganglia = ganglia_data;
         end
-        
+
         function names = getGanglionNames()
             %GETGANGLIONNAMES Get a list of ganglion names.
             persistent ganglion_names;
@@ -97,8 +148,8 @@ classdef NeuroPAL
             end
             names = ganglion_names;
         end
-        
-        
+
+
         %% Pharyngeal ganglia data.
         function names = getAnteriorPharynx()
             %GETANTERIORPHARYNX A list of anterior pharynx neurons.
@@ -111,7 +162,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getPosteriorPharynx()
             %GETPOSTERIORPHARYNX A list of posterior pharynx neurons.
             persistent neurons;
@@ -123,8 +174,8 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
-        
+
+
         %% Head ganglia data.
        function names = getLeftAnteriorGanglion()
             %GETLEFTANTERIORGANGLION A list of left anterior ganglion neurons.
@@ -137,7 +188,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getRightAnteriorGanglion()
             %GETRIGHTANTERIORGANGLION A list of right anterior ganglion neurons.
             persistent neurons;
@@ -149,7 +200,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getDorsalGanglion()
             %GETDORSALGANGLION A list of dorsal ganglion neurons.
             persistent neurons;
@@ -161,7 +212,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getLeftLateralGanglion()
             %GETLEFTLATERALGANGLION A list of left lateral ganglion neurons.
             persistent neurons;
@@ -173,7 +224,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getRightLateralGanglion()
             %GETRIGHTLATERALGANGLION A list of right lateral ganglion neurons.
             persistent neurons;
@@ -185,7 +236,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getVentralGanglion()
             %GETVENTRALGANGLION A list of ventral ganglion neurons.
             persistent neurons;
@@ -208,8 +259,8 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
-        
+
+
         %% Midbody ganglia data.
         function names = getAnteriorMidbody()
             %GETANTERIORMIDBODY A list of anterior midbody neurons.
@@ -222,7 +273,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getCentralMidbody()
             %GETCENTRALRMIDBODY A list of central midbody neurons.
             persistent neurons;
@@ -234,7 +285,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getPosteriorMidbody()
             %GETPOSTERIORMIDBODY A list of posterior midbody neurons.
             persistent neurons;
@@ -246,7 +297,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getVentralNerveCord()
             %GETVENTRALNERVECORD A list of ventral nerve cord neurons.
             persistent neurons;
@@ -258,9 +309,9 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
-        
-        %% Tail ganglia data.        
+
+
+        %% Tail ganglia data.
         function names = getPreAnalGanglion()
             %GETPREANALGANGLION A list of pre-anal ganglion neurons.
             persistent neurons;
@@ -272,7 +323,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getDorsoRectalGanglion()
             %GETDORSORECTALGANGLION A list of dorso-rectal ganglion neurons.
             persistent neurons;
@@ -284,7 +335,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getLeftLumbarGanglion()
             %GETLEFTLUMBARGANGLION A list of left lumbar ganglion neurons.
             persistent neurons;
@@ -296,7 +347,7 @@ classdef NeuroPAL
             end
             names = neurons;
         end
-        
+
         function names = getRightLumbarGanglion()
             %GETRIGHTLUMBARGANGLION A list of right lumbar ganglion neurons.
             persistent neurons;
@@ -309,5 +360,16 @@ classdef NeuroPAL
             names = neurons;
         end
     end
-end
 
+
+    %% Constant properties.
+    properties (Constant)
+        non_neuronal_cells = { ...
+            'AMSOL'
+            'AMSOR'
+            'HMC'
+            'PHSO1L'
+            'PHSO1R'
+            };
+    end
+end

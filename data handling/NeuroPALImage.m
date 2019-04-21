@@ -37,6 +37,12 @@ classdef NeuroPALImage
             %prefs = [];
             %neurons = [];
             
+            % Is the user accidentally trying to open the ID file?
+            id_file_ext = '_ID.mat';
+            if endsWith(filename, id_file_ext)
+                filename = strrep(filename, id_file_ext, '.mat');
+            end
+            
             % Get the file extension.
             [~, ~, ext] = fileparts(filename);
             if isempty(ext)
@@ -94,6 +100,7 @@ classdef NeuroPALImage
             try
                 [image_data, meta_data] = imreadCZI(czi_file);
             catch
+                warning('Cannot read: "%s"', czi_file);
                 return;
             end
             
@@ -121,7 +128,7 @@ classdef NeuroPALImage
             colors = image_data.colors;
             colors = round(colors/max(colors(:)));
             info.RGBW = nan(4,1);
-            info.GFP = [];
+            info.GFP = nan;
             for i = 1:size(colors,1)
                 switch char(colors(i,:))
                     case [1,0,0] % red
@@ -135,8 +142,16 @@ classdef NeuroPALImage
                             info.RGBW(4) = i;
                         end
                     otherwise % GFP
-                        info.GFP(end+1) = i;
+                        info.GFP = i;
                 end
+            end
+            
+            % Did we find the GFP channel?
+            if isnan(info.GFP) && size(colors,1) > 4
+                
+                % Assume the first unused channel is GFP.
+                unused = setdiff(1:size(colors,1), info.RGBW);
+                info.GFP = unused(1);
             end
             
             % Determine the gamma.
