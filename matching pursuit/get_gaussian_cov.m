@@ -8,7 +8,7 @@ function [shape, recon, mu, cov, colors] = get_gaussian_cov(x, sz, norm, trunc, 
     
     L = zeros(3, 3);
     L([1, 4, 5, 7, 8, 9]) = x(1:6);
-    cov = L'*L;
+    cov = L*L';
     
     colors = color_props*exp(x(7));
     
