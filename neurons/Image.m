@@ -3,13 +3,14 @@ classdef Image < handle
     %   Detailed explanation goes here
 
     properties
-        neurons % a list of the instances of Neuron class -> see Neuron.m
+        neurons = Neuron.empty; % a list of the instances of Neuron class -> see Neuron.m
         bodypart % a string consisting the name of the worm's body part
         meta_data = containers.Map(); % key, value pairs for intermediate analysis
+        scale = ones(1,3); % (x,y,z) scale
     end
 
     methods
-        function obj = Image(superpixels, bodypart)
+        function obj = Image(superpixels, bodypart, varargin)
             %Image Construct an instance of this class.
             %   superpixel: Matlab struct superpixels with variables mean, cov,
             %   color, basline, and potentially ids, rank, probabilistic
@@ -17,18 +18,24 @@ classdef Image < handle
             %   bodypart: A string that represents which body part the
             %   current instance of this class corresponds to, examples are
             %   'head' and 'tail'.
+            %   [scale]: optional image scale (x,y,z).
 
+            % No neurons.
+            obj.bodypart = bodypart;
             if isempty(superpixels)
                 obj.neurons = [];
-                obj.bodypart = bodypart;
                 return;
             end
 
+            % Create the neurons.
             for i=1:length(superpixels.mean)
-                neurons(i) = Neuron(sub_sp(superpixels,i));
+                obj.neurons(i) = Neuron(sub_sp(superpixels,i));
             end
-            obj.neurons = neurons;
-            obj.bodypart = bodypart;
+
+            % Setup the image scale.
+            if ~isempty(varargin)
+                obj.scale = varargin{1};
+            end
         end
 
         function add_neuron(obj, volume, position, nsz, trunc)
@@ -158,11 +165,10 @@ classdef Image < handle
             i = [];
         end
 
-        function [neuron, i] = nearest_unannotated_z(obj, position)
+        function [neuron, i] = nearest_unannotated(obj, position)
             %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
 
             % Find the unannotated neurons.
-            position = round(position);
             unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
             positions = round(vertcat(obj.neurons(unIDd_i).position));
 
@@ -172,18 +178,46 @@ classdef Image < handle
             if isempty(positions)
                 return;
             end
+            
+            % Correct the positions for image scale.
+            if size(position,1) > size(position,2)
+                position = position';
+            end
+            position = position .* obj.scale';
+            positions = positions .* obj.scale';
+            
+            % Find the nearest unannotated neuron in (x,y,z).
+            [~,min_i] = min(sum((positions - position).^2,2));
+            i = unIDd_i(min_i);
+            neuron = obj.neurons(i);
+        end
 
+        function [neuron, i] = nearest_unannotated_z(obj, position)
+            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+            
+            % Find the unannotated neurons.
+            position = round(position);
+            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            positions = round(vertcat(obj.neurons(unIDd_i).position));
+            
+            % No neurons found.
+            neuron = [];
+            i = [];
+            if isempty(positions)
+                return;
+            end
+            
             % Find the nearest unannotated neuron in z.
             [~, min_z_i] = min(abs(positions(:,3) - position(3)));
             min_z = positions(min_z_i,3);
             min_z_i = find(positions(:,3) == min_z);
-
+            
             % Find the nearest unannotated neuron in (x,y).
             [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
             i = unIDd_i(min_z_i(min_xy_i));
             neuron = obj.neurons(i);
         end
-
+        
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
             annotations = vertcat({obj.neurons.annotation});
