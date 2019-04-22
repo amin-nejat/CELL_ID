@@ -165,11 +165,12 @@ classdef Image < handle
             i = [];
         end
 
-        function [neuron, i] = nearest_unannotated(obj, position)
-            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+        function [neuron, i] = nearest_unannotated(obj, neuron_i)
+            %NEAREST_UNANNOTATED find the nearest unannoted neuron
 
             % Find the unannotated neurons.
             unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            unIDd_i = setdiff(unIDd_i, neuron_i);
             positions = round(vertcat(obj.neurons(unIDd_i).position));
 
             % No neurons found.
@@ -180,9 +181,7 @@ classdef Image < handle
             end
             
             % Correct the positions for image scale.
-            if size(position,1) > size(position,2)
-                position = position';
-            end
+            position = obj.neurons(neuron_i).position;
             position = position .* obj.scale';
             positions = positions .* obj.scale';
             
@@ -192,11 +191,11 @@ classdef Image < handle
             neuron = obj.neurons(i);
         end
 
-        function [neuron, i] = nearest_unannotated_z(obj, position)
+        function [neuron, i] = nearest_unannotated_z(obj, neuron_i)
             %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
             
             % Find the unannotated neurons.
-            position = round(position);
+            position = round(obj.neurons(neuron_i).position);
             unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
             positions = round(vertcat(obj.neurons(unIDd_i).position));
             
