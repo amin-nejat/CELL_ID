@@ -114,6 +114,28 @@ classdef NeuroPAL
             neurons = neurons_data;
         end
 
+        function neurons = getNeuronsOrderedByGanglia()
+            %GETNEURONSORDEREDBYGANGLIA Get a list of neurons ordered by
+            % ganglia combining left & right ganglia.
+            persistent neurons_data;
+            if isempty(neurons_data)
+                load('herm_data.mat', 'neuronsOrderedByGanglia');
+                neurons_data = neuronsOrderedByGanglia;
+            end
+            neurons = neurons_data;
+        end
+        
+        function neurons = getNeuronsOrderedByGangliaLR()
+            %GETNEURONSORDEREDBYGANGLIALR Get a list of neurons ordered by
+            % ganglia separating left & right ganglia.
+            persistent neurons_data;
+            if isempty(neurons_data)
+                load('herm_data.mat', 'neuronsOrderedByGangliaLR');
+                neurons_data = neuronsOrderedByGangliaLR;
+            end
+            neurons = neurons_data;
+        end
+        
         function classes = getClasses()
             %GETCLASSES Get a list of neuron classes.
             persistent classes_data;
@@ -121,9 +143,91 @@ classdef NeuroPAL
                 load('herm_data.mat', 'classes');
                 classes_data = classes;
             end
-            classes = neurons_data;
+            classes = classes_data;
+        end
+        
+        function neuron_class = getNeuronClass(neuron)
+            % GETNEURONCLASS Get the class for this neuron.
+            
+            % Load the data.
+            persistent neurons2classes_data;
+            if isempty(neurons2classes_data)
+                load('herm_data.mat', 'neurons2classes');
+                neurons2classes_data = neurons2classes;
+            end
+            
+            % Find the neuron.
+            neuron_class = [];
+            neuron_i = strcmpi(neuron, NeuroPAL.getNeurons());
+            if all(neuron_i == 0)
+                return;
+            end
+            
+            % Find the neuron's class.
+            class_i = neurons2classes_data(neuron_i);
+            classes = NeuroPAL.getClasses();
+            neuron_class = classes{class_i};
         end
 
+        
+        function neuron = getNeuroPALName(neuron)
+            % GETNEUROPALNAME Get the NeuroPAL-limited name for the neuron.
+            % Left/right neurons, within the same ganglia, cannot be
+            % distinguished. Therefore,they have a degenrate neuron name.
+            % For example, RIGL & RIGR have a NeuroPAL-limited ID of RIG.
+            
+            % Is this a neuron?
+            if ~NeuroPAL.isNeuron(neuron)
+                neuron = [];
+                return;
+            end
+            
+            % Translate the neuron to its NeuroPAL-limited name.
+            switch neuron
+                % Anterior ganglion.
+                %case {'IL1DL', 'IL1DR'}
+                %    neuron = 'IL1D';
+                %case {'IL1VL', 'IL1VR'}
+                %    neuron = 'IL1V';
+                %case {'IL2DL', 'IL2DR'}
+                %    neuron = 'IL2D';
+                %case {'IL2VL', 'IL2VR'}
+                %    neuron = 'IL2V';
+                
+                % Ventral ganglion.
+                case {'AIAL', 'AIAR'}
+                    neuron = 'AIA';
+                case {'RMFL', 'RMFR'}
+                    neuron = 'RMF';
+                case {'RMHL', 'RMHR'}
+                    neuron = 'RMH';
+                %case {'AIML', 'AIMR'}
+                %    neuron = 'AIM';
+                %case {'AIYL', 'AIYR'}
+                %    neuron = 'AIY';
+                %case {'AVKL', 'AVKR'}
+                %    neuron = 'AVK';
+                
+                % Retro-vesicular ganglion.
+                case {'AVFL', 'AVFR'}
+                    neuron = 'AVF';
+                case {'RIFL', 'RIFR'}
+                    neuron = 'RIF';
+                case {'RIGL', 'RIGR'}
+                    neuron = 'RIG';
+                case {'SABVL', 'SABVR'}
+                    neuron = 'SABV';
+                %case {'VD1', 'VD2'}
+                    %neuron = 'VD1/2';
+                
+                % Pre-anal ganglion.
+                case {'PVPL', 'PVPR'}
+                    neuron = 'PVP';
+                %case {'VD12', 'VD13'}
+                    %neuron = 'VD12/13';
+            end
+        end
+        
 
         %% Ganglia data.
         function ganglia = getGanglia()
