@@ -76,7 +76,7 @@ elseif strcmp(lower(method),'rwc_old')
 elseif strcmp(lower(method),'rwc')
     
     load(['model3_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
-    colors=color(:,[1 2 3]);
+    colors=colors(:,[1 2 3]);
     positions=positions(:,[1 2 3]);
     neurons = N;
     iter=3;
