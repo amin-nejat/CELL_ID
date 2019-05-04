@@ -100,6 +100,7 @@ elseif strcmp(lower(method),'rwc')
     X = [X ones(size(X,1),1)]*beta;
     LLhat=zeros(size(M,1),size(X,1));
     for j=1:size(M,3)
+        disp([num2str(j) '/' num2str(size(M,3)) ' done']);
         Y=M(:,:,j);
         idx=find(~any(isnan(Y),2));
         Y(any(isnan(Y),2),:)=[];
@@ -115,7 +116,7 @@ elseif strcmp(lower(method),'rwc')
         LL=-pdist2_maha(Xhat,Y,Sigma).^2;
         LLhat(idx,:)=LLhat(idx,:)+LL';
     end
-    LL=LLhat-logsumexp(LLhat,1);
+    LL=(LLhat-logsumexp(LLhat,1))';
 end
 
 
