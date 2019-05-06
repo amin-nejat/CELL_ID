@@ -1,10 +1,10 @@
-function sp_assignments = compute_assignments(sp)
+function compute_assignments(sp)
 
 
 
 %% Linear assignment
 
-LL = sp.LL;
+LL = sp.get_meta_data('LL');
 
 [assignments,~]=munkres(-LL);
 
@@ -46,12 +46,13 @@ end
 
 [~,rank_uncertain]=sort(assignment_prob_probs(:,1));
 
-sp_assignments = sp;
 
-sp_assignments.assignments = assignments;
-sp_assignments.assignment_det = assignment_det';
-sp_assignments.assignment_prob_ranks = assignment_prob_ranks;
-sp_assignments.assignment_prob_probs = assignment_prob_probs;
+
+sp.add_meta_data('assignments', assignments);
+sp.add_meta_data('assignment_det', assignment_det');
+sp.add_meta_data('assignment_prob_ranks', assignment_prob_ranks);
+
+sp.add_probabilistic_probs(assignment_prob_probs)
 
 rank_uncertain_inv(rank_uncertain) = 1:length(rank_uncertain);
-sp_assignments.rank_uncertain = rank_uncertain_inv';
+sp.add_ranks(rank_uncertain_inv')

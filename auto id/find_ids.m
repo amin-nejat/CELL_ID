@@ -1,10 +1,9 @@
-function sp_ids = find_ids(sp)
+function find_ids(sp)
 
 
-assignment_prob_ranks = sp.assignment_prob_ranks;
-assignments = sp.assignments;
-
-neurons = sp.id_neurons;
+assignment_prob_ranks = sp.get_meta_data('assignment_prob_ranks');
+assignments = sp.get_meta_data('assignments');
+neurons = sp.get_meta_data('ids');
 
 ncandidates = size(assignment_prob_ranks, 2);
 ids = repmat({'NaN'}, size(assignments,1),1);
@@ -25,8 +24,10 @@ end
 ids(cellfun(@isempty, ids)) = {'NaN'};
 ids_prob(cellfun(@isempty, ids_prob)) = {'NaN'};
 
-sp_ids = sp;
-sp_ids.ids = ids;
-sp_ids.ids_prob = ids_prob;
-sp_ids.cols = cols;
-sp_ids.rows = rows;
+sp.add_deterministic_ids(ids);
+sp.add_probabilistic_ids(ids_prob);
+
+sp.add_meta_data('cols', cols);
+sp.add_meta_data('rows', rows);
+
+end

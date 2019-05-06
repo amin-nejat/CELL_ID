@@ -3,7 +3,6 @@ function [bbVol, info] = load_czi(imagefile)
 % Amin Nejat
     params = get_params();
     addpath(genpath(params.fiji_lib_folder));
-    javaaddpath(params.mij_path);
     Miji(false);
     MIJ.run('Open...', ['path=[', imagefile, ']']);
     thisVol = MIJ.getCurrentImage;
