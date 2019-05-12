@@ -351,7 +351,20 @@ classdef Image < handle
             value = obj.meta_data(key);
         end
 
-
+        function delete_annotations(obj)
+            %DELETE_ANNOTATIONS delete all user IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_annotation();
+            end
+        end
+        
+        function delete_model_IDs(obj)
+            %DELETE_MODEL_IDS delete all the model-predicted IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_model_ID();
+            end
+        end
+        
         function sp = to_superpixel(obj)
             %TO_SUPERPIXEL coverts the neurons to a superpixel data
             %structure for data loading and storing and for interfacing
