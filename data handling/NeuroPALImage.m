@@ -69,6 +69,11 @@ classdef NeuroPALImage
                 end
             end
             
+            % Did we manage to convert the file?
+            if ~exist(np_file,'file')
+                error('Cannot read/convert: "%"', np_file);
+            end
+            
             % Open the file.
             np_data = load(np_file);
             if ~isfield(np_data, 'data') || ...
