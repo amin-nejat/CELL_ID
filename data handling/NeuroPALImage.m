@@ -126,6 +126,9 @@ classdef NeuroPALImage
             end
             
             % Setup the NP file data.
+            info.z_center = floor(size(data,3) / 2);
+            info.is_Z_LR = true;
+            info.is_Z_flip = true;
             info.scale = image_data.scale * 1000000; % convert to microns
             info.DIC = image_data.dicChannel;
             
