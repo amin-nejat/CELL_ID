@@ -9,7 +9,7 @@ function resid = fit_gaussian_cov(x, vol, norm, trunc, mu, color_props, baseline
     x = x./norm';
     
     L = zeros(3, 3);
-    L([1, 4, 5, 7, 8, 9]) = x(1:6);
+    L([1,2,3,5,6,9]) = x(1:6);
     variances = L*L';
     
     props = color_props*exp(x(7));

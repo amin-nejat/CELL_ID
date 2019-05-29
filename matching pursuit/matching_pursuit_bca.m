@@ -21,7 +21,7 @@ norm = [10./szext(1: 3), ... % loc
         ones(1, size(volume, 4)), ... % noise
         ];
     
-init_eig = sort(fsize)';
+init_eig = sort(fsize);
 init_bound = init_eig-1;
 
 nonlcon = @(x) gaussian_confun_cov(x, ones(1,8), init_eig, init_bound);
