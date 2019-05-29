@@ -1,6 +1,7 @@
 function P= sinkhorn_logspace(logP,niter)
     a=nanmin(nanmin(logP(~isinf(logP))));
     logP(isinf(logP))=a-10000;
+    logP(isnan(logP))=-a-10000;
     n1 = size(logP,1);
     n2 = size(logP,2);
 

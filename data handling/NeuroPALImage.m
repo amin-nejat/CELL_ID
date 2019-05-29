@@ -69,6 +69,11 @@ classdef NeuroPALImage
                 end
             end
             
+            % Did we manage to convert the file?
+            if ~exist(np_file,'file')
+                error('Cannot read/convert: "%"', np_file);
+            end
+            
             % Open the file.
             np_data = load(np_file);
             if ~isfield(np_data, 'data') || ...
@@ -121,6 +126,7 @@ classdef NeuroPALImage
             end
             
             % Setup the NP file data.
+            info.file = czi_file;
             info.scale = image_data.scale * 1000000; % convert to microns
             info.DIC = image_data.dicChannel;
             
@@ -167,9 +173,12 @@ classdef NeuroPALImage
             prefs.DIC = info.DIC;
             prefs.GFP = info.GFP;
             prefs.gamma = info.gamma;
+            prefs.body_part = [];
             prefs.rotate.horizontal = false;
             prefs.rotate.vertical = false;
-            prefs.body_part = [];
+            prefs.z_center = ceil(size(data,3) / 2);
+            prefs.is_Z_LR = true;
+            prefs.is_Z_flip = true;
             
             % Save the CZI file to our MAT file format.
             np_file = strrep(czi_file, 'czi', 'mat');

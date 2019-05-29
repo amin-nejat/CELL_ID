@@ -3,13 +3,15 @@ classdef Image < handle
     %   Detailed explanation goes here
 
     properties
-        neurons % a list of the instances of Neuron class -> see Neuron.m
+        neurons = Neuron.empty; % a list of the instances of Neuron class -> see Neuron.m
         bodypart % a string consisting the name of the worm's body part
         meta_data = containers.Map(); % key, value pairs for intermediate analysis
+        scale = ones(1,3); % (x,y,z) scale
     end
 
+    % Public methods.
     methods
-        function obj = Image(superpixels, bodypart)
+        function obj = Image(superpixels, bodypart, varargin)
             %Image Construct an instance of this class.
             %   superpixel: Matlab struct superpixels with variables mean, cov,
             %   color, basline, and potentially ids, rank, probabilistic
@@ -17,18 +19,24 @@ classdef Image < handle
             %   bodypart: A string that represents which body part the
             %   current instance of this class corresponds to, examples are
             %   'head' and 'tail'.
+            %   [scale]: optional image scale (x,y,z).
 
+            % No neurons.
+            obj.bodypart = bodypart;
             if isempty(superpixels)
                 obj.neurons = [];
-                obj.bodypart = bodypart;
                 return;
             end
 
+            % Create the neurons.
             for i=1:length(superpixels.mean)
-                neurons(i) = Neuron(sub_sp(superpixels,i));
+                obj.neurons(i) = Neuron(sub_sp(superpixels,i));
             end
-            obj.neurons = neurons;
-            obj.bodypart = bodypart;
+
+            % Setup the image scale.
+            if ~isempty(varargin)
+                obj.scale = varargin{1};
+            end
         end
 
         function add_neuron(obj, volume, position, nsz, trunc)
@@ -59,30 +67,57 @@ classdef Image < handle
             end
         end
 
-        function rot_image = rotate_X_180(obj, image)
-            %ROTATE_X_180 Rotate the image 180 degrees around the x-axis.
+        function rot_image = rotate_X_180(obj, rot_image)
+            %ROTATE_X_180 Rotate everything 180 degrees around the x-axis.
             %   image: the image to rotate
             %   rot_image: the image rotated 180 degrees around the x-axis.
-            rot_image = image(:,end:-1:1,end:-1:1,:,:);
-            for i=1:length(obj.neurons)
-                position =  obj.neurons(i).position;
-                obj.neurons(i).position(2) = size(image,2) - position(2) + 1;
-                obj.neurons(i).position(3) = size(image,3) - position(3) + 1;
-            end
+            obj.rotate_neurons_X_180(rot_image);
+            rot_image = obj.rotate_image_X_180(rot_image);
         end
 
-        function rot_image = rotate_Y_180(obj, image)
-            %ROTATE_Y_180 Rotate the image 180 degrees around the y-axis.
+        function rot_image = rotate_Y_180(obj, rot_image)
+            %ROTATE_Y_180 Rotate everything image 180 degrees around the y-axis.
             %   image: the image to rotate
             %   rot_image: the image rotated 180 degrees around the y-axis.
-            rot_image = image(end:-1:1,:,end:-1:1,:,:);
+            obj.rotate_neurons_Y_180(rot_image);
+            rot_image = obj.rotate_image_Y_180(rot_image);
+        end
+        
+        function rotate_neurons_X_180(obj, rot_image)
+            %ROTATE_NEURONS_X_180 Rotate the neurons 180 degrees around the x-axis.
+            %   image: the image to rotate
             for i=1:length(obj.neurons)
                 position =  obj.neurons(i).position;
-                obj.neurons(i).position(1) = size(image,1) - position(1) + 1;
-                obj.neurons(i).position(3) = size(image,3) - position(3) + 1;
+                obj.neurons(i).position(2) = size(rot_image,2) - position(2) + 1;
+                obj.neurons(i).position(3) = size(rot_image,3) - position(3) + 1;
             end
         end
-
+        
+        function rotate_neurons_Y_180(obj, rot_image)
+            %ROTATE_NEURONS_Y_180 Rotate the neurons 180 degrees around the y-axis.
+            %   image: the image to rotate
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(1) = size(rot_image,1) - position(1) + 1;
+                obj.neurons(i).position(3) = size(rot_image,3) - position(3) + 1;
+            end
+        end
+        
+        function rot_image = rotate_image_X_180(obj, rot_image)
+            %ROTATE_IMAGE_X_180 Rotate an image 180 degrees around the x-axis.
+            %   image: the image to rotate
+            %   rot_image: the image rotated 180 degrees around the x-axis.
+            rot_image = rot_image(:,end:-1:1,end:-1:1,:,:);
+        end
+        
+        function rot_image = rotate_image_Y_180(obj, rot_image)
+            %ROTATE_IMAGE_Y_180 Rotate an image 180 degrees around the y-axis.
+            %   image: the image to rotate
+            %   rot_image: the image rotated 180 degrees around the y-axis.
+            rot_image = rot_image(end:-1:1,:,end:-1:1,:,:);
+        end
+        
+        
         function rot_image = rotate(obj, image, rot)
             %ROT_IMAGE Rotates the image using parameters specified in rot
             %   image: the full image that needs to be rotated
@@ -158,12 +193,12 @@ classdef Image < handle
             i = [];
         end
 
-        function [neuron, i] = nearest_unannotated_z(obj, position)
-            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+        function [neuron, i] = nearest_unannotated(obj, neuron_i)
+            %NEAREST_UNANNOTATED find the nearest unannoted neuron
 
             % Find the unannotated neurons.
-            position = round(position);
             unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            unIDd_i = setdiff(unIDd_i, neuron_i);
             positions = round(vertcat(obj.neurons(unIDd_i).position));
 
             % No neurons found.
@@ -172,18 +207,44 @@ classdef Image < handle
             if isempty(positions)
                 return;
             end
+            
+            % Correct the positions for image scale.
+            position = obj.neurons(neuron_i).position;
+            position = position .* obj.scale';
+            positions = positions .* obj.scale';
+            
+            % Find the nearest unannotated neuron in (x,y,z).
+            [~,min_i] = min(sum((positions - position).^2,2));
+            i = unIDd_i(min_i);
+            neuron = obj.neurons(i);
+        end
 
+        function [neuron, i] = nearest_unannotated_z(obj, neuron_i)
+            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+            
+            % Find the unannotated neurons.
+            position = round(obj.neurons(neuron_i).position);
+            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            positions = round(vertcat(obj.neurons(unIDd_i).position));
+            
+            % No neurons found.
+            neuron = [];
+            i = [];
+            if isempty(positions)
+                return;
+            end
+            
             % Find the nearest unannotated neuron in z.
             [~, min_z_i] = min(abs(positions(:,3) - position(3)));
             min_z = positions(min_z_i,3);
             min_z_i = find(positions(:,3) == min_z);
-
+            
             % Find the nearest unannotated neuron in (x,y).
             [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
             i = unIDd_i(min_z_i(min_xy_i));
             neuron = obj.neurons(i);
         end
-
+        
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
             annotations = vertcat({obj.neurons.annotation});
@@ -318,7 +379,20 @@ classdef Image < handle
             value = obj.meta_data(key);
         end
 
-
+        function delete_annotations(obj)
+            %DELETE_ANNOTATIONS delete all user IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_annotation();
+            end
+        end
+        
+        function delete_model_IDs(obj)
+            %DELETE_MODEL_IDS delete all the model-predicted IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_model_ID();
+            end
+        end
+        
         function sp = to_superpixel(obj)
             %TO_SUPERPIXEL coverts the neurons to a superpixel data
             %structure for data loading and storing and for interfacing

@@ -53,6 +53,9 @@ classdef Neuron < handle
             if isfield(superpixel, 'probabilistic_probs')
                 obj.probabilistic_probs = superpixel.probabilistic_probs;
             end
+            %if isfield(superpixel, 'rank')
+            %    obj.rank = superpixel.rank;
+            %end
 
         end
 
@@ -75,6 +78,19 @@ classdef Neuron < handle
             end
         end
 
+        function delete_annotation(obj)
+            %DELETE_ANNOTATION delete the user ID.
+            obj.annotate('', 0, nan);
+        end
+        
+        function delete_model_ID(obj)
+            %DELETE_MODEL_ID delete the model-predicted ID.
+            obj.deterministic_id = [];
+            obj.probabilistic_ids = [];
+            obj.probabilistic_probs = [];
+            obj.rank = [];
+        end
+        
         function rotate(obj, rot, sz, newsz)
             %ROTATE rotates the neuron and translates it according to new
             %image space.
