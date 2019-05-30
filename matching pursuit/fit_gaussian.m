@@ -1,8 +1,8 @@
 function [shape, sp, goodness] = fit_gaussian(bpatch, szext, colorvec, fsize, trunc, absolute_position)
     options = optimoptions('fmincon');
-    options.MaxFunEvals = 10000;
-    options.MaxIter = 10000;
-    options.StepTolerance = 5e-10;
+    options.MaxFunEvals = 5000;
+    options.MaxIter = 5000;
+    options.StepTolerance = 1e-8;
     % options.PlotFcn = 'optimplotx';
     % options.Display = 'iter';
 

@@ -7,7 +7,6 @@ x = x./norm;
 
 L = zeros(3, 3);
 L([1,2,3,5,6,9]) = x(1: 6);
-L = reshape(L, 3, 3);
 variances = L'*L;
 
 v = sort(eig(variances));
