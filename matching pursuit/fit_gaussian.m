@@ -13,7 +13,7 @@ function [shape, sp, goodness] = fit_gaussian(bpatch, szext, colorvec, fsize, tr
             ones(1, szext(4)), ... % noise
             ];
 
-    init_eig = 2.5*sort(fsize)';
+    init_eig = 2.5*sort(fsize);
     init_bound = init_eig-1;
 
     nonlcon = @(x) gaussian_confun_cov(x, ones(1,8), init_eig, init_bound);
@@ -68,7 +68,7 @@ function [shape, sp, goodness] = fit_gaussian(bpatch, szext, colorvec, fsize, tr
     b_eq = [1; 1];
 
 
-    f = @(x) fit_gaussian_fixed_cov(x', bpatch, norm, trunc, eye(3));
+    f = @(x) fit_gaussian_fixed_cov(x', bpatch, norm, trunc, diag(init_eig(end:-1:1)));
     res_fixed_cov = fmincon(f, x0, [], [], A_eq, b_eq, lb, ub, [], options);
 
 
