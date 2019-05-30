@@ -167,7 +167,7 @@ classdef Neuron < handle
             %   nsz: size of the reconstructed image
             %   trunc: truncation value used for reconstruction.
             %   recon: (X,Y,Z,C) 4D double array.
-            recon = simulate_gaussian(2*nsz+1, ... % size
+            recon = Utils.simulate_gaussian(2*nsz+1, ... % size
                 nsz+1+obj.position-round(obj.position), ... % center
                 obj.covariance, ... % cov
                 obj.color, ... % colors

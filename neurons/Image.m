@@ -31,7 +31,7 @@ classdef Image < handle
 
             % Create the neurons.
             for i=1:length(superpixels.mean)
-                obj.neurons(i) = Neuron(sub_sp(superpixels,i));
+                obj.neurons(i) = Neuron(Utils.sub_sp(superpixels,i));
             end
 
             % Setup the image scale.
@@ -44,7 +44,7 @@ classdef Image < handle
             %% do_auto_id calls the constructor of AutoId and then fills in all secondary properties
             % finally, it updates the image structure with all the relevant
             % features from auto_id.
-            obj.auto_id = AutoId(obj, type);
+            obj.auto_id = AutoId.instance(obj, type);
             obj.auto_id.compute_assignments();
             obj.auto_id.find_ids();
             obj = add_to_image(obj.auto_id, obj);
@@ -64,7 +64,11 @@ classdef Image < handle
             color = squeeze(volume(round(position(1)),round(position(2)),round(position(3)),:))';
             bpatch = subcube(volume, round(position), nsz);
             if isKey(obj.meta_data, 'auto_detect') && obj.meta_data('auto_detect')
-                [~, sp, ~] = fit_gaussian(double(bpatch), size(volume), color, nsz, trunc, position);
+                auto_detect = AutoDetect.instance();
+                auto_detect.szext = size(volume);
+                auto_detect.trunc = trunc;
+                auto_detect.fsize = nsz;
+                [~, sp, ~] = auto_detect.fit_gaussian(double(bpatch), color, position);
             else
                 sp = [];
                 sp.mean = position;
@@ -223,8 +227,8 @@ classdef Image < handle
             
             % Correct the positions for image scale.
             position = obj.neurons(neuron_i).position;
-            position = position .* obj.scale';
-            positions = positions .* obj.scale';
+            position = position .* obj.scale;
+            positions = positions .* obj.scale;
             
             % Find the nearest unannotated neuron in (x,y,z).
             [~,min_i] = min(sum((positions - position).^2,2));
