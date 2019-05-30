@@ -4,6 +4,7 @@ classdef Image < handle
 
     properties
         neurons = Neuron.empty; % a list of the instances of Neuron class -> see Neuron.m
+        auto_id = AutoId.empty
         bodypart % a string consisting the name of the worm's body part
         meta_data = containers.Map(); % key, value pairs for intermediate analysis
         scale = ones(1,3); % (x,y,z) scale
@@ -38,7 +39,19 @@ classdef Image < handle
                 obj.scale = varargin{1};
             end
         end
-
+        
+        function do_auto_id(obj, type)
+            %% do_auto_id calls the constructor of AutoId and then fills in all secondary properties
+            % finally, it updates the image structure with all the relevant
+            % features from auto_id.
+            obj.auto_id = AutoId(obj, type);
+            obj.auto_id.compute_assignments();
+            obj.auto_id.find_ids();
+            obj = add_to_image(obj.auto_id, obj);
+        end
+        
+            
+            
         function add_neuron(obj, volume, position, nsz, trunc)
             %ADD_NEURON Adds a neuron to the list of neurons in obj.neurons
             %   by running one iteration of Matching Pursuit.
@@ -192,7 +205,7 @@ classdef Image < handle
             end
             i = [];
         end
-
+        
         function [neuron, i] = nearest_unannotated(obj, neuron_i)
             %NEAREST_UNANNOTATED find the nearest unannoted neuron
 
