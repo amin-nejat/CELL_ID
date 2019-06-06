@@ -120,6 +120,133 @@ classdef Preprocess < handle
                 rho(:, :, :, ch) =  imfilter(D, filter, 'same');
             end
         end
+        
+        
+        
+        function mask =  filter_small_artifacts(data, filter_color)
+        % Generate marks for filtering artifacts smaller than neurons. 
+        % Input: 
+        %        data: data to filter
+        %        filter_color: color of small artifacts 
+        % Output:      
+        %        green_mask: 2D matrix showing pixels to be filtered
+        % Ruoxi Sun
+        
+            if filter_color == "red" 
+                data_color = data(:,:,:,1);
+            elseif filter_color == "green"
+                data_color = data(:,:,:,2);
+            elseif filter_color == "blue"
+                data_color = data(:,:,:,3);
+            else
+                error('colors have to be red, green, blue')
+            end
+      
+            %green = data(:,:,:,2); 
+            data_color = imgaussfilt(data_color, .7); 
+            thre = prctile( data_color(:) , 99 ); 
+            BW = (data_color>thre);
+            
+            % connected components
+            CC = bwconncomp(BW); 
+            L = labelmatrix(CC);
+ 
+            stats = regionprops3(BW, 'Volume', 'Centroid', 'BoundingBox', 'ConvexVolume'); 
+            stats = table2array(stats); 
+            % filter by size
+            idx = find(stats(:,1)<130);
+            select = stats(idx,:); 
+            % generate the filtering mask 
+            CC1 = CC;
+            CC1.PixelIdxList = CC.PixelIdxList(idx); 
+            CC1.NumObjects = length(CC.PixelIdxList(idx));
+            LL = labelmatrix(CC1);
+            mask = (LL>0); 
+        end
+            
+            
+       function [green_mask, green_square] =  filter_gut(data)
+        % Generate marks for filtering gut (big green area) 
+        % Input: 
+        %        data: data to filter 
+        % Output:      
+        %        green_mask: convex hall over gut area 
+        %        green_square: square over gut area 
+        % Ruoxi Sun
+           
+            %green
+            green = data(:,:,:,2); 
+            green1 = imgaussfilt(green, .7); 
+            thre = prctile(green1(:), 99); 
+            thre = max(thre, 2.8);
+            BW = (green1>thre);  
+            %red
+            red = data(:,:,:,1); 
+            red1 = imgaussfilt(red, .7); 
+            thre = prctile(red1(:), 99); 
+            BW = BW.*(red1<thre);  
+            %blue
+            blue = data(:,:,:,3); 
+            blue1 = imgaussfilt(blue, .7); 
+            thre = prctile(blue1(:), 99); 
+            thre = max(thre, 2.8);
+            BW = logical(BW.*(blue1<thre));  
+
+            CC = bwconncomp(BW); 
+            L = labelmatrix(CC);
+            % filter by size and convex hall size  
+            stats = regionprops3(BW, 'Volume', 'Centroid', 'BoundingBox', 'ConvexVolume'); 
+            ConvexImage = regionprops3(BW, 'ConvexImage');
+            stats = table2array(stats); 
+
+            idx = find(stats(:,1)>1900 & stats(:,11)>6000);
+            % big green objects on later frames are more likely to be filtered out 
+            idx_end = find(stats(:,1)>1000 & stats(:,4)>size(data,3)-13 & stats(:,11)>1700);
+            idx1 = union(idx, idx_end);
+            select = stats(idx1,:); 
+
+            green_mask = zeros(size(green)); 
+            green_square = zeros(size(green)); 
+            for i = 1:size(select,1)
+                 tmp = table2array(ConvexImage(idx1(i),1));
+                 xrange = round(select(i,5):select(i,5)+select(i,8)-1);
+                 yrange = round(select(i,6):select(i,6)+select(i,9)-1);
+                 zrange = round(select(i,7):select(i,7)+select(i,10)-1);
+                 green_mask(yrange, xrange, zrange) = permute(tmp{:}, [1,2,3]);
+                 green_square(yrange, xrange, zrange) = 1; 
+            end
+       end
+        
+                
+        function [data_filter, mask] = filter_gut_lysosomes(data)
+        % filtering gut cells (big green artifacts) and lysosomes (small blue artifacts)
+        % Input: 
+        %        data: data to filter (z scored)
+        % Output:
+        %        data_filter: data after filtering
+        %        mask: 2D matrix showing pixels filtered
+        % Ruoxi Sun
+
+            % generate masks to filter out
+            % lysosomes        
+            mask_g  =  filter_small_artifacts(data, 'green');  
+            mask_b  =  filter_small_artifacts(data, 'blue'); 
+            % gut
+            [green_mask, green_square] =  filter_gut(data);   
+            square_cat = repmat(green_square,[1,1,1,4]); 
+            mask = (green_square + mask_g + mask_b)>0; 
+            
+            % filter
+            g = data(:,:,:,2);
+            b = data(:,:,:,3);
+            g(mask_g==1) = 0; 
+            b(mask_b==1) = 0;
+            data_filter = data;
+            data_filter(:,:,:,2) = g; 
+            data_filter(:,:,:,3) = b; 
+            data_filter(square_cat==1) = 0; 
+
+        end
 
 
     end
