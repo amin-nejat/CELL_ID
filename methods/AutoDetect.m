@@ -5,8 +5,9 @@ classdef AutoDetect < Singleton
         supervoxels = []
         
         fsize
-        trunc
         szext
+        
+        scale
    end
    
    methods(Access=private)
@@ -14,7 +15,7 @@ classdef AutoDetect < Singleton
         obj.options = optimoptions('fmincon', 'Display', 'off');
         obj.options.MaxFunEvals = 5000;
         obj.options.MaxIter = 5000;
-        obj.options.StepTolerance = 1e-8;
+        obj.options.StepTolerance = 1e-10;
       end
    end
    
@@ -30,14 +31,13 @@ classdef AutoDetect < Singleton
       end
       
       
-      function [c, ceq] = constrain_eigenvalues(x, norm, init, bound)
+       function [c, ceq] = constrain_eigenvalues(x, init, bound)
         % Nonlinear inequality constraints (eigenvalues) for fmincon.
         % Amin Nejat
-            x = x./norm;
 
             L = zeros(3, 3);
-            L([1,2,3,5,6,9]) = x(1: 6);
-            variances = L'*L;
+            L([1,2,3,5,6,9]) = x(4:9);
+            variances = L*L';
 
             v = sort(eig(variances));
             c = -[v'-init+bound, bound-v'+init];
@@ -45,51 +45,26 @@ classdef AutoDetect < Singleton
             ceq = [];
         end
         
-        function resid = fit_gaussian_fixed_cov(x, vol, norm, trunc, cov)
+        function resid = gaussian_cost(x, vol, norm_factor)
         % Calculating residual between a multi-color Gaussian function and the
-        % original image where the covariance of the Gaussian is fixed.
+        % original image.
         %
         % Amin Nejat
 
-            x = x./norm';
-
+            x = x./norm_factor';
+            
             mu = x(1:3);
+            L = zeros(3, 3); L([1,2,3,5,6,9]) = x(4:9); cov = L*L';
 
-            props = x(6:size(vol,4) + 5)*exp(x(4));
-            baseline = x(size(vol,4) + 6:end)*x(5);
+            props = x(12:size(vol,4) + 11)*exp(x(10));
+            baseline = x(size(vol,4) + 12:end-1)*x(11);
             sz = size(vol);
-
-            recon = Utils.simulate_gaussian(sz(1:3), ...
-                mu', cov, props', baseline', zeros(1, size(vol, 4)), trunc);
-
+            recon = Utils.simulate_gaussian(sz(1:3), mu', cov, props', baseline', x(end));
+            
             resid = sqrt(sum((vol(:) - recon(:)).^2));
         end
         
-        function resid = fit_gaussian_cov(x, vol, norm, trunc, mu, color_props, baseline_props)
-        % Calculating residual between a multi-color Gaussian for a given set of
-        % parameters and the original image. In this function covariance of the
-        % Gaussian is the only variable, rest of the parameters are fixed. Used by 
-        % fmincon to find the best fit Gaussian function.
-        %
-        % Amin Nejat
-
-            x = x./norm';
-
-            L = zeros(3, 3);
-            L([1,2,3,5,6,9]) = x(1:6);
-            variances = L*L';
-
-            props = color_props*exp(x(7));
-            baseline = baseline_props*x(8);
-            sz = [size(vol, 1), size(vol, 2), size(vol, 3), size(vol, 4)];
-
-            recon = Utils.simulate_gaussian(sz(1: 3), ...
-                mu', variances, props', baseline', zeros(1, size(vol, 4)), trunc);
-
-            resid = sqrt(sum((vol(:) - recon(:)).^2));
-        end
-        
-        function [shape, recon, mu, cov, colors] = get_gaussian_cov(x, sz, norm, trunc, mu, color_props)
+        function [shape, recon, mu, cov, colors] = get_gaussian(x, sz, norm)
         % Creating Gaussian function for a given set of parameters, used for
         % visualization.
         %
@@ -97,19 +72,16 @@ classdef AutoDetect < Singleton
 
             x = x./norm;
 
-            L = zeros(3, 3);
-            L([1,2,3,5,6,9]) = x(1:6);
-            cov = L*L';
+            mu = x(1:3);
+            L = zeros(3, 3); L([1,2,3,5,6,9]) = x(4:9); cov = L*L';
 
-            colors = color_props*exp(x(7));
-
-            recon = Utils.simulate_gaussian(sz, ...
-                mu, cov, colors, zeros(1, sz(4)), zeros(1, sz(4)), trunc);
-
-            shape = recon(:, :, :, 1)/colors(1);
+            colors = x(12:sz(4)+11)*exp(x(10));
+            recon = Utils.simulate_gaussian(sz(1:3), mu, cov, colors, zeros(1,sz(4)), x(end));
+            shape = recon(:,:,:,1)/colors(1);
         end
         
-        function filter = get_filter(sz, sigma_factor, truncate_percentage)
+        
+        function filter = get_filter(sz, sigma_factor, trunc)
         % Creating a Gaussian filter 2D, 3D, or 4D for smoothing an image.
         %
         % Amin Nejat
@@ -119,7 +91,7 @@ classdef AutoDetect < Singleton
             pos = [];
             [pos(:, 1), pos(:, 2), pos(:, 3)] = ind2sub(sz, find(ones(sz(1:3))));
             filt = reshape(mvnpdf(pos, fmu, fsigma), sz);
-            filt(filt < prctile(filt(:), truncate_percentage)) = 0;
+            filt(filt < prctile(filt(:), trunc)) = 0;
 
             filter = filt/sqrt(sum(filt(:).*filt(:)));
         end
@@ -127,12 +99,13 @@ classdef AutoDetect < Singleton
    end
    
    methods % Public Access
-        function supervoxels = detect(obj, volume, filter, n_objects, trunc, cov_threshold)
+        function supervoxels = detect(obj, volume, filter, n_objects, cov_threshold, scale, exclusion)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
         % fits to input dataset. The algorithm runs greedy by subtracting off the
         % brightest Gaussian at each iteration.
         %
         % Amin Nejat
+            obj.scale = scale;
             
             h = waitbar(0,'Initialize ...');
             
@@ -142,7 +115,6 @@ classdef AutoDetect < Singleton
 
             obj.szext = [size(volume), 1];
             obj.fsize = size(filter)-1;
-            obj.trunc = trunc;
 
             rho = Preprocess.filter_frame(volume, filter);
 
@@ -154,23 +126,31 @@ classdef AutoDetect < Singleton
                 catch
                     break;
                 end
+                
 
                 rho_mag = max(rho, [], 4);
                 [~, lmidx] = max(rho_mag(:));
                 [x,y,z] = ind2sub(size(rho_mag), lmidx);
-
+                
                 bpatch = Utils.subcube(volume, [x,y,z], obj.fsize);
 
-                [shape, sp, ~] = obj.fit_gaussian(bpatch, squeeze(rho(x,y,z,:))', [x,y,z]);
-
+                [shape, sp] = obj.fit_gaussian(bpatch, squeeze(rho(x,y,z,:))', [x,y,z]);
+                                
                 fshape = imfilter(shape, filter, 'full');
                 residual = Utils.placement(obj.szext(1:3), [x,y,z], fshape);
 
                 for ch = 1: size(rho, 4)
                     rho(:,:,:,ch) = rho(:,:,:,ch)-residual*sp.color(ch);
                 end
-
-                if max(eig(squeeze(sp.cov))) > cov_threshold
+                
+                
+               exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
+               
+               if ~isempty(obj.supervoxels)
+                   min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2)))
+               end
+                
+                if max(eig(squeeze(sp.cov))) > cov_threshold && exclusion_condition
                     obj.supervoxels = Utils.union_sp(obj.supervoxels, sp);
                     N = size(obj.supervoxels.mean, 1);
                 end
@@ -185,19 +165,20 @@ classdef AutoDetect < Singleton
 
 
        
-        function [shape, sp, goodness] = fit_gaussian(obj, bpatch, colorvec, absolute_position)
+        function [shape, sp] = fit_gaussian(obj, bpatch, colorvec, absolute_position)
 
-            norm = [10./obj.szext(1: 3), ... % loc
+            norm = [obj.scale, ... % loc
+                    sqrt([obj.scale(1),1,1,obj.scale(2),1,obj.scale(3)]), ... % covariance parameters
                     1, ... % color scale
                     1, ... % noise scale
                     ones(1, obj.szext(4)), ... % color
                     ones(1, obj.szext(4)), ... % noise
-                    ];
+                    10000];
+                
+            init_eig = [4,4,4];
+            init_bound = [2,2,2];
 
-            init_eig = 2.5*sort(obj.fsize);
-            init_bound = init_eig-1;
-
-            nonlcon = @(x) AutoDetect.constrain_eigenvalues(x, ones(1,8), init_eig, init_bound);
+            nonlcon = @(x) AutoDetect.constrain_eigenvalues(x, init_eig, init_bound);
 
             colors = reshape(bpatch, [numel(bpatch)/size(bpatch, 4), size(bpatch, 4)]);
             colors(colors == 0) = eps;
@@ -211,69 +192,48 @@ classdef AutoDetect < Singleton
             colorvec = colorvec/sum(colorvec(:));
             noisevec = noisevec/sum(noisevec(:));
 
-
-            x0 =   double([obj.fsize+1, ... % loc
+            
+            x0 =   double([(obj.fsize+1).*obj.scale, ... % loc
+                sqrt([init_eig(3),0,0,init_eig(2),0,init_eig(1)]), ... % covariance parameters
                 log(color_level), ... % color scale
                 noise_level, ... % noise scale
                 colorvec, ... % color
                 noisevec, ... % noise
-                ]).*norm;
-
-
-            if isnan(x0(4))
-                x0(4) = 2;
-            end
-
-            bounds = [30*obj.fsize./(6*obj.szext(1:3)), ... % loc
-                    2, ... % color scale
-                    0.2, ... % noise scale
-                    0.1*ones(1, obj.szext(4)), ... % color
-                    0.5*ones(1, obj.szext(4)), ... % noise
-                    ];
-
-            x0(6: 5+2*obj.szext(4)) = max(0, x0(6: 5+2*obj.szext(4)));
-
-            lb = x0 - bounds;
-            ub = x0 + bounds;
-
-            lb(6: 5+2*obj.szext(4)) = max(0, lb(6: 5+2*obj.szext(4)));
-            lb(4) = max(1, lb(4));
-
-            lb(5) = -1;
-            ub(5) = 1;
-
-            A_eq = [zeros(1, 5), ones(1, obj.szext(4)), zeros(1, obj.szext(4)); ...
-                   [zeros(1, 5), zeros(1, obj.szext(4)), ones(1, obj.szext(4))]];
+                0]);
+            
+            lb = [x0(1:3)-0.3*ones(1,3), zeros(1,6), 0, -0.1, zeros(1,2*obj.szext(4)), 0];
+            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 10, ones(1,2*obj.szext(4)), 10];
+            
+            
+            A_eq = [zeros(1, 11), ones(1, obj.szext(4)), zeros(1, obj.szext(4)), 0; ...
+                   [zeros(1, 11), zeros(1, obj.szext(4)), ones(1, obj.szext(4)), 0]];
             b_eq = [1; 1];
 
+            
+            f = @(x) AutoDetect.gaussian_cost(x', bpatch, norm);
+            x_hat = fmincon(f, x0, [], [], A_eq, b_eq, lb, ub, nonlcon, obj.options);
 
-            f = @(x) AutoDetect.fit_gaussian_fixed_cov(x', bpatch, norm, obj.trunc, diag(init_eig(end:-1:1)));
-            res_fixed_cov = fmincon(f, x0, [], [], A_eq, b_eq, lb, ub, [], obj.options);
+            [shape, rec, tr, cov, col] = AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
+            bas = x_hat(12+obj.szext(4):11+2*obj.szext(4))*x_hat(11);
 
 
-            f = @(x) AutoDetect.fit_gaussian_cov(x', bpatch, ones(1,8), obj.trunc, res_fixed_cov(1:3)'./norm(1:3)', res_fixed_cov(6:5+obj.szext(4)), res_fixed_cov(6+obj.szext(4):5+2*obj.szext(4)));
-            res = fmincon(f, [sqrt([init_eig(3),0,init_eig(2),0,0,init_eig(1)]),res_fixed_cov(4:5)], [], [], [], [], [eps,eps,eps,eps,eps,eps,1,-1], [10,10,10,10,10,10,100,1], nonlcon, obj.options);
+%             figure(1);
+%             subplot(1,2,1); cla;
+%             image(squeeze(max(rec(:,:,:,[1,2,3]), [], 3)/10))
+%             title('NeuroPAL Image');
+%             plot_3D(bpatch, [], gca);
+%             subplot(1,2,2); cla;
+%             image(squeeze(max(bpatch(:,:,:,[1,2,3]), [], 3)/10))
+%             title('Gaussian Reconstruction');
+%             plot_3D(rec, [], gca);
 
-            [shape, rec, tr, cov, col] = AutoDetect.get_gaussian_cov(res, [2*obj.fsize+1, obj.szext(4)], ones(1,8), obj.trunc, res_fixed_cov(1:3)./norm(1:3), res_fixed_cov(6:5+obj.szext(4)));
-            bas = res_fixed_cov(6+obj.szext(4):5+2*obj.szext(4))/res(end);
-
-%             subplot(1,3,1)
-%             image(squeeze(max(rec(:,:,:,[4,3,1]), [], 3))/20)
-%             subplot(1,3,2)
-%             image(squeeze(max(bpatch(:,:,:,[4,3,1]), [], 3))/20)
-%             subplot(1,3,3)
-%             image(squeeze(max(bpatch(:,:,:,[4,3,1]) - rec(:,:,:,[4,3,1]), [], 3))/20)
-%             drawnow
-
-            reccoef = corrcoef(rec(:), bpatch(:));
-            goodness = reccoef(1,2);
-
-            relative_position = (res_fixed_cov(1:3)-x0(1:3))./norm(1:3);
+            relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 
             sp.mean = relative_position+absolute_position;
             sp.cov(1,:,:) = cov;
             sp.color = col;
             sp.baseline = bas;
+            sp.truncation = x_hat(end)/norm(end);
         end
         
    end

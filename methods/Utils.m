@@ -7,7 +7,7 @@ classdef Utils
     
     methods(Static)
           
-        function volume = simulate_gaussian(sz, mu, sigma, props, noise_mean, noise_std, truncate_percent)
+        function volume = simulate_gaussian(sz, mu, sigma, props, baseline, truncation)
         % Simulate a truncated Gaussian function for fitting procedure. This
         % function is used by matching pursuit algorithm.
         %
@@ -15,16 +15,8 @@ classdef Utils
             [pos(:,1), pos(:,2), pos(:,3)] = ind2sub(sz, find(ones(sz(1:3))));
 
             p = mvnpdf(pos, mu, sigma);
-
-            volume = zeros(sz);
-
-            prob = reshape(p, sz(1: 3));
-            prob(prob < prctile(prob(:), truncate_percent)) = 0;
-            prob = prob / max(prob(:));
-
-            for ch = 1: length(props)
-                volume(:, :, :, ch) = props(ch)*prob + noise_mean(ch) + noise_std(ch)*randn(sz(1: 3));
-            end
+            p(p<truncation) = 0;
+            volume = reshape(p*props+baseline, [sz,length(props)]);
         end
         
         
@@ -79,7 +71,6 @@ classdef Utils
             video = zeros(sz);
             for t = 1: sz(5)
                 for n=1:size(sp(t).mean,1)
-                    n
                     simul = simulate_gaussian(2*nsz+1, ... % size
                             nsz+1+sp(t).mean(n,:)-round(sp(t).mean(n,:)), ... % center
                             squeeze(sp(t).cov(n,:,:)), ... % cov

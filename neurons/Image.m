@@ -350,8 +350,8 @@ classdef Image < handle
             end
         end
 
-        function image = get_3d_shape(obj,sz,nsz,trunc)
-            %GET_MARKER_COLORS getter of neuron 3d reconstruction s.
+        function image = get_3d_shape(obj,sz,nsz)
+            %GET_3D_SHAPE getter of neuron 3d reconstruction s.
             %   sz: size of the full reconstructed image, which is the same
             %   size of the original image used for fitting.
             %   nsz: size of a neuron used for reconstruction.
@@ -360,7 +360,25 @@ classdef Image < handle
             %   Gaussian functions and stitching them together.
             image = zeros(sz);
             for i=1:length(obj.neurons)
-                image = superpose(image, round(obj.neurons(i).position), obj.neurons(i).get_3d_reconstruction(nsz,trunc));
+                image = Utils.superpose(image, round(obj.neurons(i).position), obj.neurons(i).get_3d_reconstruction(nsz));
+            end
+        end
+        
+        function image = get_3d_segments(obj,sz,nsz)
+            %GET_3D_SEGMENTS getter of neuron 3d segmentations.
+            %   sz: size of the full reconstructed image, which is the same
+            %   size of the original image used for fitting.
+            %   nsz: size of a neuron used for reconstruction.
+            %   trunc: Gaussian truncation value used for reconstruction.
+            %   image: full reconstruction of image using truncated
+            %   Gaussian functions and stitching them together.
+            
+            image = zeros(sz(1:3));
+            for i=1:length(obj.neurons)
+                recon = obj.neurons(i).get_3d_reconstruction(nsz);
+                recon(recon>0) = i;
+                recon = max(recon, [], 4);
+                image = Utils.superpose(image, round(obj.neurons(i).position), recon);
             end
         end
 
