@@ -14,7 +14,7 @@ classdef Neuron < handle
         color % neuron color (R,G,B,W,...), W = white channel, values=[0-255]
         baseline % baseline noise values (R,G,B,W,...), values=[-1,1]
         covariance % 3x3 covariance matrix that's fit to the neurong
-        truncation
+        truncation = 0
         deterministic_id  % neuron ID assigned by the deterministic model
         probabilistic_ids % neuron IDs listed by descending probability
         probabilistic_probs % neuron ID probabilities
@@ -35,7 +35,10 @@ classdef Neuron < handle
             obj.color = superpixel.color;
             obj.baseline = superpixel.baseline;
             obj.covariance = squeeze(superpixel.cov);
-            obj.truncation = superpixel.truncation;
+            
+            if isfield(superpixel, 'truncation')
+                obj.truncation = superpixel.truncation;
+            end
 
             if isfield(superpixel, 'deterministic_id')
                 obj.deterministic_id = superpixel.deterministic_id{1};

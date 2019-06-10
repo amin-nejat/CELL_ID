@@ -52,7 +52,7 @@ classdef Image < handle
         
             
             
-        function add_neuron(obj, volume, position, nsz, trunc)
+        function add_neuron(obj, volume, position, nsz, scale)
             %ADD_NEURON Adds a neuron to the list of neurons in obj.neurons
             %   by running one iteration of Matching Pursuit.
             %   volume: the full z-scored image.
@@ -62,13 +62,14 @@ classdef Image < handle
             %   trunc: the truncation value of the Gaussian function used
             %   for fitting.
             color = squeeze(volume(round(position(1)),round(position(2)),round(position(3)),:))';
+            obj.scale = scale;
             bpatch = subcube(volume, round(position), nsz);
             if isKey(obj.meta_data, 'auto_detect') && obj.meta_data('auto_detect')
                 auto_detect = AutoDetect.instance();
+                auto_detect.scale = scale;
                 auto_detect.szext = size(volume);
-                auto_detect.trunc = trunc;
                 auto_detect.fsize = nsz;
-                [~, sp, ~] = auto_detect.fit_gaussian(double(bpatch), color, position);
+                [~, sp] = auto_detect.fit_gaussian(double(bpatch), color, position);
             else
                 sp = [];
                 sp.mean = position;

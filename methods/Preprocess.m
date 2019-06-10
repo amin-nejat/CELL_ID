@@ -105,9 +105,9 @@ classdef Preprocess < handle
         %
         % Amin Nejat
             zvideo = zeros(size(video));
-            for ch = 1: size(video, 4)
-                data = double(video(:, :, :, ch, :));
-                zvideo(:, :, :, ch, :) = reshape((data(:)-mean(data(:)))/std(data(:)), size(data));
+            for ch = 1: size(video,4)
+                data = double(video(:,:,:,ch,:));
+                zvideo(:,:,:,ch,:) = (data-mean(data(:)))/std(data(:));
             end
         end
         
@@ -229,10 +229,10 @@ classdef Preprocess < handle
 
             % generate masks to filter out
             % lysosomes        
-            mask_g  =  filter_small_artifacts(data, 'green');  
-            mask_b  =  filter_small_artifacts(data, 'blue'); 
+            mask_g  =  Preprocess.filter_small_artifacts(data, 'green');  
+            mask_b  =  Preprocess.filter_small_artifacts(data, 'blue'); 
             % gut
-            [green_mask, green_square] =  filter_gut(data);   
+            [green_mask, green_square] =  Preprocess.filter_gut(data);   
             square_cat = repmat(green_square,[1,1,1,4]); 
             mask = (green_square + mask_g + mask_b)>0; 
             
@@ -247,7 +247,17 @@ classdef Preprocess < handle
             data_filter(square_cat==1) = 0; 
 
         end
+        
+        function mask = manual_artefact_removal(data)
+            image(squeeze(max(data(:,:,:,[1,2,3]), [], 3)));
+            set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
+            daspect([1,1,1]);
+            axis off;
+            
+            h = drawpolygon('FaceAlpha',0);
 
+            mask = poly2mask(h.Position(:,1), h.Position(:,2), size(data,1), size(data,2));
+        end
 
     end
 end

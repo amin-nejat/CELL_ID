@@ -31,7 +31,7 @@ classdef AutoDetect < Singleton
       end
       
       
-       function [c, ceq] = constrain_eigenvalues(x, init, bound)
+       function [c, ceq] = constrain_eigenvalues(x, lb, ub)
         % Nonlinear inequality constraints (eigenvalues) for fmincon.
         % Amin Nejat
 
@@ -40,7 +40,7 @@ classdef AutoDetect < Singleton
             variances = L*L';
 
             v = sort(eig(variances));
-            c = -[v'-init+bound, bound-v'+init];
+            c = -[v'-lb, ub-v'];
             
             ceq = [];
         end
@@ -96,6 +96,72 @@ classdef AutoDetect < Singleton
             filter = filt/sqrt(sum(filt(:).*filt(:)));
         end
         
+        function eval = evaluation(image, volume, mp_params, centers, scale, precision)
+        % Evaluation of the segmentation method, the output contains shape
+        % based evaluation (correlation and MSE) in the reconstruction
+        % field and location based evaluation (TP, FP, TN, FN, Accuracy,
+        % Precision, Recall, F1) in the centeres field.
+        % Amin Nejat
+        
+            sz = size(volume);
+            reconstruction = image.get_3d_shape(sz,mp_params.hnsz);
+
+            vec = @(x) x(:);
+
+
+            % reconstruction based
+            eval = [];
+            eval.recon.mse = nanmean(vec((reconstruction - volume).^2));
+            correlation = corrcoef(vec(reconstruction), vec(volume));
+            eval.recon.cor = correlation(1,2);
+
+            % shape based
+            segmentation = image.get_3d_segments(sz,mp_params.hnsz);
+
+            % location based
+
+            eval.centers.tp = [];
+            eval.centers.fp = [];
+            eval.centers.tn = [];
+            eval.centers.fn = [];
+
+            eval.centers.accuracy = [];
+            eval.centers.f1 = [];
+            eval.centers.precision = [];
+            eval.centers.recall = [];
+            eval.centers.mean_closest_distance = [];
+
+            for i=1:size(image.get_positions(),1)
+                positions = image.get_positions();
+                positions = positions(1:i,:);
+
+                distances = pdist2(positions.*scale', centers.*scale');
+                distances(distances > precision) = Inf;
+
+                if i == 1
+                    tp = any(~isinf(distances));
+                else
+                    [~,cols] = find(munkres(distances));
+                    tp = length(cols);
+                end
+
+                fn = size(centers,1)-tp;
+                fp = size(positions,1)-tp;
+                tn = 0;
+
+                eval.centers.tp(end+1) = tp;
+                eval.centers.fp(end+1) = fp;
+                eval.centers.tn(end+1) = tn;
+                eval.centers.fn(end+1) = fn;
+
+                eval.centers.accuracy(end+1) = (tp+tn)/(tp+fp+tn+fn);
+                eval.centers.f1(end+1) = 2*tp/(2*tp+fp+fn);
+                eval.centers.precision(end+1) = tp/(tp+fp);
+                eval.centers.recall(end+1) = tp/(tp+fn);
+                eval.centers.mean_closest_distance(end+1) = mean(min(pdist2(positions.*scale', centers.*scale')));
+            end
+        end
+        
    end
    
    methods % Public Access
@@ -127,7 +193,6 @@ classdef AutoDetect < Singleton
                     break;
                 end
                 
-
                 rho_mag = max(rho, [], 4);
                 [~, lmidx] = max(rho_mag(:));
                 [x,y,z] = ind2sub(size(rho_mag), lmidx);
@@ -144,13 +209,9 @@ classdef AutoDetect < Singleton
                 end
                 
                 
-               exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
-               
-               if ~isempty(obj.supervoxels)
-                   min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2)))
-               end
-                
-                if max(eig(squeeze(sp.cov))) > cov_threshold && exclusion_condition
+                exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
+                min(eig(squeeze(sp.cov).*obj.scale))
+                if min(eig(squeeze(sp.cov).*obj.scale)) > cov_threshold && exclusion_condition
                     obj.supervoxels = Utils.union_sp(obj.supervoxels, sp);
                     N = size(obj.supervoxels.mean, 1);
                 end
@@ -174,11 +235,12 @@ classdef AutoDetect < Singleton
                     ones(1, obj.szext(4)), ... % color
                     ones(1, obj.szext(4)), ... % noise
                     10000];
-                
-            init_eig = [4,4,4];
-            init_bound = [2,2,2];
+            
+            eig_lb = [0.01,0.01,0.01];
+            eig_ub = [4,4,4];
+            
 
-            nonlcon = @(x) AutoDetect.constrain_eigenvalues(x, init_eig, init_bound);
+            nonlcon = @(x) AutoDetect.constrain_eigenvalues(x, eig_lb, eig_ub);
 
             colors = reshape(bpatch, [numel(bpatch)/size(bpatch, 4), size(bpatch, 4)]);
             colors(colors == 0) = eps;
@@ -194,15 +256,15 @@ classdef AutoDetect < Singleton
 
             
             x0 =   double([(obj.fsize+1).*obj.scale, ... % loc
-                sqrt([init_eig(3),0,0,init_eig(2),0,init_eig(1)]), ... % covariance parameters
-                log(color_level), ... % color scale
+                sqrt([3,0,0,3,0,3]), ... % covariance parameters
+                1.5*log(color_level), ... % color scale
                 noise_level, ... % noise scale
                 colorvec, ... % color
                 noisevec, ... % noise
                 0]);
             
             lb = [x0(1:3)-0.3*ones(1,3), zeros(1,6), 0, -0.1, zeros(1,2*obj.szext(4)), 0];
-            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 10, ones(1,2*obj.szext(4)), 10];
+            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 10, ones(1,2*obj.szext(4)), 1];
             
             
             A_eq = [zeros(1, 11), ones(1, obj.szext(4)), zeros(1, obj.szext(4)), 0; ...
@@ -215,17 +277,6 @@ classdef AutoDetect < Singleton
 
             [shape, rec, tr, cov, col] = AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
             bas = x_hat(12+obj.szext(4):11+2*obj.szext(4))*x_hat(11);
-
-
-%             figure(1);
-%             subplot(1,2,1); cla;
-%             image(squeeze(max(rec(:,:,:,[1,2,3]), [], 3)/10))
-%             title('NeuroPAL Image');
-%             plot_3D(bpatch, [], gca);
-%             subplot(1,2,2); cla;
-%             image(squeeze(max(bpatch(:,:,:,[1,2,3]), [], 3)/10))
-%             title('Gaussian Reconstruction');
-%             plot_3D(rec, [], gca);
 
             relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 
