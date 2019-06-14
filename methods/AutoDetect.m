@@ -102,15 +102,18 @@ classdef AutoDetect < Singleton
         % field and location based evaluation (TP, FP, TN, FN, Accuracy,
         % Precision, Recall, F1) in the centeres field.
         % Amin Nejat
-        
+            
+            eval = [];
+            eval.params.mp_params = mp_params;
+            eval.params.precision = precision;
+            
             sz = size(volume);
             reconstruction = image.get_3d_shape(sz,mp_params.hnsz);
 
             vec = @(x) x(:);
 
 
-            % reconstruction based
-            eval = [];
+            % reconstruction based            
             eval.recon.mse = nanmean(vec((reconstruction - volume).^2));
             correlation = corrcoef(vec(reconstruction), vec(volume));
             eval.recon.cor = correlation(1,2);
@@ -210,7 +213,7 @@ classdef AutoDetect < Singleton
                 
                 
                 exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
-                min(eig(squeeze(sp.cov).*obj.scale))
+                
                 if min(eig(squeeze(sp.cov).*obj.scale)) > cov_threshold && exclusion_condition
                     obj.supervoxels = Utils.union_sp(obj.supervoxels, sp);
                     N = size(obj.supervoxels.mean, 1);
@@ -237,7 +240,7 @@ classdef AutoDetect < Singleton
                     10000];
             
             eig_lb = [0.01,0.01,0.01];
-            eig_ub = [4,4,4];
+            eig_ub = [5,5,5];
             
 
             nonlcon = @(x) AutoDetect.constrain_eigenvalues(x, eig_lb, eig_ub);
@@ -249,10 +252,10 @@ classdef AutoDetect < Singleton
             colorvec(colorvec < 0) = eps;
 
             color_level = sum(colorvec(:));
-            noise_level = sum(noisevec(:));
+            noise_level = abs(sum(noisevec(:)));
 
-            colorvec = colorvec/sum(colorvec(:));
-            noisevec = noisevec/sum(noisevec(:));
+            colorvec = colorvec/color_level;
+            noisevec = noisevec/noise_level;
 
             
             x0 =   double([(obj.fsize+1).*obj.scale, ... % loc
@@ -263,12 +266,12 @@ classdef AutoDetect < Singleton
                 noisevec, ... % noise
                 0]);
             
-            lb = [x0(1:3)-0.3*ones(1,3), zeros(1,6), 0, -0.1, zeros(1,2*obj.szext(4)), 0];
-            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 10, ones(1,2*obj.szext(4)), 1];
+            lb = [x0(1:3)-0.3*ones(1,3), zeros(1,6), 0, 0, zeros(1,obj.szext(4)), -ones(1,obj.szext(4)), 0];
+            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 0.1, ones(1,2*obj.szext(4)), 1000];
             
             
             A_eq = [zeros(1, 11), ones(1, obj.szext(4)), zeros(1, obj.szext(4)), 0; ...
-                   [zeros(1, 11), zeros(1, obj.szext(4)), ones(1, obj.szext(4)), 0]];
+                   [zeros(1, 11), zeros(1, obj.szext(4)), ones(1, obj.szext(4)), 1]];
             b_eq = [1; 1];
 
             
@@ -277,6 +280,14 @@ classdef AutoDetect < Singleton
 
             [shape, rec, tr, cov, col] = AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
             bas = x_hat(12+obj.szext(4):11+2*obj.szext(4))*x_hat(11);
+            
+%             figure(1);
+%             subplot(1,3,1); cla;
+%             image(squeeze(max(rec(:,:,:,[1,2,3]), [], 3)/10))
+%             subplot(1,3,2); cla;
+%             image(squeeze(max(bpatch(:,:,:,[1,2,3]), [], 3)/10))
+%             subplot(1,3,3); cla;
+%             image(squeeze(max(bpatch(:,:,:,[1,2,3])-rec(:,:,:,[1,2,3]), [], 3)/10))
 
             relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 

@@ -19,6 +19,17 @@ classdef Utils
             volume = reshape(p*props+baseline, [sz,length(props)]);
         end
         
+        function volume = simulate_mvt(sz, mu, covariance, props, baseline, truncation)
+        % Simulate a truncated Gaussian function for fitting procedure. This
+        % function is used by matching pursuit algorithm.
+        %
+        % Amin Nejat
+            [pos(:,1),pos(:,2),pos(:,3)] = ind2sub(sz, find(ones(sz(1:3))));
+            p = mvtpdf(pos-mu,covariance,0.1);
+            p(p<truncation) = 0;
+            volume = reshape(p*props+baseline, [sz,length(props)]);
+        end
+        
         
         function patch = subcube(cube, loc, center)
         % Grabbing a patch of the image in a given location.
