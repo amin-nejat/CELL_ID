@@ -226,10 +226,13 @@ classdef Image < handle
                 return;
             end
             
-            % Correct the positions for image scale.
+            % Correct the positions for image scale. 
+            % Gonzalo (me) transposed obj.scale because otherwise it
+            % generates an error. To be checked whether this is the right
+            % solution
             position = obj.neurons(neuron_i).position;
-            position = position .* obj.scale;
-            positions = positions .* obj.scale;
+            position = position .* obj.scale';
+            positions = positions .* obj.scale';
             
             % Find the nearest unannotated neuron in (x,y,z).
             [~,min_i] = min(sum((positions - position).^2,2));
@@ -387,6 +390,21 @@ classdef Image < handle
             %GET_POSITIONS getter of neuron position s.
             positions = vertcat(obj.neurons.position);
         end
+        
+        function [labels, conf] = get_human_labels(obj)
+            %GET human annotations and their confidences.
+            try
+                for i=1:length(obj.neurons)
+            labels{i} = obj.neurons(i).annotation;
+            conf{i}= obj.neurons(i).annotation_confidence;
+                end
+            
+            catch
+                labels =[];
+                conf = [];
+            end
+        end
+
 
         function colors = get_colors(obj)
             %GET_COLORS getter of neuron color s.
