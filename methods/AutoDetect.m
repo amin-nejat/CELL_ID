@@ -143,7 +143,7 @@ classdef AutoDetect < Singleton
                 if i == 1
                     tp = any(~isinf(distances));
                 else
-                    [~,cols] = find(munkres(distances));
+                    [~,cols] = find(munkres2(distances));
                     tp = length(cols);
                 end
 

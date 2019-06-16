@@ -22,12 +22,12 @@
         
         function obj = instance(image, type)
              persistent instance
-             if isempty(instance)
+             %if isempty(instance)
                 obj = AutoId(image, type);
-                instance = obj;
-             else
-                obj = instance;
-             end
+              %  instance = obj;
+             %else
+               % obj = instance;
+             %end
         end
       
         function D=pdist2_maha(X,Y,Sigma)
@@ -43,6 +43,7 @@
                 X = [X ones(size(X,1),1)]*beta;
                 D=pdist2(Y,X,'mahalanobis',inv(sigma));
                 [P,cost(t)]=munkres(D);
+               
                 beta = linsolve(P*[X ones(size(X,1),1)],Y);
             end
             Xhat=X;
@@ -137,7 +138,8 @@
             compartment = lower(sp.bodypart);
             positions=sp.get_positions();
             colors = sp.get_colors();
-
+            [labels, conf] = sp.get_human_labels();
+            
             if strcmp(lower(method), 'mog')
 
 
@@ -196,76 +198,191 @@
 
                 a=nanmin(nanmin(LL(~isinf(LL))));
                 LL(isinf(LL))=a-10000;
-
+                
             elseif strcmp(lower(method),'rwc')
-
+                
                 load(['model3_', compartment, '.mat']); %% LOAD ALIGNED TRAINING DATA HEAD
                 colors=colors(:,[1 2 3]);
                 positions=positions(:,[1 2 3]);
                 neurons = N;
-                iter=3;
+                known = AutoId.find_labeled_index(labels,conf, neurons);
+                iter=2;
                 %% Anonymous functions
                 vec = @(x)(x(:));
                 sum_square = @(x)(sum(vec(x.^2)));
-
-
+                
+                
                 %% initialization
-                tmp.M=model.M0;
-                [~,LL2]=AutoId.model_2_test(colors,positions,tmp);
-                P=munkres(-LL2'-logsumexp(LL2',2));
+                
+                n_total_iter =100;
                 M=model.M;
-                Sigma=model.Sigma;
-
-                X=[positions colors];
+                M0=model.M0;
+                sigma0 = nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)]));
+                sigma00 = nancov(reshape(permute(M0,[1 3 2]),[size(M0,1)*size(M0,3) size(M0,2)]));
+                
+                
+                Sigma_eval = model.Sigma;
+                lambda=0.5;
+                for i=1:size(M,1)
+                    
+                    Sigma(:,:,i)=lambda*model.Sigma(:,:,i)+(1-lambda)*sigma0;
+                    Sigma0(:,:,i)=sigma0;
+                    Sigma00(:,:,i)=sigma00;
+                    
+                end
+                
+                model.Sigma = Sigma;
+                tmp.M = model.M0;
+                tmp.Sigma  = Sigma00;
+                
+                
+                P=AutoId.model_2_test(colors,positions,tmp,known);
+                
+                X=[positions.*[1 1 4] colors(:,1:3)]; % Make sure that z-pixels are scaled accordingly
+                
                 X(any(isnan(X),2),:)=[];
-                X0=X;
-                Y=nanmean(M,3);
-                beta = linsolve(P'*[X ones(size(X,1),1)],Y);
+                
+                YM =nanmean(M,3);
+                beta = linsolve(P'*[X ones(size(X,1),1)],YM);
                 X = [X ones(size(X,1),1)]*beta;
+                
+                
                 LLhat=zeros(size(M,1),size(X,1));
-                for j=1:size(M,3)
-                    disp([num2str(j) '/' num2str(size(M,3)) ' done']);
-                    Y=M(:,:,j);
-                    idx=find(~any(isnan(Y),2));
+                
+                
+                for jj=1:n_total_iter
+                    
+                    disp(['Iteration ' num2str(jj) '/' num2str(n_total_iter) ' done']);
+                %                     
+                    j = randsample(size(M,3),1);
+                    Y = M(:,:,j);
+                    idx = find(~any(isnan(Y),2));
                     Y(any(isnan(Y),2),:)=[];
+                    
+                    
+                    LL =  -AutoId.pdist2_maha(X,YM,Sigma_eval);
+                    LLhat(idx,:)=LL';
+                    
+                    
+                    
                     beta=[eye(size(X,2));zeros(1,size(Y,2))];
+                    
                     for t=1:iter
                         X = [X ones(size(X,1),1)]*beta;
-                        positions = X(:,1:size(positions,2)); colors=X(:,size(positions,2)+1:end);
-                        [P2,~]=AutoId.model_2_test(colors,positions,model);
-                        P=P2(idx,:)';
-                        beta = linsolve(P'*[X ones(size(X,1),1)],Y);
+                        positions = X(:,1:size(positions,2));
+                        colors = X(:,size(positions,2)+1:end);
+                        P = AutoId.model_2_test(colors,positions,model,known);
+                        beta = linsolve(P(:,idx)'*[X ones(size(X,1),1)],Y);
+                        
                     end
-                    Xhat=[X ones(size(X,1),1)]*beta;
-                    LL=-AutoId.pdist2_maha(Xhat,Y,Sigma).^2;
-                    LLhat(idx,:)=LLhat(idx,:)+LL';
+                    
+                    
                 end
-                LL=(LLhat-logsumexp(LLhat,1))';
+                
+                %                 tmp.M=model.M0;
+                %                 [~,LL2]=AutoId.model_2_test(colors,positions,tmp);
+                %                 P=munkres(-LL2'-logsumexp(LL2',2));
+                %                 M=model.M;
+                %                 Sigma=model.Sigma;
+                %
+                %                 X=[positions colors];
+                %                 X(any(isnan(X),2),:)=[];
+                %                 X0=X;
+                %                 Y=nanmean(M,3);
+                %                 beta = linsolve(P'*[X ones(size(X,1),1)],Y);
+                %                 X = [X ones(size(X,1),1)]*beta;
+                %                 LLhat=zeros(size(M,1),size(X,1));
+                %                 for j=1:size(M,3)
+                %                     disp([num2str(j) '/' num2str(size(M,3)) ' done']);
+                %                     Y=M(:,:,j);
+                %                     idx=find(~any(isnan(Y),2));
+                %                     Y(any(isnan(Y),2),:)=[];
+                %                     beta=[eye(size(X,2));zeros(1,size(Y,2))];
+                %                     for t=1:iter
+                %                         X = [X ones(size(X,1),1)]*beta;
+                %                         positions = X(:,1:size(positions,2)); colors=X(:,size(positions,2)+1:end);
+                %                         [P2,~]=AutoId.model_2_test(colors,positions,model);
+                %                         P=P2(idx,:)';
+                %                         beta = linsolve(P'*[X ones(size(X,1),1)],Y);
+                %                     end
+                %                     Xhat=[X ones(size(X,1),1)]*beta;
+                %                     LL=-AutoId.pdist2_maha(Xhat,Y,Sigma).^2;
+                %                     LLhat(idx,:)=LLhat(idx,:)+LL';
+                %                 end
+                %                 LL=(LLhat-logsumexp(LLhat,1))';
+                
+                
+                
             end
-
-
+            
+            
             id_method = method;
             LL =  LL;
             neuron_names = neurons;
-
+            
         end
-        
-        function [assignments,LL,beta]=model_2_test(colors,positions,model)
+        function [P] =model_2_test(colors,positions,model, known)
+            
             M=model.M;
             X=[positions colors];
             X(any(isnan(X),2),:)=[];
-            sigma0=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
-            Phat=zeros(size(M,1),size(X,1));
-            for j=1:size(M,3)
+            
+            LLhat=zeros(size(M,1),size(X,1));
+            order = randperm(size(M,3));
+            for jj=1:length(order)
+                j=order(jj);
                 Y=M(:,:,j);
                 idx=find(~any(isnan(Y),2));
                 Y(any(isnan(Y),2),:)=[];
-                [beta,P,~,~]=AutoId.regression_woc(X,Y,sigma0,3);
-                Phat(idx,:)=Phat(idx,:)+P;
+                D = AutoId.pdist2_maha(X,Y,model.Sigma);
+                LLhat(idx,:)=LLhat(idx,:)+D';
+                
             end
+            LLhat = LLhat';
+            if(~isempty(known))
+                LLhat(known(:,1),:) = 10000000000;
+                for i=1:length(known)
+                    LLhat(known(i,1),known(i,2))=-100000000;
+                end
+            end
+            P = munkres(LLhat);
+        end
+%         function [assignments,LL,beta]=model_2_test(colors,positions,model)
+%             M=model.M;
+%             X=[positions colors];
+%             X(any(isnan(X),2),:)=[];
+%             sigma0=inv(nancov(reshape(permute(M,[1 3 2]),[size(M,1)*size(M,3) size(M,2)])));
+%             Phat=zeros(size(M,1),size(X,1));
+%             for j=1:size(M,3)
+%                 Y=M(:,:,j);
+%                 idx=find(~any(isnan(Y),2));
+%                 Y(any(isnan(Y),2),:)=[];
+%                 [beta,P,~,~]=AutoId.regression_woc(X,Y,sigma0,3);
+%                 Phat(idx,:)=Phat(idx,:)+P;
+%             end
+% 
+%             LL=log(Phat);
+%             [assignments]=munkres(-(LL-logsumexp(LL,1)));
+%         end
 
-            LL=log(Phat);
-            [assignments]=munkres(-(LL-logsumexp(LL,1)));
+ function known = find_labeled_index(labels, conf, neurons)
+            cont=1;
+            
+            if(~isempty(conf))
+            for i=1:length(conf)
+                if(conf{i}>0.5)
+                name = labels{i};
+                known(cont,1)=i;
+                known(cont,2)=find(strcmp(name,neurons));
+                cont=cont+1;
+                end
+            end
+            else
+                known=[];
+            end
+            if(cont==1)
+                known=[];
+            end
         end
     end
         
@@ -330,7 +447,7 @@
             obj.ids_prob = ids_prob;
 
         end
-        
+       
         function compute_assignments(obj)
            % compute_assignments computes some secondary properties of auto_id object
             LL = obj.LL;
