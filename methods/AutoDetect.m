@@ -30,7 +30,6 @@ classdef AutoDetect < Singleton
          end
       end
       
-      
        function [c, ceq] = constrain_eigenvalues(x, lb, ub)
         % Nonlinear inequality constraints (eigenvalues) for fmincon.
         % Amin Nejat
@@ -119,7 +118,7 @@ classdef AutoDetect < Singleton
             eval.recon.cor = correlation(1,2);
 
             % shape based
-            segmentation = image.get_3d_segments(sz,mp_params.hnsz);
+%             segmentation = image.get_3d_segments(sz,mp_params.hnsz);
 
             % location based
 
@@ -278,16 +277,8 @@ classdef AutoDetect < Singleton
             f = @(x) AutoDetect.gaussian_cost(x', bpatch, norm);
             x_hat = fmincon(f, x0, [], [], A_eq, b_eq, lb, ub, nonlcon, obj.options);
 
-            [shape, rec, tr, cov, col] = AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
+            [shape, ~, ~, cov, col] = AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
             bas = x_hat(12+obj.szext(4):11+2*obj.szext(4))*x_hat(11);
-            
-%             figure(1);
-%             subplot(1,3,1); cla;
-%             image(squeeze(max(rec(:,:,:,[1,2,3]), [], 3)/10))
-%             subplot(1,3,2); cla;
-%             image(squeeze(max(bpatch(:,:,:,[1,2,3]), [], 3)/10))
-%             subplot(1,3,3); cla;
-%             image(squeeze(max(bpatch(:,:,:,[1,2,3])-rec(:,:,:,[1,2,3]), [], 3)/10))
 
             relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 

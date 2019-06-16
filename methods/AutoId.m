@@ -1,4 +1,4 @@
-classdef AutoId < handle
+    classdef AutoId < handle
     %AUTO_ID Auto.
     %
     %   An auto_id object is has a set of possible names (different if tail/head), the method used, a likelihood
