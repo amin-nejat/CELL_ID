@@ -1,19 +1,23 @@
-function [assignment,cost] = munkres(costMat)
-% MUNKRES   Munkres Assign Algorithm 
+function [assignment_mat,cost,assignment] = munkres(costMat)
+% MUNKRES   Munkres (Hungarian) Algorithm for Linear Assignment Problem. 
 %
-% [ASSIGN,COST] = munkres(COSTMAT) returns the optimal assignment in ASSIGN
-% with the minimum COST based on the assignment problem represented by the
-% COSTMAT, where the (i,j)th element represents the cost to assign the jth
+% [ASSIGN,COST] = munkres(COSTMAT) returns the optimal column indices,
+% ASSIGN assigned to each row and the minimum COST based on the assignment
+% problem represented by the COSTMAT, where the (i,j)th element represents the cost to assign the jth
 % job to the ith worker.
 %
+% Partial assignment: This code can identify a partial assignment is a full
+% assignment is not feasible. For a partial assignment, there are some
+% zero elements in the returning assignment vector, which indicate
+% un-assigned tasks. The cost returned only contains the cost of partially
+% assigned tasks.
 % This is vectorized implementation of the algorithm. It is the fastest
 % among all Matlab implementations of the algorithm.
 % Examples
 % Example 1: a 5 x 5 example
 %{
 [assignment,cost] = munkres(magic(5));
-[assignedrows,dum]=find(assignment);
-disp(assignedrows'); % 3 2 1 5 4
+disp(assignment); % 3 2 1 5 4
 disp(cost); %15
 %}
 % Example 2: 400 x 400 random data
@@ -22,17 +26,33 @@ n=400;
 A=rand(n);
 tic
 [a,b]=munkres(A);
-toc                 % about 6 seconds 
+toc                 % about 2 seconds 
 %}
+% Example 3: rectangular assignment with inf costs
+%{
+A=rand(10,7);
+A(A>0.7)=Inf;
+[a,b]=munkres(A);
+%}
+% Example 4: an example of partial assignment
+%{
+A = [1 3 Inf; Inf Inf 5; Inf Inf 0.5]; 
+[a,b]=munkres(A)
+%}
+% a = [1 0 3]
+% b = 1.5
 % Reference:
 % "Munkres' Assignment Algorithm, Modified for Rectangular Matrices", 
 % http://csclab.murraystate.edu/bob.pilgrim/445/munkres.html
-% version 1.0 by Yi Cao at Cranfield University on 17th June 2008
-assignment = false(size(costMat));
+% version 2.3 by Yi Cao at Cranfield University on 11th September 2011
+assignment = zeros(1,size(costMat,1));
 cost = 0;
-costMat(costMat~=costMat)=Inf;
-validMat = costMat<Inf;
-validCol = any(validMat);
+validMat = costMat == costMat & costMat < Inf;
+bigM = 10^(ceil(log10(sum(costMat(validMat))))+1);
+costMat(~validMat) = bigM;
+% costMat(costMat~=costMat)=Inf;
+% validMat = costMat<Inf;
+validCol = any(validMat,1);
 validRow = any(validMat,2);
 nRows = sum(validRow);
 nCols = sum(validCol);
@@ -40,8 +60,8 @@ n = max(nRows,nCols);
 if ~n
     return
 end
-    
-dMat = zeros(n);
+maxv=10*max(costMat(validMat));
+dMat = zeros(n) + maxv;
 dMat(1:nRows,1:nCols) = costMat(validRow,validCol);
 %*************************************************
 % Munkres' Assignment Algorithm starts here
@@ -49,16 +69,17 @@ dMat(1:nRows,1:nCols) = costMat(validRow,validCol);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   STEP 1: Subtract the row minimum from each row.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- dMat = bsxfun(@minus, dMat, min(dMat,[],2));
+minR = min(dMat,[],2);
+minC = min(bsxfun(@minus, dMat, minR));
 %**************************************************************************  
 %   STEP 2: Find a zero of dMat. If there are no starred zeros in its
 %           column or row start the zero. Repeat for each zero
 %**************************************************************************
-zP = ~dMat;
-starZ = false(n);
+zP = dMat == bsxfun(@plus, minC, minR);
+starZ = zeros(n,1);
 while any(zP(:))
     [r,c]=find(zP,1);
-    starZ(r,c)=true;
+    starZ(r)=c;
     zP(r,:)=false;
     zP(:,c)=false;
 end
@@ -67,12 +88,14 @@ while 1
 %   STEP 3: Cover each column with a starred zero. If all the columns are
 %           covered then the matching is maximum
 %**************************************************************************
-    primeZ = false(n);
-    coverColumn = any(starZ);
-    if ~any(~coverColumn)
+    if all(starZ>0)
         break
     end
+    coverColumn = false(1,n);
+    coverColumn(starZ(starZ>0))=true;
     coverRow = false(n,1);
+    primeZ = zeros(n,1);
+    [rIdx, cIdx] = find(dMat(~coverRow,~coverColumn)==bsxfun(@plus,minR(~coverRow),minC(~coverColumn)));
     while 1
         %**************************************************************************
         %   STEP 4: Find a noncovered zero and prime it.  If there is no starred
@@ -82,21 +105,29 @@ while 1
         %           uncovered zeros left. Save the smallest uncovered value and 
         %           Go to Step 6.
         %**************************************************************************
-        zP(:) = false;
-        zP(~coverRow,~coverColumn) = ~dMat(~coverRow,~coverColumn);
+        cR = find(~coverRow);
+        cC = find(~coverColumn);
+        rIdx = cR(rIdx);
+        cIdx = cC(cIdx);
         Step = 6;
-        while any(any(zP(~coverRow,~coverColumn)))
-            [uZr,uZc] = find(zP,1);
-            primeZ(uZr,uZc) = true;
-            stz = starZ(uZr,:);
-            if ~any(stz)
+        while ~isempty(cIdx)
+            uZr = rIdx(1);
+            uZc = cIdx(1);
+            primeZ(uZr) = uZc;
+            stz = starZ(uZr);
+            if ~stz
                 Step = 5;
                 break;
             end
             coverRow(uZr) = true;
             coverColumn(stz) = false;
-            zP(uZr,:) = false;
-            zP(~coverRow,stz) = ~dMat(~coverRow,stz);
+            z = rIdx==uZr;
+            rIdx(z) = [];
+            cIdx(z) = [];
+            cR = find(~coverRow);
+            z = dMat(~coverRow,stz) == minR(~coverRow) + minC(stz);
+            rIdx = [rIdx(:);cR(z)];
+            cIdx = [cIdx(:);stz(ones(sum(z),1))];
         end
         if Step == 6
             % *************************************************************************
@@ -104,13 +135,9 @@ while 1
             %         row, and subtract it from every element of each uncovered column.
             %         Return to Step 4 without altering any stars, primes, or covered lines.
             %**************************************************************************
-            M=dMat(~coverRow,~coverColumn);
-            minval=min(min(M));
-            if minval==inf
-                return
-            end
-            dMat(coverRow,coverColumn)=dMat(coverRow,coverColumn)+minval;
-            dMat(~coverRow,~coverColumn)=M-minval;
+            [minval,rIdx,cIdx]=outerplus(dMat(~coverRow,~coverColumn),minR(~coverRow),minC(~coverColumn));            
+            minC(~coverColumn) = minC(~coverColumn) + minval;
+            minR(coverRow) = minR(coverRow) - minval;
         else
             break
         end
@@ -127,16 +154,33 @@ while 1
     %  zero of the series, star each primed zero of the series, erase
     %  all primes and uncover every line in the matrix.  Return to Step 3.
     %**************************************************************************
-    rowZ1 = starZ(:,uZc);
-    starZ(uZr,uZc)=true;
-    while any(rowZ1)
-        starZ(rowZ1,uZc)=false;
-        uZc = primeZ(rowZ1,:);
+    rowZ1 = find(starZ==uZc);
+    starZ(uZr)=uZc;
+    while rowZ1>0
+        starZ(rowZ1)=0;
+        uZc = primeZ(rowZ1);
         uZr = rowZ1;
-        rowZ1 = starZ(:,uZc);
-        starZ(uZr,uZc)=true;
+        rowZ1 = find(starZ==uZc);
+        starZ(uZr)=uZc;
     end
 end
 % Cost of assignment
-assignment(validRow,validCol) = starZ(1:nRows,1:nCols);
-cost = sum(costMat(assignment));
+rowIdx = find(validRow);
+colIdx = find(validCol);
+starZ = starZ(1:nRows);
+vIdx = starZ <= nCols;
+assignment(rowIdx(vIdx)) = colIdx(starZ(vIdx));
+pass = assignment(assignment>0);
+pass(~diag(validMat(assignment>0,pass))) = 0;
+assignment(assignment>0) = pass;
+cost = trace(costMat(assignment>0,assignment(assignment>0)));
+assignment_mat = false(size(costMat));
+assignment_mat(sub2ind(size(costMat),find(assignment>0),assignment(assignment>0)))=1;
+function [minval,rIdx,cIdx]=outerplus(M,x,y)
+ny=size(M,2);
+minval=inf;
+for c=1:ny
+    M(:,c)=M(:,c)-(x+y(c));
+    minval = min(minval,min(M(:,c)));
+end
+[rIdx,cIdx]=find(M==minval);
