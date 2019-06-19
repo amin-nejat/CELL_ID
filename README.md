@@ -1,12 +1,18 @@
 # CELL_ID
 C-elegans Cell Identifier
 
-- Open the get_params.m function first and change the directories to your local directory.
-- For opening czi and tiff files Fiji software is required which is publibcly available here: https://imagej.net/Fiji/Downloads. If any of these are missing the data must be in the .mat format and the dimensions must follow this format (x,y,z,c).
-- Once updating get_params.m function is finished open visualize_light.mlapp using Matlab 2018b.
-- Pess "Load Data" and select your dataset. The pre-processing menu contains some basic pre-precessing steps that you can apply before analyzing the image. These pre-processing steps include spatial decimation, thresholding, z-scoring, and denoising (it is recommended to run the cell detection procedure on z-scored image).
-- Select "Detect Neurons" and select the parameters. If you've ran the cell detection before you can reload the pre-stored data structure that contains the information about the cells (location, covariance, signal and noise color).
-- You can reconstruct the neuron shapes and color by pressing "Reconstruct" button in the Reconstruction tab.
-- Once cell detection is finished use double click to remove the objects that are not cells or add the cells that are not detected by the automatic cell detection procedure.
-- After the changes are done click on "Save" button.
-- Select "ID Neurons" and choose the parameters for automatic cell identification. Once it's finished by left-clicking on each cell the ID that is assigned to it by the algorithm will be displayed. The user can change the ID in the edit field next to it and by pressing "Annotate" the ID will be updated to user selection.
+**GUI environment** 
+
+
+![GUI](https://dl.dropboxusercontent.com/s/d3lysgcr3dk8g5d/GUI-labeled.png)
+
+(a) open and load a NeuroPAL image, (b) menu for basic preprocessing and improving the visualization, (c) automatically detect the neurons in NeuroPAL images, (d) automatically identify and label the detected neurons (e) clicking on each neurons shows the potential names that our method has found for that neuron and their associated uncertainties, (f) confirm the neuron identity, (g,h) manually annotate neurons, (i) selecting color channels used for visualizing NeuroPAL image, (j) select double click action: manually add a neuron/automatically find a neuron near the clicked location/remove artefacts, (k) list of neuron names sorted by their uncertainty according to the result of our method, (l) true neuron names and colors categorized by their corresponding ganglia, (m) z-stacks of NeuroPAL image and text labels for annotated or confirmed neurons, (n) controller for moving through different z-stacks, (o) maximum intensity projection of the image.
+
+**Class, Package, and Usecase Diagrams**
+
+
+To build a fast and scalable system we followed object oriented design practices. We identified internally coherent and externally independent classes in our environment and established their properties and behavior, as well as their interactions with other modules. We have separate packages for data handling, methods, logging, biological objects, and user interface. Each of these packages contains relevant classes and the functionalities of the system is built upon the interactions between the classes. For reusability purposes we tried to develop a modular system with independent modules. This allows the users of the system to reuse different compartments of the system for other purposes.
+
+![Class](https://dl.dropboxusercontent.com/s/43l6x3vw55c8s5j/Class.png)
+![Package](https://dl.dropboxusercontent.com/s/f26jeky6mzdlz3c/Package.png)
+![Usecase](https://dl.dropboxusercontent.com/s/clgk3w8ju7d1i8n/Usecase.png)
