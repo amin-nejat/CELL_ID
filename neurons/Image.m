@@ -63,7 +63,7 @@ classdef Image < handle
             %   for fitting.
             color = squeeze(volume(round(position(1)),round(position(2)),round(position(3)),:))';
             obj.scale = scale;
-            bpatch = subcube(volume, round(position), nsz);
+            bpatch = Utils.subcube(volume, round(position), nsz);
             if isKey(obj.meta_data, 'auto_detect') && obj.meta_data('auto_detect')
                 auto_detect = AutoDetect.instance();
                 auto_detect.scale = scale;
@@ -71,13 +71,14 @@ classdef Image < handle
                 auto_detect.fsize = nsz;
                 [~, sp] = auto_detect.fit_gaussian(double(bpatch), color, position);
             else
-                sp = [];
-                sp.mean = position;
-                sp.color = color;
-                sp.baseline = [0,0,0,0];
-                sp.cov = diag(nsz);
+                sp          = [];
+                sp.mean     = position;
+                sp.color    = nan(1,size(volume,4));
+                sp.baseline = nan(1,size(volume,4));
+                sp.cov      = nan(3,3);
             end
-
+            cpatch = Utils.subcube(volume, round(sp.mean), [1,1,0]);
+            sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
             if isempty(obj.neurons)
                 obj.neurons = Neuron(sp);
             else
@@ -395,10 +396,9 @@ classdef Image < handle
             %GET human annotations and their confidences.
             try
                 for i=1:length(obj.neurons)
-            labels{i} = obj.neurons(i).annotation;
-            conf{i}= obj.neurons(i).annotation_confidence;
+                    labels{i} = obj.neurons(i).annotation;
+                    conf{i}= obj.neurons(i).annotation_confidence;
                 end
-            
             catch
                 labels =[];
                 conf = [];
@@ -409,6 +409,11 @@ classdef Image < handle
         function colors = get_colors(obj)
             %GET_COLORS getter of neuron color s.
             colors = vertcat(obj.neurons.color);
+        end
+        
+        function colors = get_colors_readout(obj)
+            %GET_COLORS_READOUT getter of neuron color readout s.
+            colors = vertcat(obj.neurons.color_readout);
         end
 
         function baselines = get_baselines(obj)
@@ -454,6 +459,7 @@ classdef Image < handle
             sp = [];
             sp.mean = obj.get_positions();
             sp.color = obj.get_colors();
+            sp.color_readout = obj.get_colors_readout();
             sp.baseline = obj.get_baselines();
             sp.cov = obj.get_covariances();
             sp.probabilistic_ids = obj.get_probabilistic_ids();

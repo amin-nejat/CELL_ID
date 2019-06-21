@@ -215,6 +215,8 @@ classdef AutoDetect < Singleton
                 exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
                 
                 if min(eig(squeeze(sp.cov).*obj.scale)) > cov_threshold && exclusion_condition
+                    cpatch = Utils.subcube(volume, round(sp.mean), [1,1,0]);
+                    sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                     obj.supervoxels = Utils.union_sp(obj.supervoxels, sp);
                     N = size(obj.supervoxels.mean, 1);
                 end

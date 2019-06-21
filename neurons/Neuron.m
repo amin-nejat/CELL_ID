@@ -11,10 +11,10 @@ classdef Neuron < handle
 
     properties
         position % neuron pixel position (x,y,z)
-        color % neuron color (R,G,B,W,...), W = white channel, values=[0-255]
+        color % neuron color based on fitting (R,G,B,W,...), W = white channel, values=[0-255]
         baseline % baseline noise values (R,G,B,W,...), values=[-1,1]
         covariance % 3x3 covariance matrix that's fit to the neurong
-        truncation = 0
+        truncation = 0 % Gaussian truncation value that defines the sharpness of the edge of neuron
         deterministic_id  % neuron ID assigned by the deterministic model
         probabilistic_ids % neuron IDs listed by descending probability
         probabilistic_probs % neuron ID probabilities
@@ -23,6 +23,7 @@ classdef Neuron < handle
         annotation_confidence = -1 % user confidence about annotation
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
+        color_readout % neuron color based on readout from the image
     end
 
     methods
@@ -31,15 +32,18 @@ classdef Neuron < handle
             %   converts a superpixel to a Neuron instance by reading out
             %   the variables inside superpixels and assigning them to the
             %   properties of the Neuron instance.
+            
             obj.position = superpixel.mean;
             obj.color = superpixel.color;
             obj.baseline = superpixel.baseline;
             obj.covariance = squeeze(superpixel.cov);
             
+            if isfield(superpixel, 'color_readout')
+                obj.color_readout = superpixel.color_readout;
+            end
             if isfield(superpixel, 'truncation')
                 obj.truncation = superpixel.truncation;
             end
-
             if isfield(superpixel, 'deterministic_id')
                 obj.deterministic_id = superpixel.deterministic_id{1};
             end

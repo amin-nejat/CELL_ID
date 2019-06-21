@@ -137,7 +137,7 @@
 
             compartment = lower(sp.bodypart);
             positions=sp.get_positions();
-            colors = sp.get_colors();
+            colors = sp.get_colors_readout();
             [labels, conf] = sp.get_human_labels();
             
             if strcmp(lower(method), 'mog')
