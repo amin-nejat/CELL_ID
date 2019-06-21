@@ -16,3 +16,18 @@ To build a fast and scalable system we followed object oriented design practices
 ![Class](https://dl.dropboxusercontent.com/s/43l6x3vw55c8s5j/Class.png)
 ![Package](https://dl.dropboxusercontent.com/s/f26jeky6mzdlz3c/Package.png)
 ![Usecase](https://dl.dropboxusercontent.com/s/clgk3w8ju7d1i8n/Usecase.png)
+
+**Related article** 
+
+Here is a link to the draft of the paper: [CELL_ID](https://dl.dropboxusercontent.com/s/vxcq10ffdsgfa88/worm-neural-ID.pdf)
+
+# Installation
+
+To open NeuroPAL images the following package needs to be installed:
+
+https://docs.openmicroscopy.org/bio-formats/5.3.4/users/matlab/index.html
+
+We also use the following MATLAB functions but we have included them in the software:
+
+https://github.com/tminka/lightspeed/blob/master/logsumexp.m
+https://www.mathworks.com/matlabcentral/fileexchange/20328-munkres-assignment-algorithm
