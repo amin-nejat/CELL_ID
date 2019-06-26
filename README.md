@@ -40,9 +40,10 @@ Here is a link to biorxiv the paper: [CELL_ID](https://www.biorxiv.org/content/1
 
 # Installation
 
-To open NeuroPAL images the following package needs to be installed:
+To open NeuroPAL images the following packages needs to be installed:
 
 https://docs.openmicroscopy.org/bio-formats/5.3.4/users/matlab/index.html
+https://github.com/StackOverflowMATLABchat/mlapptools
 
 We also use the following MATLAB functions but we have included them in the software:
 
