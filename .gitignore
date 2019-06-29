@@ -195,3 +195,7 @@ octave-core
 # movies
 *.mp4
 *.flv
+
+
+.NeuroPAL_ID_Preferences.mat
+visualize_light_prefs.mat
