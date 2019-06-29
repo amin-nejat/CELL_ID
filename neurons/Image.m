@@ -40,17 +40,6 @@ classdef Image < handle
             end
         end
         
-        function do_auto_id(obj, type)
-            %% do_auto_id calls the constructor of AutoId and then fills in all secondary properties
-            % finally, it updates the image structure with all the relevant
-            % features from auto_id.
-            obj.auto_id = AutoId.instance(obj, type);
-            obj.auto_id.compute_assignments();
-            obj.auto_id.find_ids();
-            obj = add_to_image(obj.auto_id, obj);
-        end
-        
-            
             
         function add_neuron(obj, volume, position, nsz, scale)
             %ADD_NEURON Adds a neuron to the list of neurons in obj.neurons
@@ -269,7 +258,7 @@ classdef Image < handle
         
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
-            annotations = vertcat({obj.neurons.annotation});
+            annotations = vertcat({obj.neurons.annotation})';
         end
 
         function is_annotations_on = get_is_annotations_on(obj)
@@ -392,20 +381,6 @@ classdef Image < handle
             positions = vertcat(obj.neurons.position);
         end
         
-        function [labels, conf] = get_human_labels(obj)
-            %GET human annotations and their confidences.
-            try
-                for i=1:length(obj.neurons)
-                    labels{i} = obj.neurons(i).annotation;
-                    conf{i}= obj.neurons(i).annotation_confidence;
-                end
-            catch
-                labels =[];
-                conf = [];
-            end
-        end
-
-
         function colors = get_colors(obj)
             %GET_COLORS getter of neuron color s.
             colors = vertcat(obj.neurons.color);
@@ -464,7 +439,7 @@ classdef Image < handle
             sp.cov = obj.get_covariances();
             sp.probabilistic_ids = obj.get_probabilistic_ids();
             sp.deterministic_id = obj.get_deterministic_ids()';
-            sp.annotation = obj.get_annotations()';
+            sp.annotation = obj.get_annotations();
             sp.is_annotation_on = obj.get_is_annotations_on();
             sp.probabilistic_probs = obj.get_probabilistic_probs();
             sp.annotation_confidence = obj.get_annotation_confidences();

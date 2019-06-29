@@ -24,6 +24,12 @@ classdef Neuron < handle
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
         color_readout % neuron color based on readout from the image
+        
+        MARKER_SIZE_NOT_SELECTED = 40
+        MARKER_SIZE_SELECTED = 200
+        LINE_SIZE_NOT_SELECTED = 1
+        LINE_SIZE_SELECTED = 4
+        
     end
 
     methods
@@ -65,7 +71,21 @@ classdef Neuron < handle
             %if isfield(superpixel, 'rank')
             %    obj.rank = superpixel.rank;
             %end
-
+            
+            prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);
+            
+            if isfield(prefs, 'MARKER_SIZE_NOT_SELECTED')
+                obj.MARKER_SIZE_NOT_SELECTED = prefs.MARKER_SIZE_NOT_SELECTED;
+            end
+            if isfield(prefs, 'MARKER_SIZE_SELECTED')
+                obj.MARKER_SIZE_SELECTED = prefs.MARKER_SIZE_SELECTED;
+            end
+            if isfield(prefs, 'LINE_SIZE_NOT_SELECTED')
+                obj.LINE_SIZE_NOT_SELECTED = prefs.LINE_SIZE_NOT_SELECTED;
+            end
+            if isfield(prefs, 'LINE_SIZE_SELECTED')
+                obj.LINE_SIZE_SELECTED = prefs.LINE_SIZE_SELECTED;
+            end
         end
 
         function annotate(obj, name, confidence, is_on)
@@ -153,9 +173,9 @@ classdef Neuron < handle
             %neuron according to whether it is selected in the software or
             %not.
             if ~obj.is_selected
-                size = 40;
+                size = obj.MARKER_SIZE_NOT_SELECTED;
             else
-                size = 200;
+                size = obj.MARKER_SIZE_SELECTED;
             end
         end
 
@@ -164,9 +184,9 @@ classdef Neuron < handle
             %neuron according to whether it is selected in the software or
             %not.
             if ~obj.is_selected
-                size = 1;
+                size = obj.LINE_SIZE_NOT_SELECTED;
             else
-                size = 4;
+                size = obj.LINE_SIZE_SELECTED;
             end
         end
 
