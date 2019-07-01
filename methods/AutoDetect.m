@@ -293,5 +293,4 @@ classdef AutoDetect < Singleton
         end
         
    end
-   
 end
