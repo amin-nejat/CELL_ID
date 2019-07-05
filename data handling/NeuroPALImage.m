@@ -61,7 +61,7 @@ classdef NeuroPALImage
                     case '.czi' % Zeiss format
                         NeuroPALImage.convertCZI(filename);
                     case '.nd2' % Nikon format
-                        % TODO
+                        NeuroPALImage.convertND2(filename);
                     case {'.tif','.tiff'} % TIFF format
                         % TODO
                     otherwise % Unknown format
@@ -89,6 +89,12 @@ classdef NeuroPALImage
             prefs = np_data.prefs;
             neurons = np_data.neurons;
         end
+    end
+    
+    
+    %% Private variables.
+    properties (Constant)
+        gamma_default = 0.5;
     end
     
     
@@ -161,12 +167,13 @@ classdef NeuroPALImage
             end
             
             % Determine the gamma.
-            info.gamma = 1;
-            keys = lower(meta_data.keys);
-            gamma_i = find(contains(keys, 'gamma'),1);
-            if ~isempty(gamma_i)
-                info.gamma = str2double(meta_data.values(gamma_i));
-            end
+            %info.gamma = 1;
+            %keys = lower(meta_data.keys);
+            %gamma_i = find(contains(keys, 'gamma'),1);
+            %if ~isempty(gamma_i)
+            %    info.gamma = str2double(meta_data.values(gamma_i));
+            %end
+            info.gamma = NeuroPALImage.gamma_default;
             
             % Initialize the user preferences.
             prefs.RGBW = info.RGBW;
@@ -185,6 +192,98 @@ classdef NeuroPALImage
             neurons = [];
             save(np_file, 'data', 'info', 'prefs', 'neurons');
         end
+        
+        function np_file = convertND2(nd2_file)
+            %CONVERTND2 Convert an ND2 file to NeuroPAL format.
+            %
+            % nd2_file = the ND2 file to convert
+            % np_file = the NeuroPAL format file
+            
+            % Open the file.
+            np_file = [];
+            try
+                [image_data, meta_data] = imreadND2(nd2_file);
+            catch
+                warning('Cannot read: "%s"', nd2_file);
+                return;
+            end
+            
+            % Check the image orientation.
+            data = image_data.data;
+            data_order = 1:ndims(data);
+            if size(data,1) > size(data,2)
+                
+                % Fix the orientation.
+                data_order(1) = 2;
+                data_order(2) = 1;
+                data = permute(data, data_order);
+                
+                % Reorder the image scale.
+                scale = image_data.scale;
+                image_data.scale(1) = scale(2);
+                image_data.scale(2) = scale(1);
+            end
+            
+            % Setup the NP file data.
+            info.file = nd2_file;
+            info.scale = image_data.scale;
+            info.DIC = image_data.dicChannel;
+            
+            % Determine the color channels.
+            colors = image_data.colors;
+            colors = round(colors/max(colors(:)));
+            info.RGBW = nan(4,1);
+            info.GFP = nan;
+            for i = 1:size(colors,1)
+                switch char(colors(i,:))
+                    case [1,0,0] % red
+                        info.RGBW(1) = i;
+                    case [0,1,0] % green
+                        info.RGBW(2) = i;
+                    case [0,0,1] % blue
+                        info.RGBW(3) = i;
+                    case [1,1,1] % white
+                        if i ~= info.DIC
+                            info.RGBW(4) = i;
+                        end
+                    otherwise % GFP
+                        info.GFP = i;
+                end
+            end
+            
+            % Did we find the GFP channel?
+            if isnan(info.GFP) && size(colors,1) > 4
+                
+                % Assume the first unused channel is GFP.
+                unused = setdiff(1:size(colors,1), info.RGBW);
+                info.GFP = unused(1);
+            end
+            
+            % Determine the gamma.
+            %info.gamma = 1;
+            %keys = lower(meta_data.keys);
+            %gamma_i = find(contains(keys, 'gamma'),1);
+            %if ~isempty(gamma_i)
+            %    info.gamma = str2double(meta_data.values(gamma_i));
+            %end
+            info.gamma = NeuroPALImage.gamma_default;
+            
+            % Initialize the user preferences.
+            prefs.RGBW = info.RGBW;
+            prefs.DIC = info.DIC;
+            prefs.GFP = info.GFP;
+            prefs.gamma = info.gamma;
+            prefs.body_part = [];
+            prefs.rotate.horizontal = false;
+            prefs.rotate.vertical = false;
+            prefs.z_center = ceil(size(data,3) / 2);
+            prefs.is_Z_LR = true;
+            prefs.is_Z_flip = true;
+            
+            % Save the CZI file to our MAT file format.
+            np_file = strrep(nd2_file, 'nd2', 'mat');
+            neurons = [];
+            save(np_file, 'data', 'info', 'prefs', 'neurons');
+        end
     end
 end
-
