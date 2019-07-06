@@ -21,7 +21,7 @@ function [image, metadata] = imreadND2(filename)
 %       values    = the meta data values (the values for the meta data)
 %       hashtable = a Java Hashtable of keys and their values
 
-% Open the CZI file.
+% Open the ND2 file.
 data = bfopen(filename);
 
 % Extract the metadata.

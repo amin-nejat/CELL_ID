@@ -62,8 +62,10 @@ classdef NeuroPALImage
                         NeuroPALImage.convertCZI(filename);
                     case '.nd2' % Nikon format
                         NeuroPALImage.convertND2(filename);
+                    case {'.lif'} % Leica format
+                        NeuroPALImage.convertAny(filename);
                     case {'.tif','.tiff'} % TIFF format
-                        % TODO
+                        NeuroPALImage.convertAny(filename);
                     otherwise % Unknown format
                         error('Unknown image format: "%s"', filename);
                 end
@@ -280,8 +282,105 @@ classdef NeuroPALImage
             prefs.is_Z_LR = true;
             prefs.is_Z_flip = true;
             
-            % Save the CZI file to our MAT file format.
+            % Save the ND2 file to our MAT file format.
             np_file = strrep(nd2_file, 'nd2', 'mat');
+            neurons = [];
+            save(np_file, 'data', 'info', 'prefs', 'neurons');
+        end
+        
+        function np_file = convertAny(any_file)
+            %CONVERTANY Convert any file to NeuroPAL format.
+            %
+            % any_file = the ND2 file to convert
+            % np_file = the NeuroPAL format file
+            
+            % Open the file.
+            np_file = [];
+            try
+                [image_data, meta_data] = imreadAny(any_file);
+            catch
+                warning('Cannot read: "%s"', any_file);
+                return;
+            end
+            
+            % Check the image orientation.
+            data = image_data.data;
+            data_order = 1:ndims(data);
+            if size(data,1) > size(data,2)
+                
+                % Fix the orientation.
+                data_order(1) = 2;
+                data_order(2) = 1;
+                data = permute(data, data_order);
+                
+                % Reorder the image scale.
+                scale = image_data.scale;
+                image_data.scale(1) = scale(2);
+                image_data.scale(2) = scale(1);
+            end
+            
+            % Setup the NP file data.
+            info.file = any_file;
+            info.scale = image_data.scale;
+            info.DIC = image_data.dicChannel;
+            
+            % Determine the color channels.
+            colors = image_data.colors;
+            colors = round(colors/max(colors(:)));
+            info.RGBW = nan(4,1);
+            info.GFP = nan;
+            for i = 1:size(colors,1)
+                switch char(colors(i,:))
+                    case [1,0,0] % red
+                        info.RGBW(1) = i;
+                    case [0,1,0] % green
+                        info.RGBW(2) = i;
+                    case [0,0,1] % blue
+                        info.RGBW(3) = i;
+                    case [1,1,1] % white
+                        if i ~= info.DIC
+                            info.RGBW(4) = i;
+                        end
+                    otherwise % GFP
+                        info.GFP = i;
+                end
+            end
+            
+            % Did we find the GFP channel?
+            if isnan(info.GFP) && size(colors,1) > 4
+                
+                % Assume the first unused channel is GFP.
+                unused = setdiff(1:size(colors,1), info.RGBW);
+                info.GFP = unused(1);
+            end
+            
+            % Determine the gamma.
+            %info.gamma = 1;
+            %keys = lower(meta_data.keys);
+            %gamma_i = find(contains(keys, 'gamma'),1);
+            %if ~isempty(gamma_i)
+            %    info.gamma = str2double(meta_data.values(gamma_i));
+            %end
+            info.gamma = NeuroPALImage.gamma_default;
+            
+            % Initialize the user preferences.
+            prefs.RGBW = info.RGBW;
+            prefs.DIC = info.DIC;
+            prefs.GFP = info.GFP;
+            prefs.gamma = info.gamma;
+            prefs.body_part = [];
+            prefs.rotate.horizontal = false;
+            prefs.rotate.vertical = false;
+            prefs.z_center = ceil(size(data,3) / 2);
+            prefs.is_Z_LR = true;
+            prefs.is_Z_flip = true;
+            
+            % Save the file to our MAT file format.
+            suffix = strfind(any_file, '.');
+            if isempty(suffix)
+                suffix = length(any_file);
+            end
+            np_file = cat(2, any_file(1:(suffix(end) - 1)), '.mat');
             neurons = [];
             save(np_file, 'data', 'info', 'prefs', 'neurons');
         end
