@@ -138,8 +138,8 @@ for i=1:size(imageData,1)
     
     % Get the image plane data.
     dataStrs = split(imageData{i,2}, ';');
-    zStr = strtrim(dataStrs{3});
-    cStr = strtrim(dataStrs{4});
+    zStr = strtrim(dataStrs{end-1});
+    cStr = strtrim(dataStrs{end});
     
     % Assemble the image.
     z = sscanf(zStr,'Z=%f');
