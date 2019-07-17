@@ -6,7 +6,7 @@ classdef Image < handle
         neurons = Neuron.empty; % a list of the instances of Neuron class -> see Neuron.m
         auto_id = AutoId.empty
         bodypart % a string consisting the name of the worm's body part
-        meta_data = containers.Map(); % key, value pairs for intermediate analysis
+        meta_data % key, value pairs for intermediate analysis
         scale = ones(1,3); % (x,y,z) scale
     end
 
@@ -23,6 +23,8 @@ classdef Image < handle
             %   [scale]: optional image scale (x,y,z).
 
             % No neurons.
+            obj.meta_data = containers.Map();
+            
             obj.bodypart = bodypart;
             if isempty(superpixels)
                 obj.neurons = [];

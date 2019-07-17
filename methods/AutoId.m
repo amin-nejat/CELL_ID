@@ -5,24 +5,25 @@ classdef AutoId < handle
     %   matrix, and a set of ids for each of observed neurons. 
     properties(Constant)
         % constants
-        ncandidates = 7;
-        annotation_weight = 10;
+        ncandidates         = 7;
+        annotation_weight   = 0.5;
         
-        iter_sinkhorn   = 2000;
-        iter_regression = 2;
-        iter_rwc        = 100;
+        iter_sinkhorn       = 2000;
+        iter_rwc            = 10;
         
-        lambda          =0.5;
+        lambda              = 0.5;
         
-        min_log_likelihood          = -1e9;
-        max_log_likelihood          = 1e5;
-
+        min_log_likelihood  = -1e9
+        max_log_likelihood  = 1e5
+        
+        theta               = 0: 0.25: 2*pi
     end
     
     properties
         
-        atlas = getfield(load('atlas.mat'), 'atlas')
+        atlas = getfield(load('atlas.mat'), 'atlas') % atlas data structure containing neuron names, positions, colors, and their covariances
         
+        aligned % atlas aligned positions and colors
         log_likelihood % likelihood matrix, of size n_mp x n_possible
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
         assignment_prob_ranks % n_obsx7 matrix with the 7 most likely assignment
@@ -40,54 +41,59 @@ classdef AutoId < handle
                obj = instance;
              end
         end
+        
+        function rotmat = rotmat(theta)
+            rotmat = [cos(theta) -sin(theta);...
+                      sin(theta) cos(theta)];
+        end
+        
+        function pos = major_axis_align(pos,sign)
+            [coeff,~,~,~,~,mu] = pca(pos);
+            coeff(:,1:2) = coeff(:,1:2)*sign;
+            pos = (pos-mu)*coeff;
+        end
       
         function D = pdist2_maha(X,Y,Sigma)
+            % mahalanobis distance between a set of points and the
+            % components of a GMM
             D=zeros(size(X,1),size(Y,1));
             for i=1:size(Y,1)
                 D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i));
             end
         end
         
-        function [beta,P,Xhat]=regression_woc(X,Y,sigma,iter)
-            beta=[eye(size(X,2));zeros(1,size(Y,2))];
-            for t=1:iter
-                X = [X ones(size(X,1),1)]*beta;
-                D=pdist2(Y,X,'mahalanobis',inv(sigma));
-                [P,~]=munkres(D);
-                beta = linsolve(P*[X ones(size(X,1),1)],Y);
-            end
-            Xhat=X;
-        end
-        
         function vec_x = vec(x)
+            % vectorize multi-dimensional array
             vec_x = x(:);
         end
         
         function beta = MCR_solver(Y,X,sigma)
-        % MCR - Multiple covariance regression solver
-        % Y - Target (n x d)
-        % X - Source (n x p)
-        % Sigma - covariances for each row of Y (d x d x n)
-        % Solving: \sum_i \|Y_i - X_i \beta\|_{sigma_i}^2
-            d1 = size(Y,2);
-            d2 = size(X,2);
-            n = size(Y,1);
+            % MCR - Multiple covariance regression solver
+            % Y - Target (n x d)
+            % X - Source (n x p)
+            % Sigma - covariances for each row of Y (d x d x n)
+            % Solving: \sum_i \|Y_i - X_i \beta\|_{sigma_i}^2
             
-            A = zeros(d1*d2,d1*d2,n);
-            B = zeros(d2,d1,n);
+            % variables
+            d1 = size(Y,2); d2 = size(X,2); n = size(Y,1);
             
+            % memory allocation
+            A = zeros(d1*d2,d1*d2,n); B = zeros(d2,d1,n);
+            
+            % to learn about math look at the paper
             for i=1:size(Y,1)
-                A(:,:,i)=kron(inv(sigma(:,:,i)),X(i,:)'*X(i,:));
-                B(:,:,i)=X(i,:)'*Y(i,:)/sigma(:,:,i);
+                A(:,:,i) = kron(inv(sigma(:,:,i)),X(i,:)'*X(i,:));
+                B(:,:,i) = X(i,:)'*Y(i,:)/sigma(:,:,i);
             end
-            beta=reshape(nansum(A,3)\AutoId.vec(nansum(B,3)),[size(X,2),size(Y,2)]);
+            beta = reshape(nansum(A,3)\AutoId.vec(nansum(B,3)),[size(X,2),size(Y,2)]);
         end
         
         function [S,R,T]=scaled_rotation(X,Y)
-        %Solves for Y = S*R*X + T
-        %where S is a diagonal scaling matrix
-        %R is a rotation matrix i.e. orthonormal and det(R)=1
-        %T is a translation
+            %Solves for Y = S*R*X + T
+            %where S is a diagonal scaling matrix
+            %R is a rotation matrix i.e. orthonormal and det(R)=1
+            %T is a translation
+            
             % Remove NAN rows
             idx=find(all(~isnan([X Y]),2));
             X=X(idx,:);
@@ -142,9 +148,9 @@ classdef AutoId < handle
         end
         
         function P = update_permutation(colors, positions, model, known)
-            M = model.M;
-            X=[positions colors];
-            X(any(isnan(X),2),:)=[];
+            M = model.mu;
+            X = [positions colors];
+            X(any(isnan(X),2),:) = [];
             
             log_likelihoodhat=zeros(size(M,1),size(X,1));
             order = randperm(size(M,3));
@@ -153,9 +159,8 @@ classdef AutoId < handle
                 Y=M(:,:,j);
                 idx=find(~any(isnan(Y),2));
                 Y(any(isnan(Y),2),:)=[];
-                D = AutoId.pdist2_maha(X,Y,model.Sigma);
+                D = AutoId.pdist2_maha(X,Y,model.sigma);
                 log_likelihoodhat(idx,:)=log_likelihoodhat(idx,:)+D';
-                
             end
             log_likelihoodhat = log_likelihoodhat';
             if(~isempty(known))
@@ -167,6 +172,61 @@ classdef AutoId < handle
             P = munkres(log_likelihoodhat);
         end
         
+        function [col,pos,cost] = local_alignment(col,pos,model,theta,sgn,annotated)
+            % local alignment between atlas and rotated points for given
+            % theta
+            POS = pos;
+            
+            % GMM for computing the likelihood of current local alignment
+            gm = gmdistribution(model.mu,model.sigma);
+            
+            % standardize positions by axis aligning it
+            pos = AutoId.major_axis_align(pos,sgn);
+            
+            % compute the rough transformation between atlas centers and
+            % its axis-aligned version 
+            [coeff_mu,~,~,~,~,mu_mu] = pca(model.mu(:,[1 2 3]));
+            coeff_mu = coeff_mu*det(coeff_mu);
+            
+            % transform rotated positions based on the atlas transformation
+            % to roughly align it
+            pos(:,[2 3]) = pos(:,[2 3])*AutoId.rotmat(theta);
+            pos = pos*coeff_mu'+mu_mu;
+            
+            % upweighting already annotated neurons
+            weights = ones(1,size(model.mu,1));
+            weights(annotated(:,2)) = 1/(size(model.mu,1)*AutoId.annotation_weight);
+            
+            sigma_weighted = bsxfun(@times, model.sigma, reshape(weights,1,1,size(model.mu,1)));
+            
+            for iteration = 1: AutoId.iter_rwc
+                % sample from GMM components
+                Z = arrayfun(@(i) mvnrnd(model.mu(i,:), model.sigma(:,:,i)), 1:size(model.mu,1), 'UniformOutput', false);
+                Z = vertcat(Z{:});
+                
+                % update permutation
+                P = AutoId.update_permutation(col,pos,model,annotated);
+                
+                % align point to sample
+                beta_pos = AutoId.MCR_solver(Z(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:));
+                beta_col = AutoId.MCR_solver(Z(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:));
+
+                beta = AutoId.MCR_solver([pos(:,[1 2 3]) ones(size(pos,1),1)]*beta_pos,[POS ones(size(pos,1),1)],repmat(eye(3),1,1,size(pos,1)));
+                
+                % making sure that there are no mirror flips
+                det_cost = sign(det(beta(1:3,1:3)));
+                beta_pos = beta_pos*det_cost;
+                
+                % update positions and colors
+                pos = [pos ones(size(pos,1),1)]*beta_pos;
+                col = [col ones(size(col,1),1)]*beta_col;
+            end
+            
+            % compute the cost based on log likelihood of current local
+            % alignment and GMM distribution
+            cost = nansum(log(gm.pdf([pos col])));
+        end
+        
     end
         
     
@@ -174,12 +234,6 @@ classdef AutoId < handle
         function obj = AutoId()
             % load the statistical atlas
         end
-        
-        function value = get_meta_data(obj, key)
-            %GET_META_DATA returns the value paired with key.
-            value = obj.meta_data(key);
-        end
-        
       
         function add_to_image(obj, im)
             % add_to_image  function simply uptdates some properties of the image
@@ -204,6 +258,7 @@ classdef AutoId < handle
 
             ids(cellfun(@isempty, ids)) = {'NaN'};
             ids_prob(cellfun(@isempty, ids_prob)) = {'NaN'};
+            
             
             % update image information
             im.add_deterministic_ids(ids);
@@ -259,7 +314,11 @@ classdef AutoId < handle
             
         end
         
-        function id(obj,im)
+        function id(obj,im,varargin)
+            if any(strcmp(varargin, 'atlas'))
+                obj.atlas = varargin{find(strcmp(varargin, 'atlas'))+1};
+            end
+            
             % neurons that are already annotated
             annotations = im.get_annotations();
             annotation_confidences = im.get_annotation_confidences();
@@ -275,8 +334,8 @@ classdef AutoId < handle
             colors = colors(:,[1 2 3]);
             
             % align the image to statistical atlas
-            obj.align_to_atlas(colors, im.get_positions().*im.scale, ...
-                                obj.atlas.(lower(im.bodypart)).model, annotated);
+            obj.global_alignment(colors, im.get_positions().*im.scale, ...
+                               obj.atlas.(lower(im.bodypart)).model, annotated);
             
             obj.log_likelihood(annotated(:,1),:)= AutoId.min_log_likelihood;
             for i=1:size(annotated,1)
@@ -294,7 +353,7 @@ classdef AutoId < handle
         function update_id(obj, im, neuron_i, neuron)
             % update_auto_id changes the properties of auto_id given human has given 
             % the identity neuron to the neuron_i-th neuron (with the mp order).
-            %it also updates the image object accordingly.
+            % it also updates the image object accordingly.
             obj.log_likelihood(neuron_i,:)= AutoId.min_log_likelihood;
             
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
@@ -311,70 +370,98 @@ classdef AutoId < handle
         end
         
         
-        function align_to_atlas(obj, col, pos, model, annotated)
-        % Automatic labeling of previously identified neurons based on mixture of
-        % Gaussian model.
+        
+        function global_alignment(obj, col, pos, model, annotated)
+        % Global alignment based on search in the theta space
         %
-        % Erdem & Amin
+        % Amin & Erdem
             h = waitbar(0,'Initialize ...');
-
-            mu = nanmean(model.M,3); % should be replaced with model.mu;
             
-            % initialization
-            sigma_pooled_l = nancov(reshape(permute(model.M,[1 3 2]),[size(model.M,1)*size(model.M,3) size(model.M,2)]));
-            sigma_pooled_u = nancov(reshape(permute(model.M0,[1 3 2]),[size(model.M0,1)*size(model.M0,3) size(model.M0,2)]));
-
-            sigma = AutoId.lambda*model.Sigma+(1-AutoId.lambda)*sigma_pooled_l;
+            cost = nan(2*length(AutoId.theta),1);
+            colors = cell(2*length(AutoId.theta),1);
+            positions = cell(2*length(AutoId.theta),1);
             
-            sigma([1,2,3],[4,5,6]) = 0;
-            sigma([4,5,6],[1,2,3]) = 0;
+            for idx = 1:length(AutoId.theta)
+                f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
+                f(length(AutoId.theta)+...
+                  idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+            end
             
-            model.Sigma = sigma;
-            
-            weights = ones(1,size(model.M,1));
-            weights(annotated(:,2)) = 1/AutoId.annotation_weight;
-%             Sigma_weighted = bsxfun(@times, repmat(eye(6),1,1,size(model.M,1)), reshape(weights,1,1,size(model.M,1)));
-            
-            Sigma_weighted = bsxfun(@times, sigma, reshape(weights,1,1,size(model.M,1)));
-            
-            init        = model;
-            init.M      = model.M0;
-            init.Sigma  = repmat(sigma_pooled_u,1,1,size(model.Sigma,3));
-            
-            P = AutoId.update_permutation(col, pos, init, annotated);
-            
-            beta_pos = AutoId.MCR_solver(mu(:,1:3), P'*[pos ones(size(pos,1),1)], Sigma_weighted(1:3,1:3,:));
-            beta_col = AutoId.MCR_solver(mu(:,4:end), P'*[col ones(size(col,1),1)], Sigma_weighted(4:end,4:end,:));
-            
-            pos = [pos ones(size(pos,1),1)]*beta_pos;
-            col = [col ones(size(col,1),1)]*beta_col;
+            for idx=1:2*length(AutoId.theta)
+                [job_idx,c,p,cc] = fetchNext(f);
                 
-            for iteration = 1: AutoId.iter_rwc
+                positions{job_idx}  = p;
+                colors{job_idx}     = c;
+                cost(job_idx)       = cc;
                 try
-                    waitbar(iteration/AutoId.iter_rwc,h,['Iteration ' num2str(iteration) '/' num2str(AutoId.iter_rwc)]);
+                    waitbar(idx/(2*length(AutoId.theta)),h,[num2str(round((100.0*idx/(2*length(AutoId.theta))))),'%']);
                 catch
                     break;
                 end
-                Z = arrayfun(@(i) mvnrnd(mu(i,:), model.Sigma(:,:,i)), 1:size(mu,1), 'UniformOutput', false);
-                Z = vertcat(Z{:});
-
-                P = AutoId.update_permutation(col,pos,model,annotated);
-                
-                beta_pos = AutoId.MCR_solver(Z(:,1:3), P'*[pos ones(size(pos,1),1)], Sigma_weighted(1:3,1:3,:));
-                beta_col = AutoId.MCR_solver(Z(:,4:end), P'*[col ones(size(col,1),1)], Sigma_weighted(4:end,4:end,:));
-                
-                pos = [pos ones(size(pos,1),1)]*beta_pos;
-                col = [col ones(size(col,1),1)]*beta_col;
             end
-            
-            obj.log_likelihood = - AutoId.pdist2_maha([pos col], mu, model.Sigma);
             
             try
                 close(h);
             catch
-                warning('ID is canceled.');
+                warning('Auto ID is canceled.');
+            end
+            
+            [theta_idx] = find(cost==max(cost(:)));
+            
+            pos = positions{theta_idx};
+            col = colors{theta_idx};
+
+            obj.log_likelihood = -AutoId.pdist2_maha([pos col], model.mu, model.sigma);
+            obj.aligned = [pos col];
+        end
+        
+        function visualize(obj,im,varargin)
+            if ~any(strcmp(varargin,'ax'))
+                clf; hold on;
+                set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
+            end
+            
+            % original data
+            model = obj.atlas.(lower(im.bodypart)).model;
+            col = im.get_colors_readout(); col = col(:,[1 2 3]);
+            pos = im.get_positions().*im.scale;
+            
+            % find transformation between original and aligned data
+            beta = linsolve([obj.aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
+            
+            % move atlas based on the transformation
+            model.mu = [model.mu ones(size(model.mu,1),1)]*beta;
+            for i=1:size(model.sigma,3)
+                model.sigma([1 2 3],[1 2 3],i) = beta([1 2 3],[1 2 3])'*model.sigma([1 2 3],[1 2 3],i)* beta([1 2 3],[1 2 3]);
+            end
+            
+            % plot the result
+            atlas_color = model.mu(:, [4 5 6]); atlas_color = (atlas_color)./(max(atlas_color));
+
+            sizes = arrayfun(@(i) mean(eig(model.sigma([1,2,3],[1,2,3],i))), 1:size(model.sigma,3));
+            sizes = 1000*sizes/max(sizes);
+            
+            if ~any(strcmp(varargin,'ax'))
+                scatter3(model.mu(:,1),model.mu(:,2),model.mu(:,3), sizes, atlas_color, 'o', 'LineWidth', 3);
+                text(model.mu(:,1),model.mu(:,2),model.mu(:,3), obj.atlas.(lower(im.bodypart)).N, 'Color', 'r');
+                scatter3(pos(:,1),pos(:,2),pos(:,3), 100, col./max(col), '.');
+
+                daspect([1,1,1]); grid on; set(gca,'color',[0.3,0.3,0.3]); view(-30,-20);
+                drawnow;
+            else
+                ax = varargin{find(strcmp(varargin,'ax'))+1};
+                z = varargin{find(strcmp(varargin,'z'))+1};
+                
+                mu_pixels = model.mu(:,1:3)./im.scale;
+                current_z_indices = mu_pixels(:,3)>z-1.5 & mu_pixels(:,3)<z+1.5;
+                scatter(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),...
+                    sizes(current_z_indices), atlas_color(current_z_indices,:), 'o', 'LineWidth', 3);
+                text(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),obj.atlas.(lower(im.bodypart)).N(current_z_indices), 'Color', 'r');
             end
         end
+
     end
+    
+    
 end
 
