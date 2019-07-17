@@ -169,12 +169,27 @@ classdef Image < handle
             %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
         end
+        
+        function num = num_auto_id_neurons(obj)
+            %NUM_AUTO_ID_NEURONS the number of auto ID'd neurons in the image
+            num = sum(arrayfun(@(x) ~isempty(x.deterministic_id), obj.neurons));
+        end
 
         function is_fully_annotated = is_all_annotated(obj)
             %IS_ALL_ANNOTATED do all neurons have user annotations?
             is_fully_annotated = obj.num_neurons() == obj.num_user_id_neurons();
         end
+        
+        function is_annotated = is_any_annotated(obj)
+            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
+            is_annotated = obj.num_auto_id_neurons() > 0;
+        end
 
+        function is_auto_IDd = is_any_auto_ID(obj)
+            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
+            is_auto_IDd = obj.num_user_id_neurons() > 0;
+        end
+        
         function names = user_id_neuron_names(obj)
             %USER_ID_NEURON_NAMES get a list of the user ID neuron names
             names = {};
@@ -286,7 +301,7 @@ classdef Image < handle
         end
 
         function add_probabilistic_ids(obj, probabilistic_ids)
-            %ADD_PROBABILISTIC_IDS stter of neuron probabilistic_id s.
+            %ADD_PROBABILISTIC_IDS setter of neuron probabilistic_id s.
             for i=1:length(obj.neurons)
                 obj.neurons(i).probabilistic_ids = probabilistic_ids(i, :);
             end
