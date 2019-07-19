@@ -3,16 +3,27 @@
     <param.appname>CELL_ID</param.appname>
     <param.icon />
     <param.icons />
+<<<<<<< HEAD
     <param.version>0.1</param.version>
     <param.authnamewatermark>AN, EV, GM, RS, EY, LP</param.authnamewatermark>
     <param.email>mn2822@columbia.edu</param.email>
+=======
+    <param.version>1.0</param.version>
+    <param.authnamewatermark />
+    <param.email />
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
     <param.company />
     <param.summary>Semi-automated Identification and Labeling of C.elegans Neurons in NeuroPAL Images</param.summary>
     <param.description />
     <param.screenshot>C:\Users\Amin\Desktop\CELL_ID.png</param.screenshot>
     <param.guid />
+<<<<<<< HEAD
     <param.installpath.string>\CELL_ID\</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+=======
+    <param.installpath.string>/NeuroPAL/</param.installpath.string>
+    <param.installpath.combo>option.installpath.systemwideapp</param.installpath.combo>
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
     <param.logo />
     <param.install.notes />
     <param.target.install.notes />
@@ -24,15 +35,21 @@
     <param.user.defined.mcr.options />
     <param.target.type>subtarget.standalone</param.target.type>
     <param.support.packages />
-    <param.web.mcr>true</param.web.mcr>
-    <param.package.mcr>false</param.package.mcr>
+    <param.web.mcr>false</param.web.mcr>
+    <param.package.mcr>true</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+<<<<<<< HEAD
     <param.windows.command.prompt>true</param.windows.command.prompt>
     <param.create.log>true</param.create.log>
     <param.log.file>log.txt</param.log.file>
+=======
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>true</param.create.log>
+    <param.log.file>NeuroPAL_ID.log</param.log.file>
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
     <param.native.matlab>false</param.native.matlab>
     <param.checkbox>false</param.checkbox>
     <param.example />
@@ -45,10 +62,15 @@
     <unset>
       <param.icon />
       <param.icons />
+<<<<<<< HEAD
+=======
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
       <param.company />
       <param.description />
       <param.guid />
-      <param.installpath.string />
       <param.installpath.combo />
       <param.logo />
       <param.install.notes />
@@ -61,8 +83,6 @@
       <param.user.defined.mcr.options />
       <param.target.type />
       <param.support.packages />
-      <param.web.mcr />
-      <param.package.mcr />
       <param.no.mcr />
       <param.web.mcr.name />
       <param.package.mcr.name />
@@ -100,6 +120,7 @@
     </fileset.resources>
     <fileset.package />
     <fileset.depfun>
+<<<<<<< HEAD
       <file>${PROJECT_ROOT}\+DataHandling\imreadAny.m</file>
       <file>${PROJECT_ROOT}\+DataHandling\imreadCZI.m</file>
       <file>${PROJECT_ROOT}\+DataHandling\imreadND2.m</file>
@@ -112,6 +133,37 @@
       <file>${PROJECT_ROOT}\+Neurons\Image.m</file>
       <file>${PROJECT_ROOT}\+Neurons\Neuron.m</file>
       <file>${PROJECT_ROOT}\+Neurons\NeuroPAL.m</file>
+=======
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfCheckJavaMemory.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfCheckJavaPath.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetFileExtensions.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetPlane.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetReader.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfInitLogging.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfopen.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/private/is_octave.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/mlapptools-develop/WidgetID.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/mlapptools-develop/mlapptools.m</file>
+      <file>${PROJECT_ROOT}/data handling/NeuroPALImage.m</file>
+      <file>${PROJECT_ROOT}/data handling/imreadAny.m</file>
+      <file>${PROJECT_ROOT}/data handling/imreadCZI.m</file>
+      <file>${PROJECT_ROOT}/data handling/imreadND2.m</file>
+      <file>${PROJECT_ROOT}/methods/AutoDetect.m</file>
+      <file>${PROJECT_ROOT}/methods/AutoId.m</file>
+      <file>${PROJECT_ROOT}/methods/BatchDetect.m</file>
+      <file>${PROJECT_ROOT}/methods/Preprocess.m</file>
+      <file>${PROJECT_ROOT}/methods/Utils.m</file>
+      <file>${PROJECT_ROOT}/methods/logsumexp.m</file>
+      <file>${PROJECT_ROOT}/methods/munkres.m</file>
+      <file>${PROJECT_ROOT}/models/atlas.mat</file>
+      <file>${PROJECT_ROOT}/neurons/Image.m</file>
+      <file>${PROJECT_ROOT}/neurons/NeuroPAL.m</file>
+      <file>${PROJECT_ROOT}/neurons/NeuroPAL_herm_data.mat</file>
+      <file>${PROJECT_ROOT}/neurons/Neuron.m</file>
+      <file>${PROJECT_ROOT}/neurons/herm_data.mat</file>
+      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/strings/strjoin.m</file>
+      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/strings/strsplit.m</file>
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
     </fileset.depfun>
     <build-deliverables>
       <file location="${PROJECT_ROOT}\visualize\for_testing" name="CELL_ID.exe" optional="false">C:\Users\Amin\Desktop\Projects\WormAutoID\codes\visualize\for_testing\CELL_ID.exe</file>
@@ -139,7 +191,11 @@
       <vista>false</vista>
       <linux>false</linux>
       <solaris>false</solaris>
+<<<<<<< HEAD
       <osver>10.0</osver>
+=======
+      <osver>10.14.5</osver>
+>>>>>>> 94b938960ce297de5bbe0f32b025a2a167a95721
       <os32>false</os32>
       <os64>true</os64>
       <arch>win64</arch>

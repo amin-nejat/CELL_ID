@@ -41,12 +41,12 @@ Temporary Items
 # Compiled MEX binaries (all platforms)
 *.mex*
 
-# Packaged app and toolbox files 
-*.mlappinstall 
-*.mltbx 
-  
-# Generated helpsearch folders 
-helpsearch*/ 
+# Packaged app and toolbox files
+*.mlappinstall
+*.mltbx
+
+# Generated helpsearch folders
+helpsearch*/
 
 # Simulink code generation folders
 slprj/
@@ -86,6 +86,9 @@ octave-core
 *.mp4
 *.flv
 
-
+# User/programmer specific files.
 .NeuroPAL_ID_Preferences.mat
 visualize_light_prefs.mat
+External_Dependencies
+visualize
+visualize.prj
