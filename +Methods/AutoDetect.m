@@ -40,7 +40,7 @@ classdef AutoDetect < Singleton
             mask = repmat(mask,1,1,1,length(prefs.RGBW));
             data_zscored = data_zscored_raw; data_zscored(mask) = 0;
 
-            filter = Methods.AutoDetect.get_filter(mp_params.hnsz', mp_params.hnsz', 0);
+            filter = Methods.AutoDetect.get_filter(mp_params.hnsz(:)', mp_params.hnsz(:)', 0);
             sp = Methods.AutoDetect.instance().detect(data_zscored, filter, mp_params.k, mp_params.min_eig_thresh, info.scale', mp_params.exclusion_radius);
 
             Methods.Utils.save_for_parfor([file, '_sp', '.mat'], sp, mp_params);

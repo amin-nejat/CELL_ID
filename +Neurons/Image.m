@@ -31,7 +31,7 @@ classdef Image < handle
             end
 
             % Create the neurons.
-            for i=1:length(superpixels.mean)
+            for i=1:size(superpixels.mean,1)
                 obj.neurons(i) = Neurons.Neuron(Methods.Utils.sub_sp(superpixels,i));
             end
 
