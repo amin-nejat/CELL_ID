@@ -24,6 +24,7 @@ classdef Neuron < handle
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
         color_readout % neuron color based on readout from the image
+        meta_data
         
         MARKER_SIZE_NOT_SELECTED = 40
         MARKER_SIZE_SELECTED = 200
@@ -71,6 +72,8 @@ classdef Neuron < handle
             %if isfield(superpixel, 'rank')
             %    obj.rank = superpixel.rank;
             %end
+            
+            obj.meta_data = containers.Map();
             
             prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);
             

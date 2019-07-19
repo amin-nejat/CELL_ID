@@ -23,7 +23,6 @@ classdef AutoId < handle
         
         atlas = getfield(load('atlas.mat'), 'atlas') % atlas data structure containing neuron names, positions, colors, and their covariances
         
-        aligned % atlas aligned positions and colors
         log_likelihood % likelihood matrix, of size n_mp x n_possible
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
         assignment_prob_ranks % n_obsx7 matrix with the 7 most likely assignment
@@ -338,8 +337,12 @@ classdef AutoId < handle
             colors = colors(:,[1 2 3]);
             
             % align the image to statistical atlas
-            obj.global_alignment(colors, im.get_positions().*im.scale, ...
+            aligned = obj.global_alignment(colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
+            
+            for neuron=1:length(im.neurons)
+                im.neurons(neuron).meta_data('aligned') = aligned(neuron,:);
+            end
             
             obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
             for i=1:size(annotated,1)
@@ -375,7 +378,7 @@ classdef AutoId < handle
         
         
         
-        function global_alignment(obj, col, pos, model, annotated)
+        function aligned = global_alignment(obj, col, pos, model, annotated)
         % Global alignment based on search in the theta space
         %
         % Amin & Erdem
@@ -419,7 +422,7 @@ classdef AutoId < handle
             col = colors{theta_idx};
 
             obj.log_likelihood = -AutoId.pdist2_maha([pos col], model.mu, model.sigma);
-            obj.aligned = [pos col];
+            aligned = [pos col];
         end
         
         function visualize(obj,im,varargin)
@@ -433,8 +436,10 @@ classdef AutoId < handle
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             
+            aligned = arrayfun(@(neuron) im.neurons(neuron).meta_data('aligned'), 1:length(im.neurons), 'UniformOutput', false);
+            aligned = cell2mat(aligned');
             % find transformation between original and aligned data
-            beta = linsolve([obj.aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
+            beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
             
             % move atlas based on the transformation
             model.mu = [model.mu ones(size(model.mu,1),1)]*beta;
