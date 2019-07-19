@@ -3,7 +3,7 @@
     <param.appname>NeuroPAL_ID</param.appname>
     <param.icon />
     <param.icons />
-    <param.version>0.1</param.version>
+    <param.version>1.0</param.version>
     <param.authnamewatermark />
     <param.email />
     <param.company />
@@ -11,7 +11,7 @@
     <param.description />
     <param.screenshot />
     <param.guid />
-    <param.installpath.string>/NeuroPAL_ID/</param.installpath.string>
+    <param.installpath.string>/NeuroPAL/</param.installpath.string>
     <param.installpath.combo>option.installpath.systemwideapp</param.installpath.combo>
     <param.logo />
     <param.install.notes />
@@ -32,15 +32,15 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
     <param.user.defined.mcr.options />
     <param.target.type>subtarget.standalone</param.target.type>
     <param.support.packages />
-    <param.web.mcr>true</param.web.mcr>
-    <param.package.mcr>false</param.package.mcr>
+    <param.web.mcr>false</param.web.mcr>
+    <param.package.mcr>true</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>false</param.windows.command.prompt>
-    <param.create.log>false</param.create.log>
-    <param.log.file />
+    <param.create.log>true</param.create.log>
+    <param.log.file>NeuroPAL_ID.log</param.log.file>
     <param.native.matlab>false</param.native.matlab>
     <param.checkbox>false</param.checkbox>
     <param.example />
@@ -53,6 +53,7 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
     <unset>
       <param.icon />
       <param.icons />
+      <param.version />
       <param.authnamewatermark />
       <param.email />
       <param.company />
@@ -60,7 +61,6 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
       <param.description />
       <param.screenshot />
       <param.guid />
-      <param.installpath.string />
       <param.installpath.combo />
       <param.logo />
       <param.install.notes />
@@ -72,15 +72,11 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
       <param.user.defined.mcr.options />
       <param.target.type />
       <param.support.packages />
-      <param.web.mcr />
-      <param.package.mcr />
       <param.no.mcr />
       <param.web.mcr.name />
       <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />
-      <param.create.log />
-      <param.log.file />
       <param.native.matlab />
       <param.checkbox />
       <param.example />
@@ -91,49 +87,33 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
     <fileset.resources />
     <fileset.package />
     <fileset.depfun>
-      <file>${PROJECT_ROOT}/auto id/auto_id.m</file>
-      <file>${PROJECT_ROOT}/auto id/compute_assignments.m</file>
-      <file>${PROJECT_ROOT}/auto id/find_ids.m</file>
-      <file>${PROJECT_ROOT}/auto id/munkres.m</file>
-      <file>${PROJECT_ROOT}/auto id/regression_woc.m</file>
-      <file>${PROJECT_ROOT}/auto id/sinkhorn_logspace.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfCheckJavaMemory.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfCheckJavaPath.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetFileExtensions.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetPlane.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfGetReader.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfInitLogging.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/bfopen.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/bfmatlab/private/is_octave.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/mlapptools-develop/WidgetID.m</file>
+      <file>${PROJECT_ROOT}/External Dependencies/mlapptools-develop/mlapptools.m</file>
       <file>${PROJECT_ROOT}/data handling/NeuroPALImage.m</file>
+      <file>${PROJECT_ROOT}/data handling/imreadAny.m</file>
       <file>${PROJECT_ROOT}/data handling/imreadCZI.m</file>
-      <file>${PROJECT_ROOT}/get_params.m</file>
-      <file>${PROJECT_ROOT}/helper functions/placement.m</file>
-      <file>${PROJECT_ROOT}/helper functions/sub_sp.m</file>
-      <file>${PROJECT_ROOT}/helper functions/subcube.m</file>
-      <file>${PROJECT_ROOT}/helper functions/superpose.m</file>
-      <file>${PROJECT_ROOT}/helper functions/union_sp.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/fit_gaussian.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/fit_gaussian_cov.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/fit_gaussian_fixed_cov.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/gaussian_confun_cov.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/get_filter.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/get_gaussian_cov.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/matching_pursuit_gaussian_two_step.m</file>
-      <file>${PROJECT_ROOT}/matching pursuit/simulate_gaussian.m</file>
+      <file>${PROJECT_ROOT}/data handling/imreadND2.m</file>
+      <file>${PROJECT_ROOT}/methods/AutoDetect.m</file>
+      <file>${PROJECT_ROOT}/methods/AutoId.m</file>
+      <file>${PROJECT_ROOT}/methods/BatchDetect.m</file>
+      <file>${PROJECT_ROOT}/methods/Preprocess.m</file>
+      <file>${PROJECT_ROOT}/methods/Utils.m</file>
+      <file>${PROJECT_ROOT}/methods/logsumexp.m</file>
+      <file>${PROJECT_ROOT}/methods/munkres.m</file>
+      <file>${PROJECT_ROOT}/models/atlas.mat</file>
       <file>${PROJECT_ROOT}/neurons/Image.m</file>
       <file>${PROJECT_ROOT}/neurons/NeuroPAL.m</file>
       <file>${PROJECT_ROOT}/neurons/NeuroPAL_herm_data.mat</file>
       <file>${PROJECT_ROOT}/neurons/Neuron.m</file>
       <file>${PROJECT_ROOT}/neurons/herm_data.mat</file>
-      <file>${PROJECT_ROOT}/preprocessing/area_filter.m</file>
-      <file>${PROJECT_ROOT}/preprocessing/decimate_frame.m</file>
-      <file>${PROJECT_ROOT}/preprocessing/filter_frame.m</file>
-      <file>${PROJECT_ROOT}/preprocessing/histmatch_frame.m</file>
-      <file>${PROJECT_ROOT}/preprocessing/threshold_frame.m</file>
-      <file>${PROJECT_ROOT}/preprocessing/zscore_frame.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfCheckJavaMemory.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfCheckJavaPath.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfGetFileExtensions.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfGetPlane.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfGetReader.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfInitLogging.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/bfopen.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/bfmatlab/private/is_octave.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/mlapptools-develop/WidgetID.m</file>
-      <file>/Users/ev/Documents/MATLAB/Mathworks Functions/mlapptools-develop/mlapptools.m</file>
       <file>/Users/ev/Documents/MATLAB/Mathworks Functions/strings/strjoin.m</file>
       <file>/Users/ev/Documents/MATLAB/Mathworks Functions/strings/strsplit.m</file>
     </fileset.depfun>
@@ -188,7 +168,7 @@ ${DYLD_LIBRARY_PATH}:MR/v96/runtime/maci64:MR/v96/sys/os/maci64:MR/v96/bin/maci6
       <vista>false</vista>
       <linux>false</linux>
       <solaris>false</solaris>
-      <osver>10.14.4</osver>
+      <osver>10.14.5</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>maci64</arch>
