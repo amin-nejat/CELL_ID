@@ -103,14 +103,22 @@ for i=1:numChannels
 end
 
 % Organize the image volume.
+%numC = numChannels;
 imageData = data{1,1};
 image.data = uint16(nan([image.pixels; numChannels]'));
-numC = numChannels;
 for i=1:size(imageData,1)
     
+    % Get the image plane data.
+    dataStrs = split(imageData{i,2}, ';');
+    zStr = strtrim(dataStrs{end-1});
+    cStr = strtrim(dataStrs{end});
+    
     % Assemble the image.
-    z = floor((i - 1) / numC) + 1;
-    c = mod(i - 1, numC) + 1;
+    %z = floor((i - 1) / numC) + 1;
+    %c = mod(i - 1, numC) + 1;
+    %image.data(:,:,z,c) = imageData{i,1}';
+    z = sscanf(zStr,'Z=%f');
+    c = sscanf(cStr,'C=%f');
     image.data(:,:,z,c) = imageData{i,1}';
     
     % Debug the image assembly.

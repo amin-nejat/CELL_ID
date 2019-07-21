@@ -31,13 +31,17 @@ classdef Image < handle
             end
 
             % Create the neurons.
-            for i=1:size(superpixels.mean,1)
-                obj.neurons(i) = Neurons.Neuron(Methods.Utils.sub_sp(superpixels,i));
+            for i=1:size(superpixels.color,1)
+                obj.neurons(i) = ...
+                    Neurons.Neuron(Methods.Utils.sub_sp(superpixels,i));
             end
 
             % Setup the image scale.
             if ~isempty(varargin)
                 obj.scale = varargin{1};
+                if size(obj.scale,1) > size(obj.scale,2)
+                    obj.scale = obj.scale';
+                end
             end
         end
         
@@ -53,6 +57,9 @@ classdef Image < handle
             %   for fitting.
             color = squeeze(volume(round(position(1)),round(position(2)),round(position(3)),:))';
             obj.scale = scale;
+            if size(obj.scale,1) > size(obj.scale,2)
+                obj.scale = obj.scale';
+            end
             bpatch = Methods.Utils.subcube(volume, round(position), nsz);
             if isKey(obj.meta_data, 'auto_detect') && obj.meta_data('auto_detect')
                 auto_detect = Methods.AutoDetect.instance();
@@ -61,13 +68,13 @@ classdef Image < handle
                 auto_detect.fsize = nsz;
                 [~, sp] = auto_detect.fit_gaussian(double(bpatch), color, position);
             else
-                sp          = [];
-                sp.mean     = position;
-                sp.color    = nan(1,size(volume,4));
-                sp.baseline = nan(1,size(volume,4));
-                sp.cov      = nan(3,3);
+                sp             = [];
+                sp.positions   = position;
+                sp.color       = nan(1,size(volume,4));
+                sp.baseline    = nan(1,size(volume,4));
+                sp.covariances = nan(3,3);
             end
-            cpatch = Methods.Utils.subcube(volume, round(sp.mean), [1,1,0]);
+            cpatch = Methods.Utils.subcube(volume, round(sp.position), [1,1,0]);
             sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
             if isempty(obj.neurons)
                 obj.neurons = Neurons.Neuron(sp);
@@ -447,12 +454,19 @@ classdef Image < handle
             %TO_SUPERPIXEL coverts the neurons to a superpixel data
             %structure for data loading and storing and for interfacing
             %with different softwares and programming languages.
+            
+            % Is there any data?
             sp = [];
-            sp.mean = obj.get_positions();
+            if isempty(obj.neurons)
+                return;
+            end
+            
+            % Marshall the data into a struct.
+            sp.positions = obj.get_positions();
             sp.color = obj.get_colors();
             sp.color_readout = obj.get_colors_readout();
             sp.baseline = obj.get_baselines();
-            sp.cov = obj.get_covariances();
+            sp.covariances = obj.get_covariances();
             sp.probabilistic_ids = obj.get_probabilistic_ids();
             sp.deterministic_id = obj.get_deterministic_ids()';
             sp.annotation = obj.get_annotations();

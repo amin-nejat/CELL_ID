@@ -228,13 +228,13 @@ classdef AutoDetect < Singleton
                 end
                 
                 
-                exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.mean-sp.mean).*obj.scale).^2, 2))) > exclusion;
+                exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.positions-sp.positions).*obj.scale).^2, 2))) > exclusion;
                 
-                if min(eig(squeeze(sp.cov).*obj.scale)) > cov_threshold && exclusion_condition
-                    cpatch = Methods.Utils.subcube(volume, round(sp.mean), [1,1,0]);
+                if min(eig(squeeze(sp.covariances).*obj.scale)) > cov_threshold && exclusion_condition
+                    cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
                     sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                     obj.supervoxels = Methods.Utils.union_sp(obj.supervoxels, sp);
-                    N = size(obj.supervoxels.mean, 1);
+                    N = size(obj.supervoxels.positions, 1);
                 end
             end
             try
@@ -301,8 +301,8 @@ classdef AutoDetect < Singleton
 
             relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 
-            sp.mean = relative_position+absolute_position;
-            sp.cov(1,:,:) = cov;
+            sp.positions = relative_position+absolute_position;
+            sp.covariances(1,:,:) = cov;
             sp.color = col;
             sp.baseline = bas;
             sp.truncation = x_hat(end)/norm(end);
