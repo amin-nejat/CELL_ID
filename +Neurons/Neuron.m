@@ -211,6 +211,5 @@ classdef Neuron < handle
                 zeros(size(obj.color)), ... % baseline mean
                 obj.truncation); % truncation
         end
-
     end
 end

@@ -11,7 +11,7 @@ classdef Image < handle
 
     % Public methods.
     methods
-        function obj = Image(superpixels, bodypart, varargin)
+        function obj = Image(superpixels, bodypart, scale, meta_data)
             %Image Construct an instance of this class.
             %   superpixel: Matlab struct superpixels with variables mean, cov,
             %   color, basline, and potentially ids, rank, probabilistic
@@ -19,29 +19,32 @@ classdef Image < handle
             %   bodypart: A string that represents which body part the
             %   current instance of this class corresponds to, examples are
             %   'head' and 'tail'.
-            %   [scale]: optional image scale (x,y,z).
+            %   scale: image scale (x,y,z).
+            %   meta_data: meta data
 
-            % No neurons.
-            obj.meta_data = containers.Map();
-            
+            % Initialize the data.
             obj.bodypart = bodypart;
+            obj.scale = scale;
+            if size(obj.scale,1) > size(obj.scale,2)
+                obj.scale = obj.scale';
+            end
+            
+            % Is there meta data?
+            obj.meta_data  = meta_data;
+            if isempty(meta_data)
+                obj.meta_data = containers.Map();
+            end
+            
+            % Are there neurons?
             if isempty(superpixels)
                 obj.neurons = [];
                 return;
             end
 
             % Create the neurons.
-            for i=1:size(superpixels.color,1)
+            for i = 1:size(superpixels.color,1)
                 obj.neurons(i) = ...
                     Neurons.Neuron(Methods.Utils.sub_sp(superpixels,i));
-            end
-
-            % Setup the image scale.
-            if ~isempty(varargin)
-                obj.scale = varargin{1};
-                if size(obj.scale,1) > size(obj.scale,2)
-                    obj.scale = obj.scale';
-                end
             end
         end
         
