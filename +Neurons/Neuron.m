@@ -40,6 +40,9 @@ classdef Neuron < handle
             %   the variables inside superpixels and assigning them to the
             %   properties of the Neuron instance.
             
+            % Initialize the meta data.
+            obj.meta_data = containers.Map();
+            
             obj.position = superpixel.positions;
             obj.color = superpixel.color;
             obj.baseline = superpixel.baseline;
@@ -51,6 +54,11 @@ classdef Neuron < handle
             end
             if isfield(superpixel, 'truncation')
                 obj.truncation = superpixel.truncation;
+            end
+            
+            % If the alignment information exists
+            if isfield(superpixel, 'aligned')
+                obj.meta_data('aligned') = superpixel.aligned;
             end
             
             % Are the neurons ID'd?
@@ -72,12 +80,6 @@ classdef Neuron < handle
             if isfield(superpixel, 'probabilistic_probs')
                 obj.probabilistic_probs = superpixel.probabilistic_probs;
             end
-            %if isfield(superpixel, 'rank')
-            %    obj.rank = superpixel.rank;
-            %end
-            
-            % Initialize the meta data.
-            obj.meta_data = containers.Map();
             
             % GET RID OF THIS!!!
             prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);

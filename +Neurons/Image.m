@@ -11,7 +11,7 @@ classdef Image < handle
 
     % Public methods.
     methods
-        function obj = Image(superpixels, bodypart, scale, meta_data)
+        function obj = Image(superpixels, bodypart, varargin)
             %Image Construct an instance of this class.
             %   superpixel: Matlab struct superpixels with variables mean, cov,
             %   color, basline, and potentially ids, rank, probabilistic
@@ -24,14 +24,15 @@ classdef Image < handle
 
             % Initialize the data.
             obj.bodypart = bodypart;
-            obj.scale = scale;
-            if size(obj.scale,1) > size(obj.scale,2)
-                obj.scale = obj.scale';
+            
+            if any(strcmp(varargin, 'scale'))
+                obj.scale = varargin{find(strcmp(varargin, 'scale'))+1}(:)';
             end
             
             % Is there meta data?
-            obj.meta_data  = meta_data;
-            if isempty(meta_data)
+            if any(strcmp(varargin, 'meta_data'))
+                obj.meta_data= varargin{find(strcmp(varargin, 'meta_data'))+1};
+            else
                 obj.meta_data = containers.Map();
             end
             
@@ -438,6 +439,10 @@ classdef Image < handle
             %GET_META_DATA returns the value paired with key.
             value = obj.meta_data(key);
         end
+        
+        function values = get_neurons_meta_data(obj, key)
+            values = arrayfun(@(x) x.meta_data(key), obj.neurons, 'UniformOutput', false);
+        end
 
         function delete_annotations(obj)
             %DELETE_ANNOTATIONS delete all user IDs.
@@ -476,6 +481,12 @@ classdef Image < handle
             sp.is_annotation_on = obj.get_is_annotations_on();
             sp.probabilistic_probs = obj.get_probabilistic_probs();
             sp.annotation_confidence = obj.get_annotation_confidences();
+            try
+                aligned = obj.get_neurons_meta_data('aligned');
+                sp.aligned = cell2mat(aligned');
+            catch % alignment information does not exist
+                
+            end
         end
     end
 end

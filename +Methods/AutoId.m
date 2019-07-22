@@ -436,8 +436,9 @@ classdef AutoId < handle
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             
-            aligned = arrayfun(@(neuron) im.neurons(neuron).meta_data('aligned'), 1:length(im.neurons), 'UniformOutput', false);
+            aligned = im.get_neurons_meta_data('aligned');
             aligned = cell2mat(aligned');
+            
             % find transformation between original and aligned data
             beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
             
