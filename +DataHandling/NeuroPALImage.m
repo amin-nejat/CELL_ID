@@ -186,7 +186,7 @@ classdef NeuroPALImage
                 sp = id_data.sp;
                 
                 % Get the meta data.
-                meta_data = [];
+                meta_data = containers.Map();
                 if isfield(id_data, 'meta_data')
                     meta_data = id_data.meta_data;
                 end
@@ -244,10 +244,15 @@ classdef NeuroPALImage
                     version = NeuroPALImage.version;
                     save(id_file, 'version', 'sp', 'mp_params', 'meta_data', '-append');
                 end
+                % Create the neuronsworm..
+                neurons = Neurons.Image(sp, worm.body, 'scale', info.scale, 'meta_data', meta_data);
+            else
+                % Create the neurons.
+                neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
             end
             
-            % Create the neurons.
-            neurons = Neurons.Image(sp, worm.body, info.scale, meta_data);
+            
+            
         end
         
         function np_file = convertCZI(czi_file)
