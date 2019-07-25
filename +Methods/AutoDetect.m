@@ -54,7 +54,7 @@ classdef AutoDetect < Singleton
            % Detect the neurons.
            mp.k = num_neurons;
            filter = Methods.AutoDetect.get_filter(mp.hnsz(:)', mp.hnsz(:)', 0);
-           sp = Methods.AutoDetect.instance().detect(data_zscored, ...
+           sp = Methods.AutoDetect.instance().detect(file, data_zscored, ...
                filter, mp.k, mp.min_eig_thresh, info.scale', mp.exclusion_radius);
            
            % Save the neurons.
@@ -201,7 +201,7 @@ classdef AutoDetect < Singleton
    end
    
    methods % Public Access
-        function supervoxels = detect(obj, volume, filter, n_objects, cov_threshold, scale, exclusion)
+        function supervoxels = detect(obj, file, volume, filter, n_objects, cov_threshold, scale, exclusion)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
         % fits to input dataset. The algorithm runs greedy by subtracting off the
         % brightest Gaussian at each iteration.
@@ -209,7 +209,9 @@ classdef AutoDetect < Singleton
         % Amin Nejat
             obj.scale = scale;
             
-            h = waitbar(0,'Initialize ...');
+            wait_title = 'Detecting Neurons';
+            file_str = strrep(file, '_', '\_');
+            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
             
             obj.supervoxels = [];
 
@@ -224,7 +226,10 @@ classdef AutoDetect < Singleton
             
             while N < n_objects && max(rho(:)) > 0.1
                 try
-                    waitbar((N+1)/n_objects,h,sprintf('%d%% completed ...',int16(100*(N+1)/n_objects)));
+                    waitbar((N+1)/n_objects,h,...
+                        {file_str, ...
+                        sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
+                        'Name', wait_title);
                 catch
                     break;
                 end
@@ -257,7 +262,7 @@ classdef AutoDetect < Singleton
             try
                 close(h);
             catch
-                warning('The detection is canceled.');
+                warning('The detection was canceled.');
             end
             supervoxels = obj.supervoxels;
         end
