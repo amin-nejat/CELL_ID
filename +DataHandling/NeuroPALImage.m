@@ -174,7 +174,7 @@ classdef NeuroPALImage
             % Open the ID file.
             version = 0;
             mp = [];
-            mp.hnsz = [15 15 5];
+            mp.hnsz = round(round(3./info.scale')/2)*2+1;
             mp.k = 0;
             mp.exclusion_radius = 1.5;
             mp.min_eig_thresh = 0.1;
