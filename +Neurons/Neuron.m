@@ -24,9 +24,10 @@ classdef Neuron < handle
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
         color_readout % neuron color based on readout from the image
-        meta_data
+        aligned_xyzRGB % the neuron's position & color, aligned to the global model
         
         % GUI properties.
+        % MOVE TO IMAGE!!!!
         MARKER_SIZE_NOT_SELECTED = 40 % unselected neuron marker size
         MARKER_SIZE_SELECTED = 200 % selected neuron marker size
         LINE_SIZE_NOT_SELECTED = 1 % unselected neuron line size
@@ -40,9 +41,7 @@ classdef Neuron < handle
             %   the variables inside superpixels and assigning them to the
             %   properties of the Neuron instance.
             
-            % Initialize the meta data.
-            obj.meta_data = containers.Map();
-            
+            % Initialize the positions & colors.
             obj.position = superpixel.positions;
             obj.color = superpixel.color;
             obj.baseline = superpixel.baseline;
@@ -54,11 +53,6 @@ classdef Neuron < handle
             end
             if isfield(superpixel, 'truncation')
                 obj.truncation = superpixel.truncation;
-            end
-            
-            % If the alignment information exists
-            if isfield(superpixel, 'aligned')
-                obj.meta_data('aligned') = superpixel.aligned;
             end
             
             % Are the neurons ID'd?

@@ -78,7 +78,7 @@ classdef Image < handle
                 sp.baseline    = nan(1,size(volume,4));
                 sp.covariances = nan(3,3);
             end
-            cpatch = Methods.Utils.subcube(volume, round(sp.position), [1,1,0]);
+            cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
             sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
             if isempty(obj.neurons)
                 obj.neurons = Neurons.Neuron(sp);
@@ -440,8 +440,10 @@ classdef Image < handle
             value = obj.meta_data(key);
         end
         
-        function values = get_neurons_meta_data(obj, key)
-            values = arrayfun(@(x) x.meta_data(key), obj.neurons, 'UniformOutput', false);
+        function aligned = get_neurons_aligned(obj)
+            %GET_NEURONS_ALIGNED get the aligned neuron position & color
+            %data (x,y,z,R,G,B,W)
+            aligned = vertcat(obj.neurons.aligned_xyzRGB);
         end
 
         function delete_annotations(obj)
@@ -481,12 +483,6 @@ classdef Image < handle
             sp.is_annotation_on = obj.get_is_annotations_on();
             sp.probabilistic_probs = obj.get_probabilistic_probs();
             sp.annotation_confidence = obj.get_annotation_confidences();
-            try
-                aligned = obj.get_neurons_meta_data('aligned');
-                sp.aligned = cell2mat(aligned');
-            catch % alignment information does not exist
-                
-            end
         end
     end
 end

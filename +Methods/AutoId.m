@@ -341,7 +341,7 @@ classdef AutoId < handle
                                obj.atlas.(lower(im.bodypart)).model, annotated);
             
             for neuron=1:length(im.neurons)
-                im.neurons(neuron).meta_data('aligned') = aligned(neuron,:);
+                im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
             
             obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
@@ -436,8 +436,11 @@ classdef AutoId < handle
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             
-            aligned = im.get_neurons_meta_data('aligned');
-            aligned = cell2mat(aligned');
+            % aligned data
+            aligned = im.get_neurons_aligned;
+            if isempty(aligned)
+                return;
+            end
             
             % find transformation between original and aligned data
             beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
