@@ -41,7 +41,7 @@ classdef AutoId < handle
              end
         end
         
-        function BatchId(file)
+        function BatchId(file, bodypart)
             % Batch ID neurons.
             
             % Open the image file.
@@ -52,8 +52,11 @@ classdef AutoId < handle
                 return;
             end
             
+            % Update the body part.
+            neurons.bodypart = bodypart;
+            
             % Save the auto ID'd neurons.
-            Methods.AutoId.instance().id(neurons);
+            Methods.AutoId.instance().id(file, neurons);
             sp = neurons.to_superpixel();
             save(id_file, 'sp', '-append');
         end
@@ -334,7 +337,7 @@ classdef AutoId < handle
             
         end
         
-        function id(obj,im,varargin)
+        function id(obj,file,im,varargin)
             if any(strcmp(varargin, 'atlas'))
                 obj.atlas = varargin{find(strcmp(varargin, 'atlas'))+1};
             end
@@ -354,7 +357,7 @@ classdef AutoId < handle
             colors = colors(:,[1 2 3]);
             
             % align the image to statistical atlas
-            aligned = obj.global_alignment(colors, im.get_positions().*im.scale, ...
+            aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
             
             for neuron=1:length(im.neurons)
@@ -395,7 +398,7 @@ classdef AutoId < handle
         
         
         
-        function aligned = global_alignment(obj, col, pos, model, annotated)
+        function aligned = global_alignment(obj, file, col, pos, model, annotated)
         % Global alignment based on search in the theta space
         %
         % Amin & Erdem
@@ -408,10 +411,11 @@ classdef AutoId < handle
             if isempty(parallel_tb)
                 is_parallel = false;
             end
-            is_parallel = false;
             
             % Setup the progress bar.
-            h = waitbar(0,'Initialize ...');
+            wait_title = 'ID''ing Neurons';
+            file_str = strrep(file, '_', '\_');
+            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
             
             % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
@@ -420,7 +424,7 @@ classdef AutoId < handle
             
             % Get the parallel pool ready.
             if is_parallel
-                pool = gcp(); % may want to have a ready-use pool
+                %pool = gcp(); % may want to have a ready-use pool
             end
             
             % Compute the alignment.
@@ -429,9 +433,9 @@ classdef AutoId < handle
                 if is_parallel
                     
                     % Compute the alignment.
-                    f(idx) = parfeval(pool, @AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
+                    f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
                     f(length(AutoId.theta)+...
-                        idx) = parfeval(pool, @AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+                        idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
                 else
                     
                     % Compute the alignment.
@@ -443,7 +447,9 @@ classdef AutoId < handle
                     
                     % Update the progress.
                     try
-                        waitbar(idx/num_tests,h,[num2str(round((100.0*idx/num_tests))),'%']);
+                        waitbar((2*idx)/num_tests,h, {file_str, ...
+                            [num2str(round((100.0*2*idx)/num_tests)),'%']}, ...
+                            'Name', wait_title);
                     catch
                         break;
                     end
@@ -459,7 +465,9 @@ classdef AutoId < handle
                     colors{job_idx}     = c;
                     cost(job_idx)       = cc;
                     try
-                        waitbar(idx/(2*length(AutoId.theta)),h,[num2str(round((100.0*idx/(2*length(AutoId.theta))))),'%']);
+                        waitbar(idx/num_tests,h, {file_str, ...
+                            [num2str(round((100.0*idx/num_tests))),'%']}, ...
+                            'Name', wait_title);
                     catch
                         break;
                     end

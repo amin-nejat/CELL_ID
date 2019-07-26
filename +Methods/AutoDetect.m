@@ -1,4 +1,4 @@
-classdef AutoDetect < Singleton
+classdef AutoDetect < handle
    
    properties % Public Access
         options = []

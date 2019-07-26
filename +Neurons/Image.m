@@ -285,16 +285,28 @@ classdef Image < handle
         
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
+            annotations = [];
+            if isempty(obj.neurons)
+                return;
+            end
             annotations = vertcat({obj.neurons.annotation})';
         end
 
         function is_annotations_on = get_is_annotations_on(obj)
             %GET_IS_ANNOTATIONS_ON getter of neuron is_annotation_on s.
+            is_annotations_on = [];
+            if isempty(obj.neurons)
+                return;
+            end
             is_annotations_on = vertcat(obj.neurons.is_annotation_on);
         end
 
         function annotation_confidences = get_annotation_confidences(obj)
             %GET_ANNOTATION_CONFIDENCES getter of neuron annotation_confidence s.
+            annotation_confidences = [];
+            if isempty(obj.neurons)
+                return;
+            end
             annotation_confidences = vertcat(obj.neurons.annotation_confidence);
         end
 
@@ -319,6 +331,10 @@ classdef Image < handle
 
         function probabilistic_ids = get_probabilistic_ids(obj)
             %GET_PROBABILISTIC_IDS getter of neuron probabilistic_id s.
+            probabilistic_ids = [];
+            if isempty(obj.neurons)
+                return;
+            end
             probabilistic_ids = vertcat(obj.neurons.probabilistic_ids);
         end
 
@@ -331,6 +347,10 @@ classdef Image < handle
 
         function probabilistic_probs = get_probabilistic_probs(obj)
             %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_prob s.
+            probabilistic_probs = [];
+            if isempty(obj.neurons)
+                return;
+            end
             probabilistic_probs = vertcat(obj.neurons.probabilistic_probs);
         end
 
@@ -343,6 +363,10 @@ classdef Image < handle
 
         function ranks = get_ranks(obj)
             %GET_RANKS getter of neuron rank s.
+            ranks = [];
+            if isempty(obj.neurons)
+                return;
+            end
             ranks = vertcat(obj.neurons.rank);
         end
 
@@ -405,26 +429,46 @@ classdef Image < handle
 
         function positions = get_positions(obj)
             %GET_POSITIONS getter of neuron position s.
+            positions = [];
+            if isempty(obj.neurons)
+                return;
+            end
             positions = vertcat(obj.neurons.position);
         end
         
         function colors = get_colors(obj)
             %GET_COLORS getter of neuron color s.
+            colors = [];
+            if isempty(obj.neurons)
+                return;
+            end
             colors = vertcat(obj.neurons.color);
         end
         
         function colors = get_colors_readout(obj)
             %GET_COLORS_READOUT getter of neuron color readout s.
+            colors = [];
+            if isempty(obj.neurons)
+                return;
+            end
             colors = vertcat(obj.neurons.color_readout);
         end
 
         function baselines = get_baselines(obj)
+            baselines = [];
+            if isempty(obj.neurons)
+                return;
+            end
             %GET_BASELINES getter of neuron baseline s.
             baselines = vertcat(obj.neurons.baseline);
         end
 
         function covariances = get_covariances(obj)
             %GET_COVARIANCES getter of neuron covariance s.
+            covariances = [];
+            if isempty(obj.neurons)
+                return;
+            end
             covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
         end
 
@@ -443,6 +487,10 @@ classdef Image < handle
         function aligned = get_neurons_aligned(obj)
             %GET_NEURONS_ALIGNED get the aligned neuron position & color
             %data (x,y,z,R,G,B,W)
+            aligned = [];
+            if isempty(obj.neurons)
+                return;
+            end
             aligned = vertcat(obj.neurons.aligned_xyzRGB);
         end
 
