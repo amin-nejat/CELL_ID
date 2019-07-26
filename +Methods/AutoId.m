@@ -41,6 +41,23 @@ classdef AutoId < handle
              end
         end
         
+        function BatchId(file)
+            % Batch ID neurons.
+            
+            % Open the image file.
+            try
+                [~, ~, ~, ~, ~, neurons, ~, id_file] = ...
+                    DataHandling.NeuroPALImage.open(file);
+            catch
+                return;
+            end
+            
+            % Save the auto ID'd neurons.
+            Methods.AutoId.instance().id(neurons);
+            sp = neurons.to_superpixel();
+            save(id_file, 'sp', '-append');
+        end
+        
         function rotmat = rotmat(theta)
             rotmat = [cos(theta) -sin(theta);...
                       sin(theta) cos(theta)];

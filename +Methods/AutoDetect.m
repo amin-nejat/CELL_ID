@@ -211,7 +211,8 @@ classdef AutoDetect < Singleton
             
             % Setup the progress bar.
             wait_title = 'Detecting Neurons';
-            h = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            file_str = strrep(file, '_', '\_');
+            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
             
             obj.supervoxels = [];
 
@@ -227,7 +228,7 @@ classdef AutoDetect < Singleton
             while N < n_objects && max(rho(:)) > 0.1
                 try
                     waitbar((N+1)/n_objects,h,...
-                        {file, ...
+                        {file_str, ...
                         sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
                         'Name', wait_title);
                 catch
