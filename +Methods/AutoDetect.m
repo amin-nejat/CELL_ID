@@ -209,6 +209,7 @@ classdef AutoDetect < Singleton
         % Amin Nejat
             obj.scale = scale;
             
+            % Setup the progress bar.
             wait_title = 'Detecting Neurons';
             file_str = strrep(file, '_', '\_');
             h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
@@ -222,8 +223,8 @@ classdef AutoDetect < Singleton
 
             rho = Methods.Preprocess.filter_frame(volume, filter);
 
+            % Detect the neurons.
             N = 0;
-            
             while N < n_objects && max(rho(:)) > 0.1
                 try
                     waitbar((N+1)/n_objects,h,...
@@ -259,6 +260,8 @@ classdef AutoDetect < Singleton
                     N = size(obj.supervoxels.positions, 1);
                 end
             end
+            
+            % Done.
             try
                 close(h);
             catch

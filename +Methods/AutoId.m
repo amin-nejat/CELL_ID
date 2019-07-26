@@ -385,42 +385,81 @@ classdef AutoId < handle
         
             import Methods.AutoId;
             
+            % Do we have the parallelization toolbox?
+            is_parallel = true;
+            parallel_tb = ver("distcomp");
+            if isempty(parallel_tb)
+                is_parallel = false;
+            end
+            is_parallel = false;
+            
+            % Setup the progress bar.
             h = waitbar(0,'Initialize ...');
             
+            % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
             colors = cell(2*length(AutoId.theta),1);
             positions = cell(2*length(AutoId.theta),1);
             
-            for idx = 1:length(AutoId.theta)
-                f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
-                f(length(AutoId.theta)+...
-                  idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+            % Get the parallel pool ready.
+            if is_parallel
+                pool = gcp(); % may want to have a ready-use pool
             end
             
-            for idx=1:2*length(AutoId.theta)
-                [job_idx,c,p,cc] = fetchNext(f);
-                
-                positions{job_idx}  = p;
-                colors{job_idx}     = c;
-                cost(job_idx)       = cc;
-                try
-                    waitbar(idx/(2*length(AutoId.theta)),h,[num2str(round((100.0*idx/(2*length(AutoId.theta))))),'%']);
-                catch
-                    break;
+            % Compute the alignment.
+            num_tests = 2*length(AutoId.theta);
+            for idx = 1:length(AutoId.theta)
+                if is_parallel
+                    
+                    % Compute the alignment.
+                    f(idx) = parfeval(pool, @AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
+                    f(length(AutoId.theta)+...
+                        idx) = parfeval(pool, @AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+                else
+                    
+                    % Compute the alignment.
+                    [colors{idx},positions{idx},cost(idx)] = ...
+                        AutoId.local_alignment(col, pos, model, AutoId.theta(idx), +1, annotated);
+                    idx_off = idx + length(AutoId.theta);
+                    [colors{idx_off},positions{idx_off},cost(idx_off)] = ...
+                        AutoId.local_alignment(col, pos, model, AutoId.theta(idx), -1, annotated);
+                    
+                    % Update the progress.
+                    try
+                        waitbar(idx/num_tests,h,[num2str(round((100.0*idx/num_tests))),'%']);
+                    catch
+                        break;
+                    end
                 end
             end
             
+            % Wait for the computations to complete.
+            if is_parallel
+                for idx=1:2*length(AutoId.theta)
+                    [job_idx,c,p,cc] = fetchNext(f);
+                    
+                    positions{job_idx}  = p;
+                    colors{job_idx}     = c;
+                    cost(job_idx)       = cc;
+                    try
+                        waitbar(idx/(2*length(AutoId.theta)),h,[num2str(round((100.0*idx/(2*length(AutoId.theta))))),'%']);
+                    catch
+                        break;
+                    end
+                end
+            end
+            
+            % Done.
             try
                 close(h);
             catch
                 warning('Auto ID is canceled.');
             end
             
+            % Find the best alignment.
             [theta_idx] = find(cost==max(cost(:)));
-            
             pos = positions{theta_idx};
             col = colors{theta_idx};
-
             obj.log_likelihood = -AutoId.pdist2_maha([pos col], model.mu, model.sigma);
             aligned = [pos col];
         end
