@@ -25,14 +25,6 @@ classdef NeuroPALImage
     %           notes = experimental notes
     %      mp = matching pursuit (neuron detection) parameters
     %      neurons = the neurons in the image
-
-        
-    %% Public variables.
-    properties (Constant, Access = public)
-        
-        % NeuroPAL file version.
-        version = 1.0;
-    end
     
     
     %% Public methods.
@@ -130,6 +122,7 @@ classdef NeuroPALImage
             %   neurons = the neurons in the image
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the image file.
@@ -167,7 +160,7 @@ classdef NeuroPALImage
                 prefs = rmfield(prefs, 'body_part');
                 
                 % Update the file version.
-                version = NeuroPALImage.version;
+                version = ProgramInfo.version;
                 save(image_file, 'version', 'prefs', 'worm', '-append');
             end
             
@@ -243,7 +236,7 @@ classdef NeuroPALImage
                     mp_params = mp;
                     
                     % Update the file version.
-                    version = NeuroPALImage.version;
+                    version = ProgramInfo.version;
                     save(id_file, 'version', 'sp', 'mp_params', '-append');
                 end
             end
@@ -259,6 +252,7 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
@@ -350,7 +344,7 @@ classdef NeuroPALImage
                 
             % Save the CZI file to our MAT file format.
             np_file = strrep(czi_file, 'czi', 'mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
         
@@ -361,6 +355,7 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
@@ -452,7 +447,7 @@ classdef NeuroPALImage
             
             % Save the ND2 file to our MAT file format.
             np_file = strrep(nd2_file, 'nd2', 'mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
         
@@ -463,6 +458,7 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
@@ -558,7 +554,7 @@ classdef NeuroPALImage
                 suffix = length(any_file);
             end
             np_file = cat(2, any_file(1:(suffix(end) - 1)), '.mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
     end
