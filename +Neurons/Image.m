@@ -51,7 +51,7 @@ classdef Image < handle
         
             
         function add_neuron(obj, volume, position, nsz, scale)
-            %ADD_NEURON Adds a neuron to the list of neurons in obj.neurons
+            %ADD_NEURON Add a neuron to the list of neurons.
             %   by running one iteration of Matching Pursuit.
             %   volume: the full z-scored image.
             %   position: the location in the neighbourhood of which the
@@ -85,6 +85,25 @@ classdef Image < handle
             else
                 obj.neurons(end+1) = Neurons.Neuron(sp);
             end
+        end
+        
+        function del_neuron(obj, neuron_i)
+            %DEL_NEURON Delete a neuron from the list of neurons.
+            
+            % Is the index in range?
+            if neuron_i > length(obj.neurons)
+                return;
+            end
+            
+            % Delete the neuron.
+            neuron_rank = obj.neurons(neuron_i).rank;
+            obj.neurons(neuron_i) = [];
+            
+            % Adjust the ranks.
+            ranks = obj.get_ranks();
+            ranks_i = ranks > neuron_rank;
+            ranks(ranks_i) = ranks(ranks_i) - 1;
+            obj.add_ranks(ranks);
         end
 
         function rot_image = rotate_X_180(obj, rot_image)
@@ -359,6 +378,12 @@ classdef Image < handle
             for i=1:length(obj.neurons)
                 obj.neurons(i).rank = ranks(i);
             end
+        end
+        
+        function [neuron, i] = find_rank(obj, rank_num)
+            %FIND_RANK find the neuron with given rank.
+            i = find(obj.get_ranks() == rank_num,1);
+            neuron = obj.neurons(i);
         end
 
         function ranks = get_ranks(obj)
