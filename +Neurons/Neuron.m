@@ -10,24 +10,29 @@ classdef Neuron < handle
     end
 
     properties
+        % Neuron position & color.
         position % neuron pixel position (x,y,z)
         color % neuron color based on fitting (R,G,B,W,...), W = white channel, values=[0-255]
+        color_readout % neuron color based on readout from the image
         baseline % baseline noise values (R,G,B,W,...), values=[-1,1]
         covariance % 3x3 covariance matrix that's fit to the neuron
         truncation = 0 % Gaussian truncation value that defines the sharpness of the edge of neuron
-        deterministic_id  % neuron ID assigned by the deterministic model
-        probabilistic_ids % neuron IDs listed by descending probability
-        probabilistic_probs % neuron ID probabilities
+        aligned_xyzRGB % the neuron's position & color, aligned to the global model
+                
+        % User neuron ID.
         annotation = '' % neuron user selected annotation
         is_annotation_on = NaN % is the neuron's annotation ON, OFF, or neither (empty)
         annotation_confidence = -1 % user confidence about annotation
+        
+        % Auto neuron ID.
+        deterministic_id  % neuron ID assigned by the deterministic model
+        probabilistic_ids % neuron IDs listed by descending probability
+        probabilistic_probs % neuron ID probabilities
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
-        is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
-        color_readout % neuron color based on readout from the image
-        aligned_xyzRGB % the neuron's position & color, aligned to the global model
         
         % GUI properties.
         % MOVE TO IMAGE!!!!
+        is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
         MARKER_SIZE_NOT_SELECTED = 40 % unselected neuron marker size
         MARKER_SIZE_SELECTED = 200 % selected neuron marker size
         LINE_SIZE_NOT_SELECTED = 1 % unselected neuron line size
@@ -44,36 +49,39 @@ classdef Neuron < handle
             % Initialize the positions & colors.
             obj.position = superpixel.positions;
             obj.color = superpixel.color;
+            obj.color_readout = superpixel.color_readout;
             obj.baseline = superpixel.baseline;
             obj.covariance = squeeze(superpixel.covariances);
             
-            % Are there neurons?
-            if isfield(superpixel, 'color_readout')
-                obj.color_readout = superpixel.color_readout;
-            end
+            % Are the neurons ID'd?
             if isfield(superpixel, 'truncation')
                 obj.truncation = superpixel.truncation;
             end
-            
-            % Are the neurons ID'd?
+            if isfield(superpixel, 'aligned_xyzRGB')
+                obj.aligned_xyzRGB = superpixel.aligned_xyzRGB;
+            end
+            if isfield(superpixel, 'annotation')
+                obj.annotation = superpixel.annotation{1};
+            end
+            if isfield(superpixel, 'is_annotation_on')
+                obj.is_annotation_on = superpixel.is_annotation_on;
+            end
+            if isfield(superpixel, 'annotation_confidence')
+                obj.annotation_confidence = superpixel.annotation_confidence;
+            end
             if isfield(superpixel, 'deterministic_id')
                 obj.deterministic_id = superpixel.deterministic_id{1};
             end
             if isfield(superpixel, 'probabilistic_ids')
                 obj.probabilistic_ids = superpixel.probabilistic_ids;
             end
-            if isfield(superpixel, 'annotation')
-                obj.annotation = superpixel.annotation{1};
-            end
-            if isfield(superpixel, 'annotation_confidence')
-                obj.annotation_confidence = superpixel.annotation_confidence;
-            end
-            if isfield(superpixel, 'is_annotation_on')
-                obj.is_annotation_on = superpixel.is_annotation_on;
-            end
             if isfield(superpixel, 'probabilistic_probs')
                 obj.probabilistic_probs = superpixel.probabilistic_probs;
             end
+            if isfield(superpixel, 'rank')
+                obj.rank = superpixel.rank;
+            end
+            
             
             % GET RID OF THIS!!!
             prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);

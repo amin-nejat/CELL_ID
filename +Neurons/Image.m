@@ -293,7 +293,7 @@ classdef Image < handle
         end
 
         function is_annotations_on = get_is_annotations_on(obj)
-            %GET_IS_ANNOTATIONS_ON getter of neuron is_annotation_on s.
+            %GET_IS_ANNOTATIONS_ON getter of neuron is_annotation_ons.
             is_annotations_on = [];
             if isempty(obj.neurons)
                 return;
@@ -302,7 +302,7 @@ classdef Image < handle
         end
 
         function annotation_confidences = get_annotation_confidences(obj)
-            %GET_ANNOTATION_CONFIDENCES getter of neuron annotation_confidence s.
+            %GET_ANNOTATION_CONFIDENCES getter of neuron annotation_confidences.
             annotation_confidences = [];
             if isempty(obj.neurons)
                 return;
@@ -311,26 +311,26 @@ classdef Image < handle
         end
 
         function add_deterministic_ids(obj, deterministic_ids)
-            %ADD_DETERMINISTIC_IDS setter of neuron deterministic_id s.
+            %ADD_DETERMINISTIC_IDS setter of neuron deterministic_ids.
             for i=1:length(obj.neurons)
                 obj.neurons(i).deterministic_id = deterministic_ids{i};
             end
         end
 
         function deterministic_ids = get_deterministic_ids(obj)
-            %GET_DETERMINISTIC_IDS getter of neuron deterministic_id s.
+            %GET_DETERMINISTIC_IDS getter of neuron deterministic_ids.
             deterministic_ids = vertcat({obj.neurons.deterministic_id});
         end
 
         function add_probabilistic_ids(obj, probabilistic_ids)
-            %ADD_PROBABILISTIC_IDS setter of neuron probabilistic_id s.
+            %ADD_PROBABILISTIC_IDS setter of neuron probabilistic_ids.
             for i=1:length(obj.neurons)
                 obj.neurons(i).probabilistic_ids = probabilistic_ids(i, :);
             end
         end
 
         function probabilistic_ids = get_probabilistic_ids(obj)
-            %GET_PROBABILISTIC_IDS getter of neuron probabilistic_id s.
+            %GET_PROBABILISTIC_IDS getter of neuron probabilistic_ids.
             probabilistic_ids = [];
             if isempty(obj.neurons)
                 return;
@@ -339,30 +339,30 @@ classdef Image < handle
         end
 
         function add_probabilistic_probs(obj, probabilistic_probs)
-            %ADD_PROBABILISTIC_PROBS setter of neuron probabilistic_prob s.
+            %ADD_PROBABILISTIC_PROBS setter of neuron probabilistic_probs.
             for i=1:length(obj.neurons)
                 obj.neurons(i).probabilistic_probs = probabilistic_probs(i, :);
             end
         end
 
         function probabilistic_probs = get_probabilistic_probs(obj)
-            %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_prob s.
+            %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_probs.
             probabilistic_probs = [];
             if isempty(obj.neurons)
                 return;
             end
             probabilistic_probs = vertcat(obj.neurons.probabilistic_probs);
         end
-
+        
         function add_ranks(obj, ranks)
-            %ADD_RANKS setter of neuron rank s.
+            %ADD_RANKS setter of neuron ranks.
             for i=1:length(obj.neurons)
                 obj.neurons(i).rank = ranks(i);
             end
         end
 
         function ranks = get_ranks(obj)
-            %GET_RANKS getter of neuron rank s.
+            %GET_RANKS getter of neuron ranks.
             ranks = [];
             if isempty(obj.neurons)
                 return;
@@ -372,7 +372,7 @@ classdef Image < handle
 
 
         function colors = get_marker_colors(obj)
-            %GET_MARKER_COLORS getter of neuron marker_color s.
+            %GET_MARKER_COLORS getter of neuron marker_colors.
             colors = zeros(length(obj.neurons), 3);
             for i=1:length(obj.neurons)
                 colors(i,:) = obj.neurons(i).get_marker_color();
@@ -380,7 +380,7 @@ classdef Image < handle
         end
 
         function sizes = get_marker_sizes(obj)
-            %GET_MARKER_SIZES getter of neuron marker_size s.
+            %GET_MARKER_SIZES getter of neuron marker_sizes.
             sizes = zeros(length(obj.neurons), 1);
             for i=1:length(obj.neurons)
                 sizes(i) = obj.neurons(i).get_marker_size();
@@ -388,7 +388,7 @@ classdef Image < handle
         end
 
         function sizes = get_line_sizes(obj)
-            %GET_LINE_COLORS getter of neuron line_size s.
+            %GET_LINE_COLORS getter of neuron line_sizes.
             sizes = zeros(length(obj.neurons), 1);
             for i=1:length(obj.neurons)
                 sizes(i) = obj.neurons(i).get_line_size();
@@ -396,7 +396,7 @@ classdef Image < handle
         end
 
         function image = get_3d_shape(obj,sz,nsz)
-            %GET_3D_SHAPE getter of neuron 3d reconstruction s.
+            %GET_3D_SHAPE getter of neuron 3d reconstructions.
             %   sz: size of the full reconstructed image, which is the same
             %   size of the original image used for fitting.
             %   nsz: size of a neuron used for reconstruction.
@@ -428,7 +428,7 @@ classdef Image < handle
         end
 
         function positions = get_positions(obj)
-            %GET_POSITIONS getter of neuron position s.
+            %GET_POSITIONS getter of neuron positions.
             positions = [];
             if isempty(obj.neurons)
                 return;
@@ -437,7 +437,7 @@ classdef Image < handle
         end
         
         function colors = get_colors(obj)
-            %GET_COLORS getter of neuron color s.
+            %GET_COLORS getter of neuron colors.
             colors = [];
             if isempty(obj.neurons)
                 return;
@@ -446,7 +446,7 @@ classdef Image < handle
         end
         
         function colors = get_colors_readout(obj)
-            %GET_COLORS_READOUT getter of neuron color readout s.
+            %GET_COLORS_READOUT getter of neuron color readouts.
             colors = [];
             if isempty(obj.neurons)
                 return;
@@ -455,23 +455,41 @@ classdef Image < handle
         end
 
         function baselines = get_baselines(obj)
+            %GET_BASELINES getter of neuron baselines.
             baselines = [];
             if isempty(obj.neurons)
                 return;
             end
-            %GET_BASELINES getter of neuron baseline s.
             baselines = vertcat(obj.neurons.baseline);
         end
 
         function covariances = get_covariances(obj)
-            %GET_COVARIANCES getter of neuron covariance s.
+            %GET_COVARIANCES getter of neuron covariances.
             covariances = [];
             if isempty(obj.neurons)
                 return;
             end
             covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
         end
+        
+        function truncations = get_truncations(obj)
+            %GET_TRUNCATIONS getter of neuron truncations.
+            truncations  = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            truncations = vertcat(obj.neurons.truncation);
+        end
 
+        function aligned_xyzRGBs = get_aligned_xyzRGBs(obj)
+            %GET_ALIGNED_XYZRGBS getter of aligned neuron positions +  colors.
+            aligned_xyzRGBs = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            aligned_xyzRGBs = vertcat(obj.neurons.aligned_xyzRGB);
+        end
+        
         function add_meta_data(obj, key, value)
             %ADD_META_DATA adding a (key,value) pair in the meta_data data
             %structure for intermediate analysis, examples are LL (log
@@ -520,17 +538,23 @@ classdef Image < handle
             end
             
             % Marshall the data into a struct.
+            % Neuron position & color.
             sp.positions = obj.get_positions();
             sp.color = obj.get_colors();
             sp.color_readout = obj.get_colors_readout();
             sp.baseline = obj.get_baselines();
             sp.covariances = obj.get_covariances();
-            sp.probabilistic_ids = obj.get_probabilistic_ids();
-            sp.deterministic_id = obj.get_deterministic_ids()';
+            sp.truncation = obj.get_truncations();
+            sp.aligned_xyzRGB  = obj.get_aligned_xyzRGBs();
+            % Neuron user ID.
             sp.annotation = obj.get_annotations();
             sp.is_annotation_on = obj.get_is_annotations_on();
-            sp.probabilistic_probs = obj.get_probabilistic_probs();
             sp.annotation_confidence = obj.get_annotation_confidences();
+            % Neuron auto ID.
+            sp.probabilistic_ids = obj.get_probabilistic_ids();
+            sp.deterministic_id = obj.get_deterministic_ids()';
+            sp.probabilistic_probs = obj.get_probabilistic_probs();
+            sp.rank = obj.get_ranks();
         end
     end
 end
