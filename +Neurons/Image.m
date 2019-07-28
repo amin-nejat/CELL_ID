@@ -7,6 +7,7 @@ classdef Image < handle
         bodypart % a string consisting the name of the worm's body part
         meta_data % key, value pairs for intermediate analysis
         scale = ones(1,3); % (x,y,z) scale
+        atlas_version = []; % the atlas version used to ID the neurons
     end
 
     % Public methods.
@@ -25,6 +26,7 @@ classdef Image < handle
             % Initialize the data.
             obj.bodypart = bodypart;
             
+            % Set the scale.
             if any(strcmp(varargin, 'scale'))
                 obj.scale = varargin{find(strcmp(varargin, 'scale'))+1}(:)';
             end
@@ -34,6 +36,11 @@ classdef Image < handle
                 obj.meta_data= varargin{find(strcmp(varargin, 'meta_data'))+1};
             else
                 obj.meta_data = containers.Map();
+            end
+            
+            % Get the atlas version.
+            if isfield(superpixels, 'atlas_version')
+                obj.atlas_version = superpixels.atlas_version;
             end
             
             % Are there neurons?
@@ -576,6 +583,7 @@ classdef Image < handle
             sp.is_annotation_on = obj.get_is_annotations_on();
             sp.annotation_confidence = obj.get_annotation_confidences();
             % Neuron auto ID.
+            sp.atlas_version = obj.atlas_version;
             sp.probabilistic_ids = obj.get_probabilistic_ids();
             sp.deterministic_id = obj.get_deterministic_ids()';
             sp.probabilistic_probs = obj.get_probabilistic_probs();

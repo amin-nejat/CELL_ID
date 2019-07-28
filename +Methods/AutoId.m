@@ -353,6 +353,9 @@ classdef AutoId < handle
                 obj.atlas = varargin{find(strcmp(varargin, 'atlas'))+1};
             end
             
+            % Set the atlas version.
+            im.atlas_version = obj.atlas_version;
+            
             % neurons that are already annotated
             annotations = im.get_annotations();
             annotation_confidences = im.get_annotation_confidences();
