@@ -8,7 +8,7 @@ classdef ImageAnalysis
     
    % Public methods.
     methods (Static)
-        function saveID2CSV(csvfile, prefs, data, neurons, um_scale)
+        function saveID2CSV(csvfile, prefs, data, data_zscored, neurons, um_scale)
             %SAVEID2CSV save the IDs, position, & colors to a CSV file.
 
             % Measure the 8 image corners to determine an appropriate
@@ -33,6 +33,17 @@ classdef ImageAnalysis
             corner(7) = median(GFP_image(x1,y2,z2), 'all');
             corner(8) = median(GFP_image(x2,y2,z2), 'all');
             min_corner = min(corner);
+            
+            % Measure the neurons GFP channel.
+            ns = neurons.neurons;
+            GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
+            GFP_colors = nan(length(ns),1);
+            for i=1:length(ns)
+                cpatch = Methods.Utils.subcube(GFP_image, ...
+                    round(ns(i).position), [1,1,0]);
+                GFP_colors(i) = median(reshape(cpatch, ...
+                    [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
+            end
             
             % Measure the neurons to determine an appropriate GFP Otsu threshold.
             colors = neurons.get_colors_readout();
@@ -91,7 +102,7 @@ classdef ImageAnalysis
                         n.probabilistic_ids{1}, n.probabilistic_probs(1), ...
                         pos(1), pos(2), pos(3), ...
                         n.color_readout(1), n.color_readout(2), n.color_readout(3), n.color_readout(4), ...
-                        n.color_readout(GFP_i));
+                        GFP_colors(i));
                     
                 % Write the real & aligned data.
                 else
@@ -103,7 +114,7 @@ classdef ImageAnalysis
                         n.color_readout(1), n.color_readout(2), n.color_readout(3), n.color_readout(4), ...
                         aligned_pos(1), aligned_pos(2), aligned_pos(3), ...
                         n.aligned_xyzRGB(4), n.aligned_xyzRGB(5), n.aligned_xyzRGB(6), ...
-                        n.color_readout(GFP_i));
+                        GFP_colors(i));
                 end
             end
             
