@@ -20,8 +20,8 @@ classdef AutoId < handle
     end
     
     properties
-        
-        atlas = getfield(load('atlas.mat'), 'atlas') % atlas data structure containing neuron names, positions, colors, and their covariances
+        atlas_version % the version for the atlas
+        atlas % atlas data structure containing neuron names, positions, colors, and their covariances
         
         log_likelihood % likelihood matrix, of size n_mp x n_possible
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
@@ -39,6 +39,16 @@ classdef AutoId < handle
              else
                obj = instance;
              end
+        end
+        
+        function [atlas, version] = getAtlas()
+            %GETATLAS get the atlas data.
+            persistent data;
+            if isempty(data)
+                data = load('atlas.mat');
+            end
+            atlas = data.atlas;
+            version = data.version;
         end
         
         function BatchId(file, bodypart)
@@ -256,6 +266,7 @@ classdef AutoId < handle
     methods
         function obj = AutoId()
             % load the statistical atlas
+            [obj.atlas, obj.atlas_version] = Methods.AutoId.getAtlas();
         end
       
         function add_to_image(obj, im)
