@@ -205,7 +205,7 @@ classdef NeuroPALImage
                                 Methods.Preprocess.zscore_frame(double(data_RGBW));
                             
                             % Read the patch colors.
-                            num_neurons = size(sp.colors,1);
+                            num_neurons = size(sp.color,1);
                             sp.color_readout = nan(num_neurons,4);
                             for i = 1:num_neurons
                                 patch = Methods.Utils.subcube(data_zscored, ...
