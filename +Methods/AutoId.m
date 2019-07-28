@@ -259,7 +259,7 @@ classdef AutoId < handle
         end
       
         function add_to_image(obj, im)
-            % add_to_image  function simply uptdates some properties of the image
+            % add_to_image  function simply updates some properties of the image
             % structure that depend on auto_id
             
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
@@ -381,14 +381,14 @@ classdef AutoId < handle
             % update_auto_id changes the properties of auto_id given human has given 
             % the identity neuron to the neuron_i-th neuron (with the mp order).
             % it also updates the image object accordingly.
+            import Methods.*;
+            
+            % Update the log likelihood.
             obj.log_likelihood(neuron_i,:)= AutoId.min_log_likelihood;
-            
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
-            
             if ~strcmp(neuron, 'NaN')
                 obj.log_likelihood(neuron_i, strcmp(neuron_names, neuron))  = AutoId.max_log_likelihood;
             end
-            
             obj.compute_assignments();
             
             % convert the assignments to names and update the information
