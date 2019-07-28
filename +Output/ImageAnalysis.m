@@ -46,9 +46,8 @@ classdef ImageAnalysis
             end
             
             % Measure the neurons to determine an appropriate GFP Otsu threshold.
-            colors = neurons.get_colors_readout();
-            [otsu_thresh, otsu_score] = graythresh(colors(:,GFP_i));
-            otsu_thresh = otsu_thresh * max(colors(:,GFP_i));
+            [otsu_thresh, otsu_score] = graythresh(GFP_colors);
+            otsu_thresh = otsu_thresh * max(GFP_colors);
             
             % Write the CSV titles & row data to a file
             aligned_xyzRGBs = neurons.get_aligned_xyzRGBs();

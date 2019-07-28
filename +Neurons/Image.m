@@ -107,6 +107,9 @@ classdef Image < handle
             obj.neurons(neuron_i) = [];
             
             % Adjust the ranks.
+            if isempty(neuron_rank)
+                return;
+            end
             ranks = obj.get_ranks();
             ranks_i = ranks > neuron_rank;
             ranks(ranks_i) = ranks(ranks_i) - 1;
