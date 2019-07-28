@@ -206,6 +206,11 @@ classdef Image < handle
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
         end
         
+        function num = num_user_unid_neurons(obj)
+            %NUM_USER_UNID_NEURONS the number of user unID'd neurons in the image
+            num = obj.num_neurons() - obj.num_user_id_neurons();
+        end
+        
         function num = num_auto_id_neurons(obj)
             %NUM_AUTO_ID_NEURONS the number of auto ID'd neurons in the image
             num = sum(arrayfun(@(x) ~isempty(x.deterministic_id), obj.neurons));
