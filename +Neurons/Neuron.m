@@ -130,6 +130,7 @@ classdef Neuron < handle
             obj.probabilistic_ids = [];
             obj.probabilistic_probs = [];
             obj.rank = [];
+            obj.aligned_xyzRGB = [];
         end
         
         function rotate(obj, rot, sz, newsz)

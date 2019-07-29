@@ -6,6 +6,7 @@ classdef ProgramInfo
         name = 'NeuroPAL Auto ID'; % program name
         version = 1.0; % software version
         version_URL = 'https://raw.githubusercontent.com/amin-nejat/CELL_ID/master/version.info';
+        website_URL = 'http://hobertlab.org/neuropal/';
     end
     
    % Public methods.
