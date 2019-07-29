@@ -71,7 +71,7 @@ octave-core
 *.asv
 
 # pdf files
-*.pdf
+#*.pdf
 
 # omit bash scripts
 *.sh
