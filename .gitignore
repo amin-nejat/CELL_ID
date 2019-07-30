@@ -91,4 +91,4 @@ octave-core
 visualize_light_prefs.mat
 External_Dependencies
 visualize
-visualize.prj
+*.prj
