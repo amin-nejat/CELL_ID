@@ -55,7 +55,9 @@ classdef Image < handle
             end
         end
         
-            
+        
+        %% ADD & DELETE NEURONS.
+        
         function add_neuron(obj, volume, position, nsz, scale)
             %ADD_NEURON Add a neuron to the list of neurons.
             %   by running one iteration of Matching Pursuit.
@@ -117,7 +119,342 @@ classdef Image < handle
             ranks(ranks_i) = ranks(ranks_i) - 1;
             obj.add_ranks(ranks);
         end
+        
 
+        %% COUNT NERUONS.
+
+        function num = num_neurons(obj)
+            %NUM_NEURONS the number of neurons in the image
+            num = length(obj.neurons);
+        end
+
+        function num = num_user_id_neurons(obj)
+            %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
+            num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
+        end
+        
+        function num = num_user_unid_neurons(obj)
+            %NUM_USER_UNID_NEURONS the number of user unID'd neurons in the image
+            num = obj.num_neurons() - obj.num_user_id_neurons();
+        end
+        
+        function num = num_auto_id_neurons(obj)
+            %NUM_AUTO_ID_NEURONS the number of auto ID'd neurons in the image
+            num = sum(arrayfun(@(x) ~isempty(x.deterministic_id), obj.neurons));
+        end
+
+        function is_fully_annotated = is_all_annotated(obj)
+            %IS_ALL_ANNOTATED do all neurons have user annotations?
+            is_fully_annotated = obj.num_neurons() == obj.num_user_id_neurons();
+        end
+        
+        function is_annotated = is_any_annotated(obj)
+            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
+            is_annotated = obj.num_auto_id_neurons() > 0;
+        end
+
+        function is_auto_IDd = is_any_auto_ID(obj)
+            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
+            is_auto_IDd = obj.num_user_id_neurons() > 0;
+        end
+        
+        
+        %% NEURON POSITIONS, COLORS, & SHAPES.
+        
+        function positions = get_positions(obj)
+            %GET_POSITIONS getter of neuron positions.
+            positions = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            positions = vertcat(obj.neurons.position);
+        end
+        
+        function colors = get_colors(obj)
+            %GET_COLORS getter of neuron colors.
+            colors = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            colors = vertcat(obj.neurons.color);
+        end
+        
+        function colors = get_colors_readout(obj)
+            %GET_COLORS_READOUT getter of neuron color readouts.
+            colors = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            colors = vertcat(obj.neurons.color_readout);
+        end
+
+        function baselines = get_baselines(obj)
+            %GET_BASELINES getter of neuron baselines.
+            baselines = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            baselines = vertcat(obj.neurons.baseline);
+        end
+
+        function covariances = get_covariances(obj)
+            %GET_COVARIANCES getter of neuron covariances.
+            covariances = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            covariances = vertcat(obj.neurons.covariance);
+            %covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
+        end
+        
+        function truncations = get_truncations(obj)
+            %GET_TRUNCATIONS getter of neuron truncations.
+            truncations  = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            truncations = vertcat(obj.neurons.truncation);
+        end
+        
+        
+        %% USER ID'D NEURONS.
+        
+        function names = user_id_neuron_names(obj)
+            %USER_ID_NEURON_NAMES get a list of the user ID neuron names
+            names = {};
+            for i = 1:length(obj.neurons)
+                if ~isempty(obj.neurons(i).annotation)
+                    names{end+1} = obj.neurons(i).annotation;
+                end
+            end
+        end
+
+        function neurons = user_id_neurons(obj)
+            %USER_ID_NEURONS get a list of the user ID neurons
+            id_neurons = arrayfun(@(x) ~isempty(x.annotation), obj.neurons);
+            neurons = obj.neurons(id_neurons);
+        end
+
+        function [neuron, i] = find_user_id_neuron(obj, name)
+            %FIND_USER_ID find a neuron by user ID name
+            neuron = [];
+            for i = 1:length(obj.neurons)
+                if strncmp(name, obj.neurons(i).annotation, length(name))
+                    neuron = obj.neurons(i);
+                    return;
+                end
+            end
+            i = [];
+        end
+        
+        function annotations = get_annotations(obj)
+            %GET_ANNOTATIONS getter of neuron annotations.
+            annotations = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            annotations = vertcat({obj.neurons.annotation})';
+        end
+
+        function is_annotations_on = get_is_annotations_on(obj)
+            %GET_IS_ANNOTATIONS_ON getter of neuron is_annotation_ons.
+            is_annotations_on = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            is_annotations_on = vertcat(obj.neurons.is_annotation_on);
+        end
+
+        function annotation_confidences = get_annotation_confidences(obj)
+            %GET_ANNOTATION_CONFIDENCES getter of neuron annotation_confidences.
+            annotation_confidences = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            annotation_confidences = vertcat(obj.neurons.annotation_confidence);
+        end
+        
+        function delete_annotations(obj)
+            %DELETE_ANNOTATIONS delete all user IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_annotation();
+            end
+        end
+        
+        
+        %% AUTO ID'D NEURONS.
+        
+        function add_deterministic_ids(obj, deterministic_ids)
+            %ADD_DETERMINISTIC_IDS setter of neuron deterministic_ids.
+            for i=1:length(obj.neurons)
+                obj.neurons(i).deterministic_id = deterministic_ids{i};
+            end
+        end
+
+        function deterministic_ids = get_deterministic_ids(obj)
+            %GET_DETERMINISTIC_IDS getter of neuron deterministic_ids.
+            deterministic_ids = vertcat({obj.neurons.deterministic_id});
+        end
+
+        function add_probabilistic_ids(obj, probabilistic_ids)
+            %ADD_PROBABILISTIC_IDS setter of neuron probabilistic_ids.
+            for i=1:length(obj.neurons)
+                obj.neurons(i).probabilistic_ids = probabilistic_ids(i, :);
+            end
+        end
+
+        function probabilistic_ids = get_probabilistic_ids(obj)
+            %GET_PROBABILISTIC_IDS getter of neuron probabilistic_ids.
+            probabilistic_ids = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            probabilistic_ids = vertcat(obj.neurons.probabilistic_ids);
+        end
+
+        function add_probabilistic_probs(obj, probabilistic_probs)
+            %ADD_PROBABILISTIC_PROBS setter of neuron probabilistic_probs.
+            for i=1:length(obj.neurons)
+                obj.neurons(i).probabilistic_probs = probabilistic_probs(i, :);
+            end
+        end
+
+        function probabilistic_probs = get_probabilistic_probs(obj)
+            %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_probs.
+            probabilistic_probs = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            probabilistic_probs = vertcat(obj.neurons.probabilistic_probs);
+        end
+        
+        function add_ranks(obj, ranks)
+            %ADD_RANKS setter of neuron ranks.
+            for i=1:length(obj.neurons)
+                obj.neurons(i).rank = ranks(i);
+            end
+        end
+        
+        function [neuron, i] = find_rank(obj, rank_num)
+            %FIND_RANK find the neuron with given rank.
+            i = find(obj.get_ranks() == rank_num,1);
+            neuron = obj.neurons(i);
+        end
+
+        function ranks = get_ranks(obj)
+            %GET_RANKS getter of neuron ranks.
+            ranks = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            ranks = vertcat(obj.neurons.rank);
+        end
+        
+        function delete_model_IDs(obj)
+            %DELETE_MODEL_IDS delete all the model-predicted IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).delete_model_ID();
+            end
+        end
+        
+        
+        %% NEURON STATISTICAL ATLAS.
+        
+        function aligned_xyzRGBs = get_aligned_xyzRGBs(obj)
+            %GET_ALIGNED_XYZRGBS getter of aligned neuron positions +  colors.
+            aligned_xyzRGBs = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            aligned_xyzRGBs = vertcat(obj.neurons.aligned_xyzRGB);
+        end
+        
+        function aligned = get_neurons_aligned(obj)
+            %GET_NEURONS_ALIGNED get the aligned neuron position & color
+            %data (x,y,z,R,G,B,W)
+            aligned = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            aligned = vertcat(obj.neurons.aligned_xyzRGB);
+        end
+
+        
+        %% NEURON META DATA.
+                
+        function add_meta_data(obj, key, value)
+            %ADD_META_DATA adding a (key,value) pair in the meta_data data
+            %structure for intermediate analysis, examples are LL (log
+            %likelihood) etc.
+            obj.meta_data(key) = value;
+        end
+
+        function value = get_meta_data(obj, key)
+            %GET_META_DATA returns the value paired with key.
+            value = obj.meta_data(key);
+        end
+        
+        
+        %% FIND NEARBY NEURONS.
+        
+        function [neuron, i] = nearest_unannotated(obj, neuron_i)
+            %NEAREST_UNANNOTATED find the nearest unannoted neuron
+
+            % Find the unannotated neurons.
+            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            unIDd_i = setdiff(unIDd_i, neuron_i);
+            positions = round(vertcat(obj.neurons(unIDd_i).position));
+
+            % No neurons found.
+            neuron = [];
+            i = [];
+            if isempty(positions)
+                return;
+            end
+            
+            % Correct the positions for image scale. 
+            % Gonzalo (me) transposed obj.scale because otherwise it
+            % generates an error. To be checked whether this is the right
+            % solution
+            position = obj.neurons(neuron_i).position;
+            position = position .* obj.scale;
+            positions = positions .* obj.scale;
+            
+            % Find the nearest unannotated neuron in (x,y,z).
+            [~,min_i] = min(sum((positions - position).^2,2));
+            i = unIDd_i(min_i);
+            neuron = obj.neurons(i);
+        end
+
+        function [neuron, i] = nearest_unannotated_z(obj, neuron_i)
+            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
+            
+            % Find the unannotated neurons.
+            position = round(obj.neurons(neuron_i).position);
+            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
+            positions = round(vertcat(obj.neurons(unIDd_i).position));
+            
+            % No neurons found.
+            neuron = [];
+            i = [];
+            if isempty(positions)
+                return;
+            end
+            
+            % Find the nearest unannotated neuron in z.
+            [~, min_z_i] = min(abs(positions(:,3) - position(3)));
+            min_z = positions(min_z_i,3);
+            min_z_i = find(positions(:,3) == min_z);
+            
+            % Find the nearest unannotated neuron in (x,y).
+            [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
+            i = unIDd_i(min_z_i(min_xy_i));
+            neuron = obj.neurons(i);
+        end
+        
+        
+        %% ROTATE THE IMAGE,NEURONS, OR BOTH.
+        
         function rot_image = rotate_X_180(obj, rot_image)
             %ROTATE_X_180 Rotate everything 180 degrees around the x-axis.
             %   image: the image to rotate
@@ -200,219 +537,10 @@ classdef Image < handle
                 obj.neurons(i).rotate(rot_mat,sz([1,2,3]),newsz([1,2,3]))
             end
         end
-
-        function num = num_neurons(obj)
-            %NUM_NEURONS the number of neurons in the image
-            num = length(obj.neurons);
-        end
-
-        function num = num_user_id_neurons(obj)
-            %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
-            num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
-        end
         
-        function num = num_user_unid_neurons(obj)
-            %NUM_USER_UNID_NEURONS the number of user unID'd neurons in the image
-            num = obj.num_neurons() - obj.num_user_id_neurons();
-        end
         
-        function num = num_auto_id_neurons(obj)
-            %NUM_AUTO_ID_NEURONS the number of auto ID'd neurons in the image
-            num = sum(arrayfun(@(x) ~isempty(x.deterministic_id), obj.neurons));
-        end
-
-        function is_fully_annotated = is_all_annotated(obj)
-            %IS_ALL_ANNOTATED do all neurons have user annotations?
-            is_fully_annotated = obj.num_neurons() == obj.num_user_id_neurons();
-        end
+        %% GUI DRAWING METHODS.
         
-        function is_annotated = is_any_annotated(obj)
-            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
-            is_annotated = obj.num_auto_id_neurons() > 0;
-        end
-
-        function is_auto_IDd = is_any_auto_ID(obj)
-            %IS_ANY_ANNOTATED do any of the neurons have user annotations?
-            is_auto_IDd = obj.num_user_id_neurons() > 0;
-        end
-        
-        function names = user_id_neuron_names(obj)
-            %USER_ID_NEURON_NAMES get a list of the user ID neuron names
-            names = {};
-            for i = 1:length(obj.neurons)
-                if ~isempty(obj.neurons(i).annotation)
-                    names{end+1} = obj.neurons(i).annotation;
-                end
-            end
-        end
-
-        function neurons = user_id_neurons(obj)
-            %USER_ID_NEURONS get a list of the user ID neurons
-            id_neurons = arrayfun(@(x) ~isempty(x.annotation), obj.neurons);
-            neurons = obj.neurons(id_neurons);
-        end
-
-        function [neuron, i] = find_user_id_neuron(obj, name)
-            %FIND_USER_ID find a neuron by user ID name
-            neuron = [];
-            for i = 1:length(obj.neurons)
-                if strncmp(name, obj.neurons(i).annotation, length(name))
-                    neuron = obj.neurons(i);
-                    return;
-                end
-            end
-            i = [];
-        end
-        
-        function [neuron, i] = nearest_unannotated(obj, neuron_i)
-            %NEAREST_UNANNOTATED find the nearest unannoted neuron
-
-            % Find the unannotated neurons.
-            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
-            unIDd_i = setdiff(unIDd_i, neuron_i);
-            positions = round(vertcat(obj.neurons(unIDd_i).position));
-
-            % No neurons found.
-            neuron = [];
-            i = [];
-            if isempty(positions)
-                return;
-            end
-            
-            % Correct the positions for image scale. 
-            % Gonzalo (me) transposed obj.scale because otherwise it
-            % generates an error. To be checked whether this is the right
-            % solution
-            position = obj.neurons(neuron_i).position;
-            position = position .* obj.scale;
-            positions = positions .* obj.scale;
-            
-            % Find the nearest unannotated neuron in (x,y,z).
-            [~,min_i] = min(sum((positions - position).^2,2));
-            i = unIDd_i(min_i);
-            neuron = obj.neurons(i);
-        end
-
-        function [neuron, i] = nearest_unannotated_z(obj, neuron_i)
-            %NEAREST_UNANNOTATED_Z find the nearest unannoted neuron in z
-            
-            % Find the unannotated neurons.
-            position = round(obj.neurons(neuron_i).position);
-            unIDd_i = find(arrayfun(@(x) isempty(x.annotation), obj.neurons));
-            positions = round(vertcat(obj.neurons(unIDd_i).position));
-            
-            % No neurons found.
-            neuron = [];
-            i = [];
-            if isempty(positions)
-                return;
-            end
-            
-            % Find the nearest unannotated neuron in z.
-            [~, min_z_i] = min(abs(positions(:,3) - position(3)));
-            min_z = positions(min_z_i,3);
-            min_z_i = find(positions(:,3) == min_z);
-            
-            % Find the nearest unannotated neuron in (x,y).
-            [~, min_xy_i] = min(sum(positions(min_z_i,1:2).^2) - sum(position(1:2).^2));
-            i = unIDd_i(min_z_i(min_xy_i));
-            neuron = obj.neurons(i);
-        end
-        
-        function annotations = get_annotations(obj)
-            %GET_ANNOTATIONS getter of neuron annotations.
-            annotations = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            annotations = vertcat({obj.neurons.annotation})';
-        end
-
-        function is_annotations_on = get_is_annotations_on(obj)
-            %GET_IS_ANNOTATIONS_ON getter of neuron is_annotation_ons.
-            is_annotations_on = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            is_annotations_on = vertcat(obj.neurons.is_annotation_on);
-        end
-
-        function annotation_confidences = get_annotation_confidences(obj)
-            %GET_ANNOTATION_CONFIDENCES getter of neuron annotation_confidences.
-            annotation_confidences = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            annotation_confidences = vertcat(obj.neurons.annotation_confidence);
-        end
-
-        function add_deterministic_ids(obj, deterministic_ids)
-            %ADD_DETERMINISTIC_IDS setter of neuron deterministic_ids.
-            for i=1:length(obj.neurons)
-                obj.neurons(i).deterministic_id = deterministic_ids{i};
-            end
-        end
-
-        function deterministic_ids = get_deterministic_ids(obj)
-            %GET_DETERMINISTIC_IDS getter of neuron deterministic_ids.
-            deterministic_ids = vertcat({obj.neurons.deterministic_id});
-        end
-
-        function add_probabilistic_ids(obj, probabilistic_ids)
-            %ADD_PROBABILISTIC_IDS setter of neuron probabilistic_ids.
-            for i=1:length(obj.neurons)
-                obj.neurons(i).probabilistic_ids = probabilistic_ids(i, :);
-            end
-        end
-
-        function probabilistic_ids = get_probabilistic_ids(obj)
-            %GET_PROBABILISTIC_IDS getter of neuron probabilistic_ids.
-            probabilistic_ids = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            probabilistic_ids = vertcat(obj.neurons.probabilistic_ids);
-        end
-
-        function add_probabilistic_probs(obj, probabilistic_probs)
-            %ADD_PROBABILISTIC_PROBS setter of neuron probabilistic_probs.
-            for i=1:length(obj.neurons)
-                obj.neurons(i).probabilistic_probs = probabilistic_probs(i, :);
-            end
-        end
-
-        function probabilistic_probs = get_probabilistic_probs(obj)
-            %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_probs.
-            probabilistic_probs = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            probabilistic_probs = vertcat(obj.neurons.probabilistic_probs);
-        end
-        
-        function add_ranks(obj, ranks)
-            %ADD_RANKS setter of neuron ranks.
-            for i=1:length(obj.neurons)
-                obj.neurons(i).rank = ranks(i);
-            end
-        end
-        
-        function [neuron, i] = find_rank(obj, rank_num)
-            %FIND_RANK find the neuron with given rank.
-            i = find(obj.get_ranks() == rank_num,1);
-            neuron = obj.neurons(i);
-        end
-
-        function ranks = get_ranks(obj)
-            %GET_RANKS getter of neuron ranks.
-            ranks = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            ranks = vertcat(obj.neurons.rank);
-        end
-
-
         function colors = get_marker_colors(obj)
             %GET_MARKER_COLORS getter of neuron marker_colors.
             colors = zeros(length(obj.neurons), 3);
@@ -468,106 +596,9 @@ classdef Image < handle
                 image = Utils.superpose(image, round(obj.neurons(i).position), recon);
             end
         end
-
-        function positions = get_positions(obj)
-            %GET_POSITIONS getter of neuron positions.
-            positions = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            positions = vertcat(obj.neurons.position);
-        end
         
-        function colors = get_colors(obj)
-            %GET_COLORS getter of neuron colors.
-            colors = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            colors = vertcat(obj.neurons.color);
-        end
         
-        function colors = get_colors_readout(obj)
-            %GET_COLORS_READOUT getter of neuron color readouts.
-            colors = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            colors = vertcat(obj.neurons.color_readout);
-        end
-
-        function baselines = get_baselines(obj)
-            %GET_BASELINES getter of neuron baselines.
-            baselines = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            baselines = vertcat(obj.neurons.baseline);
-        end
-
-        function covariances = get_covariances(obj)
-            %GET_COVARIANCES getter of neuron covariances.
-            covariances = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            covariances = vertcat(obj.neurons.covariance);
-            %covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
-        end
-        
-        function truncations = get_truncations(obj)
-            %GET_TRUNCATIONS getter of neuron truncations.
-            truncations  = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            truncations = vertcat(obj.neurons.truncation);
-        end
-
-        function aligned_xyzRGBs = get_aligned_xyzRGBs(obj)
-            %GET_ALIGNED_XYZRGBS getter of aligned neuron positions +  colors.
-            aligned_xyzRGBs = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            aligned_xyzRGBs = vertcat(obj.neurons.aligned_xyzRGB);
-        end
-        
-        function add_meta_data(obj, key, value)
-            %ADD_META_DATA adding a (key,value) pair in the meta_data data
-            %structure for intermediate analysis, examples are LL (log
-            %likelihood) etc.
-            obj.meta_data(key) = value;
-        end
-
-        function value = get_meta_data(obj, key)
-            %GET_META_DATA returns the value paired with key.
-            value = obj.meta_data(key);
-        end
-        
-        function aligned = get_neurons_aligned(obj)
-            %GET_NEURONS_ALIGNED get the aligned neuron position & color
-            %data (x,y,z,R,G,B,W)
-            aligned = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            aligned = vertcat(obj.neurons.aligned_xyzRGB);
-        end
-
-        function delete_annotations(obj)
-            %DELETE_ANNOTATIONS delete all user IDs.
-            for i = 1:length(obj.neurons)
-                obj.neurons(i).delete_annotation();
-            end
-        end
-        
-        function delete_model_IDs(obj)
-            %DELETE_MODEL_IDS delete all the model-predicted IDs.
-            for i = 1:length(obj.neurons)
-                obj.neurons(i).delete_model_ID();
-            end
-        end
+        %% DEPRECATED SAVING METHOD.
         
         function sp = to_superpixel(obj)
             %TO_SUPERPIXEL coverts the neurons to a superpixel data
