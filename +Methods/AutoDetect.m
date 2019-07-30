@@ -42,12 +42,12 @@ classdef AutoDetect < handle
            end
            
            % Preprocess the colors.
-           data_RGBW = double(data(:,:,:,prefs.RGBW));
+           data_RGBW = double(data(:,:,:,prefs.RGBW(~isnan(prefs.RGBW))));
            data_zscored_raw = Methods.Preprocess.zscore_frame(double(data_RGBW));
            
            % Remove artifacts.
            [~, mask] = Methods.Preprocess.filter_gut_lysosomes(data_zscored_raw);
-           mask = repmat(mask,1,1,1,length(prefs.RGBW));
+           mask = repmat(mask,1,1,1,length(prefs.RGBW(~isnan(prefs.RGBW))));
            data_zscored = data_zscored_raw;
            data_zscored(mask) = 0;
            
@@ -211,8 +211,7 @@ classdef AutoDetect < handle
             
             % Setup the progress bar.
             wait_title = 'Detecting Neurons';
-            file_str = strrep(file, '_', '\_');
-            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
+            h = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
             
             obj.supervoxels = [];
 
@@ -228,7 +227,7 @@ classdef AutoDetect < handle
             while N < n_objects && max(rho(:)) > 0.1
                 try
                     waitbar((N+1)/n_objects,h,...
-                        {file_str, ...
+                        {file, ...
                         sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
                         'Name', wait_title);
                 catch

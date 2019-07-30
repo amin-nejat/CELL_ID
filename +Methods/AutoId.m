@@ -428,8 +428,7 @@ classdef AutoId < handle
             
             % Setup the progress bar.
             wait_title = 'ID''ing Neurons';
-            file_str = strrep(file, '_', '\_');
-            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
+            h = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
             
             % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
