@@ -520,6 +520,13 @@ classdef AutoId < handle
                 return;
             end
             
+            % reduce rank to match aligned
+            if size(aligned,1) < size(col,1)
+                is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
+                col = col(is_aligned,:);
+                pos = pos(is_aligned,:);
+            end
+            
             % find transformation between original and aligned data
             beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
             

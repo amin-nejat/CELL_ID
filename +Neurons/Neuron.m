@@ -39,67 +39,58 @@ classdef Neuron < handle
         LINE_SIZE_SELECTED = 4 % selected neuron line size
     end
 
-    methods
-        function obj = Neuron(superpixel)
-            %Neuron Construct an instance of this class.
-            %   converts a superpixel to a Neuron instance by reading out
-            %   the variables inside superpixels and assigning them to the
-            %   properties of the Neuron instance.
+    methods (Static)
+        function neuron = unmarshall(sp, i)
+            % UNMARSHALL Construct the neuron by unmarshalling it.
+            % *** LEGACY FUNCTION. DEPRECATED!!!
             
-            % Initialize the positions & colors.
-            obj.position = superpixel.positions;
-            obj.color = superpixel.color;
-            obj.color_readout = superpixel.color_readout;
-            obj.baseline = superpixel.baseline;
-            obj.covariance = squeeze(superpixel.covariances);
+            % Construct the neuron.
+            neuron = Neurons.Neuron;
             
-            % Are the neurons ID'd?
-            if isfield(superpixel, 'truncation')
-                obj.truncation = superpixel.truncation;
+            % Neuron position & color.
+            neuron.position = sp.positions(i,:);
+            neuron.color = sp.color(i,:);
+            neuron.color_readout = sp.color_readout(i,:);
+            neuron.baseline = sp.baseline(i,:);
+            neuron.covariance = sp.covariances(i,:,:);
+            if isfield(sp, 'truncation')
+                neuron.truncation = sp.truncation(i,:);
             end
-            if isfield(superpixel, 'aligned_xyzRGB')
-                obj.aligned_xyzRGB = superpixel.aligned_xyzRGB;
-            end
-            if isfield(superpixel, 'annotation')
-                obj.annotation = superpixel.annotation{1};
-            end
-            if isfield(superpixel, 'is_annotation_on')
-                obj.is_annotation_on = superpixel.is_annotation_on;
-            end
-            if isfield(superpixel, 'annotation_confidence')
-                obj.annotation_confidence = superpixel.annotation_confidence;
-            end
-            if isfield(superpixel, 'deterministic_id')
-                obj.deterministic_id = superpixel.deterministic_id{1};
-            end
-            if isfield(superpixel, 'probabilistic_ids')
-                obj.probabilistic_ids = superpixel.probabilistic_ids;
-            end
-            if isfield(superpixel, 'probabilistic_probs')
-                obj.probabilistic_probs = superpixel.probabilistic_probs;
-            end
-            if isfield(superpixel, 'rank')
-                obj.rank = superpixel.rank;
+            if isfield(sp, 'aligned_xyzRGB')
+                if ~isempty(sp.aligned_xyzRGB) && ...
+                        i <= size(sp.aligned_xyzRGB,1)
+                    neuron.aligned_xyzRGB = sp.aligned_xyzRGB(i,:);
+                end
             end
             
+            % User neuron ID.
+            if isfield(sp, 'annotation')
+                neuron.annotation = sp.annotation{i};
+                neuron.is_annotation_on = sp.is_annotation_on(i);
+                neuron.annotation_confidence = sp.annotation_confidence(i);
+            end
             
-            % GET RID OF THIS!!!
-            prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);
-            
-            if isfield(prefs, 'MARKER_SIZE_NOT_SELECTED')
-                obj.MARKER_SIZE_NOT_SELECTED = prefs.MARKER_SIZE_NOT_SELECTED;
-            end
-            if isfield(prefs, 'MARKER_SIZE_SELECTED')
-                obj.MARKER_SIZE_SELECTED = prefs.MARKER_SIZE_SELECTED;
-            end
-            if isfield(prefs, 'LINE_SIZE_NOT_SELECTED')
-                obj.LINE_SIZE_NOT_SELECTED = prefs.LINE_SIZE_NOT_SELECTED;
-            end
-            if isfield(prefs, 'LINE_SIZE_SELECTED')
-                obj.LINE_SIZE_SELECTED = prefs.LINE_SIZE_SELECTED;
+            % Auto neuron ID.
+            if isfield(sp, 'deterministic_id')
+                neuron.deterministic_id = sp.deterministic_id{i};
+                if size(sp.probabilistic_ids,1) > 0 && ...
+                        i <= size(sp.probabilistic_ids,1)
+                    neuron.probabilistic_ids = sp.probabilistic_ids(i,:);
+                end
+                if size(sp.probabilistic_probs,1) > 0 && ...
+                        i <= size(sp.probabilistic_probs,1)
+                    neuron.probabilistic_probs = sp.probabilistic_probs(i,:);
+                end
+                if isfield(sp, 'rank')
+                    if ~isempty(sp.rank) && i <= length(sp.rank)
+                        neuron.rank = sp.rank(i);
+                    end
+                end
             end
         end
-
+    end
+    
+    methods
         function annotate(obj, name, confidence, is_on)
             % ANNOTATE annotate the neuron.
             %   name: the neuron name

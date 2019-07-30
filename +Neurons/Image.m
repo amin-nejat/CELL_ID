@@ -49,10 +49,9 @@ classdef Image < handle
                 return;
             end
 
-            % Create the neurons.
+            % Unmarshall the neurons.
             for i = 1:size(superpixels.color,1)
-                obj.neurons(i) = ...
-                    Neurons.Neuron(Methods.Utils.sub_sp(superpixels,i));
+                obj.neurons(i) = Neurons.Neuron.unmarshall(superpixels, i);
             end
         end
         
@@ -83,15 +82,18 @@ classdef Image < handle
                 sp.positions   = position;
                 sp.color       = nan(1,size(volume,4));
                 sp.baseline    = nan(1,size(volume,4));
-                sp.covariances = nan(3,3);
+                sp.covariances = nan(1,3,3);
             end
             cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
-            sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
-            if isempty(obj.neurons)
-                obj.neurons = Neurons.Neuron(sp);
-            else
-                obj.neurons(end+1) = Neurons.Neuron(sp);
-            end
+            
+            % Construct the neuron.
+            neuron = Neurons.Neuron;
+            neuron.position = sp.positions;
+            neuron.color = sp.color;
+            neuron.baseline = sp.baseline;
+            neuron.covariance = sp.covariances;
+            neuron.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
+            obj.neurons(end+1) = neuron;
         end
         
         function del_neuron(obj, neuron_i)
@@ -509,7 +511,8 @@ classdef Image < handle
             if isempty(obj.neurons)
                 return;
             end
-            covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
+            covariances = vertcat(obj.neurons.covariance);
+            %covariances = permute(cat(3, obj.neurons.covariance), [3,1,2]);
         end
         
         function truncations = get_truncations(obj)
@@ -570,6 +573,7 @@ classdef Image < handle
             %TO_SUPERPIXEL coverts the neurons to a superpixel data
             %structure for data loading and storing and for interfacing
             %with different softwares and programming languages.
+            % *** LEGACY FUNCTION. DEPRECATED, DON'T USE THIS!!!
             
             % Is there any data?
             sp = [];
