@@ -172,25 +172,43 @@ classdef NeuroPALImage
             mp.exclusion_radius = 1.5;
             mp.min_eig_thresh = 0.1;
             sp = [];
+            neurons = [];
             id_file = strrep(image_file, '.mat', '_ID.mat');
             if exist(id_file, 'file')
                 
                 % Load the neurons file.
                 id_data = load(id_file);
                 
-                % Setup the file contents.
-                mp = id_data.mp_params;
-                sp = id_data.sp;
-                
                 % Get the ID file version.
                 if isfield(id_data, 'version')
                     version = id_data.version;
                 end
                 
+                % Setup the file contents.
+                mp = id_data.mp_params;
+
                 % Check the ID file version.
-                if version < 1
+                % Version > 1.
+                if version > 1
+                    neurons = id_data.neurons;
+                    
+                % Version 1.
+                elseif version == 1
+                    
+                    % Create the neurons.
+                    sp = id_data.sp;
+                    neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
+                    
+                    % Update the file version.
+                    version = ProgramInfo.version;
+                    mp_params = mp;
+                    save(id_file, 'version', 'neurons', 'mp_params');
+                
+                % No version.
+                elseif version < 1
                     
                     % Are there any neurons?
+                    sp = id_data.sp;
                     if ~isempty(sp)
                         
                         % Correct the neuron colors.
@@ -224,6 +242,9 @@ classdef NeuroPALImage
                         end
                     end
                     
+                    % Create the neurons.
+                    neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
+                    
                     % Clean up the old mp fields.
                     if ~isfield(mp, 'exclusion_radius')
                         old_mp = mp;
@@ -237,12 +258,9 @@ classdef NeuroPALImage
                     
                     % Update the file version.
                     version = ProgramInfo.version;
-                    save(id_file, 'version', 'sp', 'mp_params', '-append');
+                    save(id_file, 'version', 'neurons', 'mp_params');
                 end
             end
-            
-            % Create the neurons.
-            neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
         end
         
         function np_file = convertCZI(czi_file)
