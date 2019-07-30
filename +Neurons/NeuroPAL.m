@@ -229,6 +229,108 @@ classdef NeuroPAL
         end
         
 
+        
+        %% Neuron counts.
+        function num_neurons = numNeurons(body)
+            %NUMNEURONS Get the number of neurons for this body part.
+            num_neurons = [];
+            switch lower(strtrim(body))
+                case 'head'
+                    num_neurons = Neurons.NeuroPAL.numHeadNeurons();
+                case 'midbody'
+                    num_neurons = Neurons.NeuroPAL.numMidbodyNeurons();
+                case 'anterior midbody'
+                    num_neurons = Neurons.NeuroPAL.numAnteriorMidbodyNeurons();
+                case 'central midbody'
+                    num_neurons = Neurons.NeuroPAL.numCentralMidbodyNeurons();
+                case 'posterior midbody'
+                    num_neurons = Neurons.NeuroPAL.numPosteriorMidbodyNeurons();
+                case 'tail'
+                    num_neurons = Neurons.NeuroPAL.numTailNeurons();
+            end
+        end
+        
+        function num_neurons = numHeadNeurons()
+            %NUMHEADNEURONS Get the number of head neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getAnteriorPharynx()) + ...
+                    length(NeuroPAL.getPosteriorPharynx()) + ...
+                    length(NeuroPAL.getLeftAnteriorGanglion()) + ...
+                    length(NeuroPAL.getRightAnteriorGanglion()) + ...
+                    length(NeuroPAL.getDorsalGanglion()) + ...
+                    length(NeuroPAL.getLeftLateralGanglion()) + ...
+                    length(NeuroPAL.getRightLateralGanglion()) + ...
+                    length(NeuroPAL.getVentralGanglion()) + ...
+                    length(NeuroPAL.getRetroVesicularGanglion());
+            end
+            num_neurons = num;
+        end
+        
+        function num_neurons = numMidbodyNeurons()
+            %NUMMIDBODYNEURONS Get the number of midbody neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getAnteriorMidbody()) + ...
+                    length(NeuroPAL.getCentralMidbody()) + ...
+                    length(NeuroPAL.getPosteriorMidbody()) + ...
+                    length(NeuroPAL.getVentralNerveCord());
+            end
+            num_neurons = num;
+        end
+        
+        function num_neurons = numAnteriorMidbodyNeurons()
+            %NUMANTERIORMIDBODYNEURONS Get the number of anterior midbody
+            % neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getAnteriorMidbody()) + ...
+                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+            end
+            num_neurons = num;
+        end
+        
+        function num_neurons = numCentralMidbodyNeurons()
+            %NUMCENTRALMIDBODYNEURONS Get the number of central midbody
+            % neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getCentralMidbody()) + ...
+                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+            end
+            num_neurons = num;
+        end
+        
+        function num_neurons = numPosteriorMidbodyNeurons()
+            %NUMPOSTERIORMIDBODYNEURONS Get the number of posterior midbody
+            % neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getPosteriorMidbody()) + ...
+                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+            end
+            num_neurons = num;
+        end
+        
+        function num_neurons = numTailNeurons()
+            %NUMTAILNEURONS Get the number of tail neurons.
+            import Neurons.*;
+            persistent num;
+            if isempty(num)
+                num = length(NeuroPAL.getPreAnalGanglion()) + ...
+                    length(NeuroPAL.getDorsoRectalGanglion()) + ...
+                    length(NeuroPAL.getLeftLumbarGanglion()) + ...
+                    length(NeuroPAL.getRightLumbarGanglion());
+            end
+            num_neurons = num;
+        end
+
+        
         %% Ganglia data.
         function ganglia = getGanglia()
             %GETGANGLIA Get a list of ganglia info.

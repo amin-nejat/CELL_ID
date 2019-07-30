@@ -10,94 +10,87 @@ classdef Neuron < handle
     end
 
     properties
+        % Neuron position & color.
         position % neuron pixel position (x,y,z)
         color % neuron color based on fitting (R,G,B,W,...), W = white channel, values=[0-255]
+        color_readout % neuron color based on readout from the image
         baseline % baseline noise values (R,G,B,W,...), values=[-1,1]
         covariance % 3x3 covariance matrix that's fit to the neuron
         truncation = 0 % Gaussian truncation value that defines the sharpness of the edge of neuron
-        deterministic_id  % neuron ID assigned by the deterministic model
-        probabilistic_ids % neuron IDs listed by descending probability
-        probabilistic_probs % neuron ID probabilities
+        aligned_xyzRGB % the neuron's position & color, aligned to the global model
+                
+        % User neuron ID.
         annotation = '' % neuron user selected annotation
         is_annotation_on = NaN % is the neuron's annotation ON, OFF, or neither (empty)
         annotation_confidence = -1 % user confidence about annotation
+        
+        % Auto neuron ID.
+        deterministic_id  % neuron ID assigned by the deterministic model
+        probabilistic_ids % neuron IDs listed by descending probability
+        probabilistic_probs % neuron ID probabilities
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
-        is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
-        color_readout % neuron color based on readout from the image
-        meta_data
         
         % GUI properties.
+        % MOVE TO IMAGE!!!!
+        is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
         MARKER_SIZE_NOT_SELECTED = 40 % unselected neuron marker size
         MARKER_SIZE_SELECTED = 200 % selected neuron marker size
         LINE_SIZE_NOT_SELECTED = 1 % unselected neuron line size
         LINE_SIZE_SELECTED = 4 % selected neuron line size
     end
 
-    methods
-        function obj = Neuron(superpixel)
-            %Neuron Construct an instance of this class.
-            %   converts a superpixel to a Neuron instance by reading out
-            %   the variables inside superpixels and assigning them to the
-            %   properties of the Neuron instance.
+    methods (Static)
+        function neuron = unmarshall(sp, i)
+            % UNMARSHALL Construct the neuron by unmarshalling it.
+            % *** LEGACY FUNCTION. DEPRECATED!!!
             
-            % Initialize the meta data.
-            obj.meta_data = containers.Map();
+            % Construct the neuron.
+            neuron = Neurons.Neuron;
             
-            obj.position = superpixel.positions;
-            obj.color = superpixel.color;
-            obj.baseline = superpixel.baseline;
-            obj.covariance = squeeze(superpixel.covariances);
-            
-            % Are there neurons?
-            if isfield(superpixel, 'color_readout')
-                obj.color_readout = superpixel.color_readout;
+            % Neuron position & color.
+            neuron.position = sp.positions(i,:);
+            neuron.color = sp.color(i,:);
+            neuron.color_readout = sp.color_readout(i,:);
+            neuron.baseline = sp.baseline(i,:);
+            neuron.covariance = sp.covariances(i,:,:);
+            if isfield(sp, 'truncation')
+                neuron.truncation = sp.truncation(i,:);
             end
-            if isfield(superpixel, 'truncation')
-                obj.truncation = superpixel.truncation;
-            end
-            
-            % If the alignment information exists
-            if isfield(superpixel, 'aligned')
-                obj.meta_data('aligned') = superpixel.aligned;
+            if isfield(sp, 'aligned_xyzRGB')
+                if ~isempty(sp.aligned_xyzRGB) && ...
+                        i <= size(sp.aligned_xyzRGB,1)
+                    neuron.aligned_xyzRGB = sp.aligned_xyzRGB(i,:);
+                end
             end
             
-            % Are the neurons ID'd?
-            if isfield(superpixel, 'deterministic_id')
-                obj.deterministic_id = superpixel.deterministic_id{1};
-            end
-            if isfield(superpixel, 'probabilistic_ids')
-                obj.probabilistic_ids = superpixel.probabilistic_ids;
-            end
-            if isfield(superpixel, 'annotation')
-                obj.annotation = superpixel.annotation{1};
-            end
-            if isfield(superpixel, 'annotation_confidence')
-                obj.annotation_confidence = superpixel.annotation_confidence;
-            end
-            if isfield(superpixel, 'is_annotation_on')
-                obj.is_annotation_on = superpixel.is_annotation_on;
-            end
-            if isfield(superpixel, 'probabilistic_probs')
-                obj.probabilistic_probs = superpixel.probabilistic_probs;
+            % User neuron ID.
+            if isfield(sp, 'annotation')
+                neuron.annotation = sp.annotation{i};
+                neuron.is_annotation_on = sp.is_annotation_on(i);
+                neuron.annotation_confidence = sp.annotation_confidence(i);
             end
             
-            % GET RID OF THIS!!!
-            prefs = load([fileparts(fileparts(mfilename('fullpath'))), filesep, 'visualize_light_prefs.mat']);
-            
-            if isfield(prefs, 'MARKER_SIZE_NOT_SELECTED')
-                obj.MARKER_SIZE_NOT_SELECTED = prefs.MARKER_SIZE_NOT_SELECTED;
-            end
-            if isfield(prefs, 'MARKER_SIZE_SELECTED')
-                obj.MARKER_SIZE_SELECTED = prefs.MARKER_SIZE_SELECTED;
-            end
-            if isfield(prefs, 'LINE_SIZE_NOT_SELECTED')
-                obj.LINE_SIZE_NOT_SELECTED = prefs.LINE_SIZE_NOT_SELECTED;
-            end
-            if isfield(prefs, 'LINE_SIZE_SELECTED')
-                obj.LINE_SIZE_SELECTED = prefs.LINE_SIZE_SELECTED;
+            % Auto neuron ID.
+            if isfield(sp, 'deterministic_id')
+                neuron.deterministic_id = sp.deterministic_id{i};
+                if size(sp.probabilistic_ids,1) > 0 && ...
+                        i <= size(sp.probabilistic_ids,1)
+                    neuron.probabilistic_ids = sp.probabilistic_ids(i,:);
+                end
+                if size(sp.probabilistic_probs,1) > 0 && ...
+                        i <= size(sp.probabilistic_probs,1)
+                    neuron.probabilistic_probs = sp.probabilistic_probs(i,:);
+                end
+                if isfield(sp, 'rank')
+                    if ~isempty(sp.rank) && i <= length(sp.rank)
+                        neuron.rank = sp.rank(i);
+                    end
+                end
             end
         end
-
+    end
+    
+    methods
         function annotate(obj, name, confidence, is_on)
             % ANNOTATE annotate the neuron.
             %   name: the neuron name
@@ -128,6 +121,7 @@ classdef Neuron < handle
             obj.probabilistic_ids = [];
             obj.probabilistic_probs = [];
             obj.rank = [];
+            obj.aligned_xyzRGB = [];
         end
         
         function rotate(obj, rot, sz, newsz)

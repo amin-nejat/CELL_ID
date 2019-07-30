@@ -20,8 +20,8 @@ classdef AutoId < handle
     end
     
     properties
-        
-        atlas = getfield(load('atlas.mat'), 'atlas') % atlas data structure containing neuron names, positions, colors, and their covariances
+        atlas_version % the version for the atlas
+        atlas % atlas data structure containing neuron names, positions, colors, and their covariances
         
         log_likelihood % likelihood matrix, of size n_mp x n_possible
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
@@ -39,6 +39,36 @@ classdef AutoId < handle
              else
                obj = instance;
              end
+        end
+        
+        function [atlas, version] = getAtlas()
+            %GETATLAS get the atlas data.
+            persistent data;
+            if isempty(data)
+                data = load('atlas.mat');
+            end
+            atlas = data.atlas;
+            version = data.version;
+        end
+        
+        function BatchId(file, bodypart)
+            % Batch ID neurons.
+            
+            % Open the image file.
+            try
+                [~, ~, ~, ~, ~, neurons, ~, id_file] = ...
+                    DataHandling.NeuroPALImage.open(file);
+            catch
+                return;
+            end
+            
+            % Update the body part.
+            neurons.bodypart = bodypart;
+            
+            % Save the auto ID'd neurons.
+            Methods.AutoId.instance().id(file, neurons);
+            sp = neurons.to_superpixel();
+            save(id_file, 'sp', '-append');
         end
         
         function rotmat = rotmat(theta)
@@ -236,10 +266,11 @@ classdef AutoId < handle
     methods
         function obj = AutoId()
             % load the statistical atlas
+            [obj.atlas, obj.atlas_version] = Methods.AutoId.getAtlas();
         end
       
         function add_to_image(obj, im)
-            % add_to_image  function simply uptdates some properties of the image
+            % add_to_image  function simply updates some properties of the image
             % structure that depend on auto_id
             
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
@@ -317,10 +348,13 @@ classdef AutoId < handle
             
         end
         
-        function id(obj,im,varargin)
+        function id(obj,file,im,varargin)
             if any(strcmp(varargin, 'atlas'))
                 obj.atlas = varargin{find(strcmp(varargin, 'atlas'))+1};
             end
+            
+            % Set the atlas version.
+            im.atlas_version = obj.atlas_version;
             
             % neurons that are already annotated
             annotations = im.get_annotations();
@@ -337,11 +371,11 @@ classdef AutoId < handle
             colors = colors(:,[1 2 3]);
             
             % align the image to statistical atlas
-            aligned = obj.global_alignment(colors, im.get_positions().*im.scale, ...
+            aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
             
             for neuron=1:length(im.neurons)
-                im.neurons(neuron).meta_data('aligned') = aligned(neuron,:);
+                im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
             
             obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
@@ -361,14 +395,14 @@ classdef AutoId < handle
             % update_auto_id changes the properties of auto_id given human has given 
             % the identity neuron to the neuron_i-th neuron (with the mp order).
             % it also updates the image object accordingly.
+            import Methods.*;
+            
+            % Update the log likelihood.
             obj.log_likelihood(neuron_i,:)= AutoId.min_log_likelihood;
-            
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
-            
             if ~strcmp(neuron, 'NaN')
                 obj.log_likelihood(neuron_i, strcmp(neuron_names, neuron))  = AutoId.max_log_likelihood;
             end
-            
             obj.compute_assignments();
             
             % convert the assignments to names and update the information
@@ -378,49 +412,93 @@ classdef AutoId < handle
         
         
         
-        function aligned = global_alignment(obj, col, pos, model, annotated)
+        function aligned = global_alignment(obj, file, col, pos, model, annotated)
         % Global alignment based on search in the theta space
         %
         % Amin & Erdem
         
             import Methods.AutoId;
             
-            h = waitbar(0,'Initialize ...');
+            % Do we have the parallelization toolbox?
+            is_parallel = true;
+            parallel_tb = ver("distcomp");
+            if isempty(parallel_tb)
+                is_parallel = false;
+            end
             
+            % Setup the progress bar.
+            wait_title = 'ID''ing Neurons';
+            file_str = strrep(file, '_', '\_');
+            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
+            
+            % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
             colors = cell(2*length(AutoId.theta),1);
             positions = cell(2*length(AutoId.theta),1);
             
-            for idx = 1:length(AutoId.theta)
-                f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
-                f(length(AutoId.theta)+...
-                  idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+            % Get the parallel pool ready.
+            if is_parallel
+                %pool = gcp(); % may want to have a ready-use pool
             end
             
-            for idx=1:2*length(AutoId.theta)
-                [job_idx,c,p,cc] = fetchNext(f);
-                
-                positions{job_idx}  = p;
-                colors{job_idx}     = c;
-                cost(job_idx)       = cc;
-                try
-                    waitbar(idx/(2*length(AutoId.theta)),h,[num2str(round((100.0*idx/(2*length(AutoId.theta))))),'%']);
-                catch
-                    break;
+            % Compute the alignment.
+            num_tests = 2*length(AutoId.theta);
+            for idx = 1:length(AutoId.theta)
+                if is_parallel
+                    
+                    % Compute the alignment.
+                    f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
+                    f(length(AutoId.theta)+...
+                        idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+                else
+                    
+                    % Compute the alignment.
+                    [colors{idx},positions{idx},cost(idx)] = ...
+                        AutoId.local_alignment(col, pos, model, AutoId.theta(idx), +1, annotated);
+                    idx_off = idx + length(AutoId.theta);
+                    [colors{idx_off},positions{idx_off},cost(idx_off)] = ...
+                        AutoId.local_alignment(col, pos, model, AutoId.theta(idx), -1, annotated);
+                    
+                    % Update the progress.
+                    try
+                        waitbar((2*idx)/num_tests,h, {file_str, ...
+                            [num2str(round((100.0*2*idx)/num_tests)),'%']}, ...
+                            'Name', wait_title);
+                    catch
+                        break;
+                    end
                 end
             end
             
+            % Wait for the computations to complete.
+            if is_parallel
+                for idx=1:2*length(AutoId.theta)
+                    [job_idx,c,p,cc] = fetchNext(f);
+                    
+                    positions{job_idx}  = p;
+                    colors{job_idx}     = c;
+                    cost(job_idx)       = cc;
+                    try
+                        waitbar(idx/num_tests,h, {file_str, ...
+                            [num2str(round((100.0*idx/num_tests))),'%']}, ...
+                            'Name', wait_title);
+                    catch
+                        break;
+                    end
+                end
+            end
+            
+            % Done.
             try
                 close(h);
             catch
                 warning('Auto ID is canceled.');
             end
             
+            % Find the best alignment.
             [theta_idx] = find(cost==max(cost(:)));
-            
             pos = positions{theta_idx};
             col = colors{theta_idx};
-
             obj.log_likelihood = -AutoId.pdist2_maha([pos col], model.mu, model.sigma);
             aligned = [pos col];
         end
@@ -436,8 +514,18 @@ classdef AutoId < handle
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             
-            aligned = im.get_neurons_meta_data('aligned');
-            aligned = cell2mat(aligned');
+            % aligned data
+            aligned = im.get_neurons_aligned;
+            if isempty(aligned)
+                return;
+            end
+            
+            % reduce rank to match aligned
+            if size(aligned,1) < size(col,1)
+                is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
+                col = col(is_aligned,:);
+                pos = pos(is_aligned,:);
+            end
             
             % find transformation between original and aligned data
             beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);

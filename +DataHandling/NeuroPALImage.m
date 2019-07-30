@@ -25,14 +25,6 @@ classdef NeuroPALImage
     %           notes = experimental notes
     %      mp = matching pursuit (neuron detection) parameters
     %      neurons = the neurons in the image
-
-        
-    %% Public variables.
-    properties (Constant, Access = public)
-        
-        % NeuroPAL file version.
-        version = 1.0;
-    end
     
     
     %% Public methods.
@@ -130,6 +122,7 @@ classdef NeuroPALImage
             %   neurons = the neurons in the image
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the image file.
@@ -167,67 +160,90 @@ classdef NeuroPALImage
                 prefs = rmfield(prefs, 'body_part');
                 
                 % Update the file version.
-                version = NeuroPALImage.version;
+                version = ProgramInfo.version;
                 save(image_file, 'version', 'prefs', 'worm', '-append');
             end
             
             % Open the ID file.
             version = 0;
             mp = [];
+            mp.hnsz = round(round(3./info.scale')/2)*2+1;
+            mp.k = 0;
+            mp.exclusion_radius = 1.5;
+            mp.min_eig_thresh = 0.1;
             sp = [];
+            neurons = [];
             id_file = strrep(image_file, '.mat', '_ID.mat');
             if exist(id_file, 'file')
                 
                 % Load the neurons file.
                 id_data = load(id_file);
                 
-                % Setup the file contents.
-                mp = id_data.mp_params;
-                sp = id_data.sp;
-                
-                % Get the meta data.
-                meta_data = containers.Map();
-                if isfield(id_data, 'meta_data')
-                    meta_data = id_data.meta_data;
-                end
-                
                 % Get the ID file version.
                 if isfield(id_data, 'version')
                     version = id_data.version;
                 end
                 
+                % Setup the file contents.
+                mp = id_data.mp_params;
+
                 % Check the ID file version.
-                if version < 1
+                % Version > 1.
+                if version > 1
+                    neurons = id_data.neurons;
                     
-                    % Correct the neuron colors.
-                    if ~isfield(sp, 'color_readout')
+                % Version 1.
+                elseif version == 1
+                    
+                    % Create the neurons.
+                    sp = id_data.sp;
+                    neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
+                    
+                    % Update the file version.
+                    version = ProgramInfo.version;
+                    mp_params = mp;
+                    save(id_file, 'version', 'neurons', 'mp_params');
+                
+                % No version.
+                elseif version < 1
+                    
+                    % Are there any neurons?
+                    sp = id_data.sp;
+                    if ~isempty(sp)
                         
-                        % Set the neuron patch size.
-                        patch_hsize = [3,3,0];
+                        % Correct the neuron colors.
+                        if ~isfield(sp, 'color_readout')
+                            
+                            % Set the neuron patch size.
+                            patch_hsize = [3,3,0];
+                            
+                            % Compute the data.
+                            data_RGBW = double(data(:,:,:,prefs.RGBW));
+                            data_zscored = ...
+                                Methods.Preprocess.zscore_frame(double(data_RGBW));
+                            
+                            % Read the patch colors.
+                            num_neurons = size(sp.color,1);
+                            sp.color_readout = nan(num_neurons,4);
+                            for i = 1:num_neurons
+                                patch = Methods.Utils.subcube(data_zscored, ...
+                                    round(sp.mean(i,:)), patch_hsize);
+                                sp.color_readout(i,:) = ...
+                                    nanmedian(reshape(patch, ...
+                                    [numel(patch)/size(patch, 4), size(patch, 4)]));
+                            end
+                        end
                         
-                        % Compute the data.
-                        data_RGBW = double(data(:,:,:,prefs.RGBW));
-                        data_zscored = ...
-                            Methods.Preprocess.zscore_frame(double(data_RGBW));
-                        
-                        % Read the patch colors.
-                        num_neurons = size(sp.mean,1);
-                        sp.color_readout = nan(num_neurons,4);
-                        for i = 1:num_neurons
-                            patch = Methods.Utils.subcube(data_zscored, ...
-                                round(sp.mean(i,:)), patch_hsize);
-                            sp.color_readout(i,:) = ...
-                                nanmedian(reshape(patch, ...
-                                [numel(patch)/size(patch, 4), size(patch, 4)]));
+                        % Clean up the old sp fields.
+                        if isfield(sp, 'mean')
+                            sp.positions = sp.mean;
+                            sp.covariances = sp.cov;
+                            sp = rmfield(sp, {'mean', 'cov'});
                         end
                     end
                     
-                    % Clean up the old sp fields.
-                    if isfield(sp, 'mean')
-                        sp.positions = sp.mean;
-                        sp.covariances = sp.cov;
-                        sp = rmfield(sp, {'mean', 'cov'});
-                    end
+                    % Create the neurons.
+                    neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
                     
                     % Clean up the old mp fields.
                     if ~isfield(mp, 'exclusion_radius')
@@ -241,18 +257,10 @@ classdef NeuroPALImage
                     mp_params = mp;
                     
                     % Update the file version.
-                    version = NeuroPALImage.version;
-                    save(id_file, 'version', 'sp', 'mp_params', 'meta_data', '-append');
+                    version = ProgramInfo.version;
+                    save(id_file, 'version', 'neurons', 'mp_params');
                 end
-                % Create the neuronsworm..
-                neurons = Neurons.Image(sp, worm.body, 'scale', info.scale, 'meta_data', meta_data);
-            else
-                % Create the neurons.
-                neurons = Neurons.Image(sp, worm.body, 'scale', info.scale);
             end
-            
-            
-            
         end
         
         function np_file = convertCZI(czi_file)
@@ -262,6 +270,7 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
@@ -353,7 +362,7 @@ classdef NeuroPALImage
                 
             % Save the CZI file to our MAT file format.
             np_file = strrep(czi_file, 'czi', 'mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
         
@@ -364,6 +373,7 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
@@ -455,7 +465,7 @@ classdef NeuroPALImage
             
             % Save the ND2 file to our MAT file format.
             np_file = strrep(nd2_file, 'nd2', 'mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
         
@@ -466,12 +476,13 @@ classdef NeuroPALImage
             % np_file = the NeuroPAL format file
             
             % Initialize the packages.
+            import Program.*;
             import DataHandling.*;
             
             % Open the file.
             np_file = [];
             try
-                [image_data, meta_data] = DataHandling.imreadAny(any_file);
+                [image_data, ~] = DataHandling.imreadAny(any_file);
             catch
                 warning('Cannot read: "%s"', any_file);
                 return;
@@ -561,7 +572,7 @@ classdef NeuroPALImage
                 suffix = length(any_file);
             end
             np_file = cat(2, any_file(1:(suffix(end) - 1)), '.mat');
-            version = NeuroPALImage.version;
+            version = ProgramInfo.version;
             save(np_file, 'version', 'data', 'info', 'prefs', 'worm');
         end
     end

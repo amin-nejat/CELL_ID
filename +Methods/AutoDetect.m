@@ -1,4 +1,4 @@
-classdef AutoDetect < Singleton
+classdef AutoDetect < handle
    
    properties % Public Access
         options = []
@@ -20,45 +20,62 @@ classdef AutoDetect < Singleton
    end
    
    methods(Static)
-      function obj = instance()
-         persistent instance
-         if isempty(instance)
-            obj = Methods.AutoDetect();
-            instance = obj;
-         else
-            obj = instance;
-         end
-      end
-      
-        function BatchDetect(file,mp_params)
-            [data, info, prefs, ~, ~] = DataHandling.NeuroPALImage.open([file, '.czi']);
-
-            data_RGBW = double(data(:,:,:,prefs.RGBW));
-            data_zscored_raw = Methods.Preprocess.zscore_frame(double(data_RGBW));
-
-            [~, mask] = Methods.Preprocess.filter_gut_lysosomes(data_zscored_raw);
-            mask = repmat(mask,1,1,1,length(prefs.RGBW));
-            data_zscored = data_zscored_raw; data_zscored(mask) = 0;
-
-            filter = Methods.AutoDetect.get_filter(mp_params.hnsz(:)', mp_params.hnsz(:)', 0);
-            sp = Methods.AutoDetect.instance().detect(data_zscored, filter, mp_params.k, mp_params.min_eig_thresh, info.scale', mp_params.exclusion_radius);
-
-            Methods.Utils.save_for_parfor([file, '_sp', '.mat'], sp, mp_params);
-        end
-      
-        function [c, ceq] = constrain_eigenvalues(x, lb, ub)
-        % Nonlinear inequality constraints (eigenvalues) for fmincon.
-        % Amin Nejat
-
-            L = zeros(3, 3);
-            L([1,2,3,5,6,9]) = x(4:9);
-            variances = L*L';
-
-            v = sort(eig(variances));
-            c = -[v'-lb, ub-v'];
-            
-            ceq = [];
-        end
+       function obj = instance()
+           persistent instance
+           if isempty(instance)
+               obj = Methods.AutoDetect();
+               instance = obj;
+           else
+               obj = instance;
+           end
+       end
+       
+       function BatchDetect(file, num_neurons)
+           % Batch detect neurons.
+           
+           % Open the image file.
+           try
+               [data, info, prefs, ~, mp, ~, ~, id_file] = ...
+                   DataHandling.NeuroPALImage.open(file);
+           catch
+               return;
+           end
+           
+           % Preprocess the colors.
+           data_RGBW = double(data(:,:,:,prefs.RGBW));
+           data_zscored_raw = Methods.Preprocess.zscore_frame(double(data_RGBW));
+           
+           % Remove artifacts.
+           [~, mask] = Methods.Preprocess.filter_gut_lysosomes(data_zscored_raw);
+           mask = repmat(mask,1,1,1,length(prefs.RGBW));
+           data_zscored = data_zscored_raw;
+           data_zscored(mask) = 0;
+           
+           % Detect the neurons.
+           mp.k = num_neurons;
+           filter = Methods.AutoDetect.get_filter(mp.hnsz(:)', mp.hnsz(:)', 0);
+           sp = Methods.AutoDetect.instance().detect(file, data_zscored, ...
+               filter, mp.k, mp.min_eig_thresh, info.scale', mp.exclusion_radius);
+           
+           % Save the neurons.
+           version = DataHandling.NeuroPALImage.version;
+           mp_params = mp;
+           save(id_file, 'version', 'sp', 'mp_params');
+       end
+       
+       function [c, ceq] = constrain_eigenvalues(x, lb, ub)
+           % Nonlinear inequality constraints (eigenvalues) for fmincon.
+           % Amin Nejat
+           
+           L = zeros(3, 3);
+           L([1,2,3,5,6,9]) = x(4:9);
+           variances = L*L';
+           
+           v = sort(eig(variances));
+           c = -[v'-lb, ub-v'];
+           
+           ceq = [];
+       end
         
         function resid = gaussian_cost(x, vol, norm_factor)
         % Calculating residual between a multi-color Gaussian function and the
@@ -184,7 +201,7 @@ classdef AutoDetect < Singleton
    end
    
    methods % Public Access
-        function supervoxels = detect(obj, volume, filter, n_objects, cov_threshold, scale, exclusion)
+        function supervoxels = detect(obj, file, volume, filter, n_objects, cov_threshold, scale, exclusion)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
         % fits to input dataset. The algorithm runs greedy by subtracting off the
         % brightest Gaussian at each iteration.
@@ -192,7 +209,10 @@ classdef AutoDetect < Singleton
         % Amin Nejat
             obj.scale = scale;
             
-            h = waitbar(0,'Initialize ...');
+            % Setup the progress bar.
+            wait_title = 'Detecting Neurons';
+            file_str = strrep(file, '_', '\_');
+            h = waitbar(0, {file_str, 'Initializing ...'}, 'Name', wait_title);
             
             obj.supervoxels = [];
 
@@ -203,11 +223,14 @@ classdef AutoDetect < Singleton
 
             rho = Methods.Preprocess.filter_frame(volume, filter);
 
+            % Detect the neurons.
             N = 0;
-            
             while N < n_objects && max(rho(:)) > 0.1
                 try
-                    waitbar((N+1)/n_objects,h,sprintf('%d%% completed ...',int16(100*(N+1)/n_objects)));
+                    waitbar((N+1)/n_objects,h,...
+                        {file_str, ...
+                        sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
+                        'Name', wait_title);
                 catch
                     break;
                 end
@@ -237,10 +260,12 @@ classdef AutoDetect < Singleton
                     N = size(obj.supervoxels.positions, 1);
                 end
             end
+            
+            % Done.
             try
                 close(h);
             catch
-                warning('The detection is canceled.');
+                warning('The detection was canceled.');
             end
             supervoxels = obj.supervoxels;
         end
