@@ -3,6 +3,17 @@ classdef GUIPreferences < handle
     
     % GUI properties.
     properties (Access = public)
+        
+        % Version.
+        %version = Program.ProgramInfo.version;
+        
+        % Preferences file.
+        prefs_file = '.NeuroPAL_ID_prefs.mat';
+        
+        % Image directory info.
+        image_dir = [];
+        
+        % Display info.
         GFP_color = [1,1,0]; % GFP reporter color for GUI
         unselected_neuron_size = 40; % unselected neuron marker size
         selected_neuron_size = 200; % selected neuron marker size
@@ -16,8 +27,14 @@ classdef GUIPreferences < handle
             %INSTANCE get the GUIPreferences singelton.
              persistent instance;
              if isempty(instance)
-                obj = Program.GUIPreferences();
-               instance = obj;
+                 
+                 % Add the image directory.
+                 obj = Program.GUIPreferences();
+                 user_dir = what('~/');
+                 obj.image_dir = user_dir.path;
+                 
+                 % Save the instantiation.
+                 instance = obj;
              else
                obj = instance;
              end
