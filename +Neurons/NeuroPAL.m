@@ -235,6 +235,8 @@ classdef NeuroPAL
             %NUMNEURONS Get the number of neurons for this body part.
             num_neurons = [];
             switch lower(strtrim(body))
+                case 'whole worm'
+                    num_neurons = 300;
                 case 'head'
                     num_neurons = Neurons.NeuroPAL.numHeadNeurons();
                 case 'midbody'
