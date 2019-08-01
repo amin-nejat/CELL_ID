@@ -121,7 +121,7 @@ classdef Image < handle
         end
         
 
-        %% COUNT NERUONS.
+        %% COUNT NEURONS.
 
         function num = num_neurons(obj)
             %NUM_NEURONS the number of neurons in the image
@@ -216,6 +216,58 @@ classdef Image < handle
             truncations = vertcat(obj.neurons.truncation);
         end
         
+        function update_colors(obj, data, old_RGBW, new_RGBW)
+            %UPDATE_COLORS update the neuron colors.
+            
+            % Are there any neurons?
+            if isempty(obj.neurons)
+                return;
+            end
+            
+            % Did the colors change?
+            if isequaln(old_RGBW, new_RGBW)
+                return;
+            end
+            
+            % Match indices to reduce computation.
+            RGBW_match = [];
+            RGBW_miss = [];
+            for i=1:length(old_RGBW)
+                j = find(new_RGBW(i) == old_RGBW ,1);
+                
+                % Old RGBW does NOT have the data.
+                if isempty(j)
+                    RGBW_miss(end + 1) = i;
+                    
+                % Old RGBW has the data.
+                else
+                    RGBW_match(end + 1,:) = [i,j];
+                end
+            end
+            
+            % Update the color channels.
+            for i = 1:length(obj.neurons)
+                
+                % Delete the aligned RGB data.
+               neuron.aligned_xyzRGB = [];
+                
+                % Store the matching data.
+                neuron = obj.neurons(i);
+                for j = 1:length(RGBW_match)
+                    neuron.color(RGBW_match(:,1)) = ...
+                        neuron.color(RGBW_match(:,2));
+                    neuron.color_readout(RGBW_match(:,1)) = ...
+                        neuron.color_readout(RGBW_match(:,2));
+                    neuron.baseline(RGBW_match(:,1)) = ...
+                        neuron.baseline(RGBW_match(:,2));
+                end
+                
+                % Compute the missing data.
+                for j = 1:length(RGBW_miss)
+                    % AMIN FILL ME IN :)
+                end
+            end
+        end
         
         %% USER ID'D NEURONS.
         
