@@ -31,8 +31,13 @@ classdef AutoDetect < handle
        end
        
        function BatchDetect(file, num_neurons)
-           % Batch detect neurons.
+           %BATCHDETECT Batch detect neurons.
            
+           % Setup the conversion progress bar.
+           wait_title = 'Converting Image';
+           wb = waitbar(0, {file, 'Converting ...'}, 'Name', wait_title);
+           wb.Children.Title.Interpreter = 'none';
+            
            % Open the image file.
            try
                [data, info, prefs, worm, mp, ~, ~, id_file] = ...
@@ -40,6 +45,18 @@ classdef AutoDetect < handle
            catch
                return;
            end
+           
+           % Done converting.
+           try
+               close(wb);
+           catch
+               warning('Image conversion was canceled.');
+           end
+           
+           % Setup the preprocessing progress bar.
+           wait_title = 'Preprocessing Image';
+           wb = waitbar(0, {file, 'Preprocessing ...'}, 'Name', wait_title);
+           wb.Children.Title.Interpreter = 'none';
            
            % Preprocess the colors.
            data_RGBW = double(data(:,:,:,prefs.RGBW(~isnan(prefs.RGBW))));
@@ -50,6 +67,13 @@ classdef AutoDetect < handle
            mask = repmat(mask,1,1,1,length(prefs.RGBW(~isnan(prefs.RGBW))));
            data_zscored = data_zscored_raw;
            data_zscored(mask) = 0;
+           
+           % Done preprocessing.
+           try
+               close(wb);
+           catch
+               warning('Image preprocessing was canceled.');
+           end
            
            % Detect the neurons.
            mp.k = num_neurons;
