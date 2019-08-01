@@ -134,7 +134,69 @@ classdef GUIPreferences < handle
             obj.neuron_dot.selected.line = dot.selected.line;
             obj.neuron_dot.unselected.line = dot.unselected.line;
         end
+        
+        function color = inputGFPColor()
+            %INPUTGFPCOLOR get the GFP reporter color from the user.
+            
+            % Instantiate the class.
+            obj = Program.GUIPreferences.instance();
+            
+            % Determine the current value.
+            value = 1;
+            if isequaln(obj.GFP_color, [1,1,0]) % 'yellow'
+                value = 1;
+            elseif isequaln(obj.GFP_color, [0,1,1]) % 'cyan'
+                value = 2;
+            elseif isequaln(obj.GFP_color, [1,0,1]) % 'magenta'
+                value = 3;
+            elseif isequaln(obj.GFP_color, [1,1,1]) % 'white'
+                value = 4;
+            elseif isequaln(obj.GFP_color, [1,0,0]) % 'red'
+                value = 5;
+            elseif isequaln(obj.GFP_color, [0,1,0]) % 'green'
+                value = 6;
+            elseif isequaln(obj.GFP_color, [0,0,1]) % 'blue'
+                value = 7;
+            end
+            
+            % Initialize the input dialog.
+            title = 'GFP Reporter Color';
+            prompt = 'Color for the GFP reporter channel:';
+            list = {'yellow', 'cyan', 'magenta', 'white', ...
+                'red', 'green', 'blue'};
+            [color_i,~] = listdlg('PromptString', prompt, 'Name', title, ...
+                'ListString', list, 'InitialValue', value, ...
+                'SelectionMode', 'single');
+            
+            % Get the user input.
+            color = [];
+            if isempty(color_i)
+                return;
+            end
+            
+            % Parse and store the user input.
+            color = list{color_i};
+            switch color
+                case 'yellow'
+                    obj.GFP_color = [1,1,0];
+                case 'cyan'
+                    obj.GFP_color = [0,1,1];
+                case 'magenta'
+                    obj.GFP_color = [1,0,1];
+                case 'white'
+                    obj.GFP_color = [1,1,1];
+                case 'red'
+                    obj.GFP_color = [1,0,0];
+                case 'green'
+                    obj.GFP_color = [0,1,0];
+                case 'blue'
+                    obj.GFP_color = [0,0,1];
+            end
+        end
     end
+    
+    
+    %% PRIVATE.
     
     % GUI private methods.
     methods (Static, Access = private)
