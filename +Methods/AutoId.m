@@ -67,8 +67,7 @@ classdef AutoId < handle
             
             % Save the auto ID'd neurons.
             Methods.AutoId.instance().id(file, neurons);
-            sp = neurons.to_superpixel();
-            save(id_file, 'sp', '-append');
+            save(id_file, 'neurons', '-append');
         end
         
         function rotmat = rotmat(theta)
@@ -428,7 +427,8 @@ classdef AutoId < handle
             
             % Setup the progress bar.
             wait_title = 'ID''ing Neurons';
-            h = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb.Children.Title.Interpreter = 'none';
             
             % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
@@ -460,7 +460,7 @@ classdef AutoId < handle
                     
                     % Update the progress.
                     try
-                        waitbar((2*idx)/num_tests,h, {file_str, ...
+                        waitbar((2*idx)/num_tests,wb, {file, ...
                             [num2str(round((100.0*2*idx)/num_tests)),'%']}, ...
                             'Name', wait_title);
                     catch
@@ -478,7 +478,7 @@ classdef AutoId < handle
                     colors{job_idx}     = c;
                     cost(job_idx)       = cc;
                     try
-                        waitbar(idx/num_tests,h, {file_str, ...
+                        waitbar(idx/num_tests,wb, {file, ...
                             [num2str(round((100.0*idx/num_tests))),'%']}, ...
                             'Name', wait_title);
                     catch
@@ -489,7 +489,7 @@ classdef AutoId < handle
             
             % Done.
             try
-                close(h);
+                close(wb);
             catch
                 warning('Auto ID is canceled.');
             end

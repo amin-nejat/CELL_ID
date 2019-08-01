@@ -35,7 +35,7 @@ classdef AutoDetect < handle
            
            % Open the image file.
            try
-               [data, info, prefs, ~, mp, ~, ~, id_file] = ...
+               [data, info, prefs, worm, mp, ~, ~, id_file] = ...
                    DataHandling.NeuroPALImage.open(file);
            catch
                return;
@@ -58,9 +58,10 @@ classdef AutoDetect < handle
                filter, mp.k, mp.min_eig_thresh, info.scale', mp.exclusion_radius);
            
            % Save the neurons.
-           version = DataHandling.NeuroPALImage.version;
+           version = Program.ProgramInfo.version;
            mp_params = mp;
-           save(id_file, 'version', 'sp', 'mp_params');
+           neurons = Neurons.Image(sp, worm.body, 'scale', info.scale');
+           save(id_file, 'version', 'neurons', 'mp_params');
        end
        
        function [c, ceq] = constrain_eigenvalues(x, lb, ub)
@@ -211,7 +212,8 @@ classdef AutoDetect < handle
             
             % Setup the progress bar.
             wait_title = 'Detecting Neurons';
-            h = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb.Children.Title.Interpreter = 'none';
             
             obj.supervoxels = [];
 
@@ -226,7 +228,7 @@ classdef AutoDetect < handle
             N = 0;
             while N < n_objects && max(rho(:)) > 0.1
                 try
-                    waitbar((N+1)/n_objects,h,...
+                    waitbar((N+1)/n_objects,wb,...
                         {file, ...
                         sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
                         'Name', wait_title);
@@ -262,7 +264,7 @@ classdef AutoDetect < handle
             
             % Done.
             try
-                close(h);
+                close(wb);
             catch
                 warning('The detection was canceled.');
             end
