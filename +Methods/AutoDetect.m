@@ -34,9 +34,11 @@ classdef AutoDetect < handle
            %BATCHDETECT Batch detect neurons.
            
            % Setup the conversion progress bar.
+           % Note: windows wants the interpreter off from the beginning.
            wait_title = 'Converting Image';
-           wb = waitbar(0, {file, 'Converting ...'}, 'Name', wait_title);
+           wb = waitbar(0, 'Converting ...', 'Name', wait_title);
            wb.Children.Title.Interpreter = 'none';
+           waitbar(0, wb, {file, 'Converting ...'}, 'Name', wait_title);
             
            % Open the image file.
            try
@@ -54,9 +56,11 @@ classdef AutoDetect < handle
            end
            
            % Setup the preprocessing progress bar.
+           % Note: windows wants the interpreter off from the beginning.
            wait_title = 'Preprocessing Image';
-           wb = waitbar(0, {file, 'Preprocessing ...'}, 'Name', wait_title);
+           wb = waitbar(0, 'Preprocessing ...', 'Name', wait_title);
            wb.Children.Title.Interpreter = 'none';
+           waitbar(0, wb, {file, 'Preprocessing ...'}, 'Name', wait_title);
            
            % Preprocess the colors.
            data_RGBW = double(data(:,:,:,prefs.RGBW(~isnan(prefs.RGBW))));

@@ -428,9 +428,11 @@ classdef AutoId < handle
             end
             
             % Setup the progress bar.
+            % Note: windows wants the interpreter off from the beginning.
             wait_title = 'ID''ing Neurons';
-            wb = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb = waitbar(0, 'Initializing ...', 'Name', wait_title);
             wb.Children.Title.Interpreter = 'none';
+            waitbar(0, wb, {file, 'Initializing ...'}, 'Name', wait_title);
             
             % Initialize the alignment.
             cost = nan(2*length(AutoId.theta),1);
@@ -462,7 +464,7 @@ classdef AutoId < handle
                     
                     % Update the progress.
                     try
-                        waitbar((2*idx)/num_tests,wb, {file, ...
+                        waitbar((2*idx)/num_tests, wb, {file, ...
                             [num2str(round((100.0*2*idx)/num_tests)),'%']}, ...
                             'Name', wait_title);
                     catch
