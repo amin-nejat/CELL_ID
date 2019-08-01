@@ -56,17 +56,19 @@ classdef AutoId < handle
             
             % Open the image file.
             try
-                [~, ~, ~, ~, ~, neurons, ~, id_file] = ...
+                [~, ~, ~, worm, ~, neurons, np_file, id_file] = ...
                     DataHandling.NeuroPALImage.open(file);
             catch
                 return;
             end
             
             % Update the body part.
+            worm.body = bodypart;
             neurons.bodypart = bodypart;
             
             % Save the auto ID'd neurons.
             Methods.AutoId.instance().id(file, neurons);
+            save(np_file, 'worm', '-append');
             save(id_file, 'neurons', '-append');
         end
         
