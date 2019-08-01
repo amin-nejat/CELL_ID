@@ -27,12 +27,20 @@ classdef GUIPreferences < handle
                  
                  % Add the image directory.
                  obj = Program.GUIPreferences();
-                 user_dir = what('~/');
+                 if ismac
+                     user_dir = what('~/');
+                 else
+                     user_dir = what('/');
+                 end
                  obj.image_dir = user_dir.path;
                  
                  % Initilaize the neurons dots.
                  obj.neuron_dot.marker.unselected = 40; % unselected neuron marker size
-                 obj.neuron_dot.marker.selected = 200; % selected neuron marker size
+                 if ismac % selected neuron marker size
+                     obj.neuron_dot.marker.selected = 200;
+                 else
+                     obj.neuron_dot.marker.selected = 100;
+                 end
                  obj.neuron_dot.line = 2; % neuron line size
                  
                  % Save the instantiation.
