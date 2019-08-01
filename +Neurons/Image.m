@@ -453,7 +453,7 @@ classdef Image < handle
         end
         
         
-        %% ROTATE THE IMAGE,NEURONS, OR BOTH.
+        %% ROTATE THE IMAGE, NEURONS, OR BOTH.
         
         function rot_image = rotate_X_180(obj, rot_image)
             %ROTATE_X_180 Rotate everything 180 degrees around the x-axis.

@@ -88,6 +88,7 @@ octave-core
 
 # User/programmer specific files.
 .NeuroPAL_ID_Preferences.mat
+.NeuroPAL_ID_prefs.mat
 visualize_light_prefs.mat
 External_Dependencies
 visualize

@@ -4,11 +4,7 @@ classdef Neuron < handle
     %   A neuron has a position within an image, color, list of potential
     %   IDs, probabilities associated with these IDs, and methods to draw
     %   it within a GUI.
-
-    properties (Access = private)
-        brain
-    end
-
+    
     properties
         % Neuron position & color.
         position % neuron pixel position (x,y,z)
@@ -31,12 +27,7 @@ classdef Neuron < handle
         rank % ranks of the neuron based on the confidence assigned by sinkhorn algorithm
         
         % GUI properties.
-        % MOVE TO IMAGE!!!!
         is_selected = false % GUI related parameter specifying if the neuron is selected in the software or not
-        MARKER_SIZE_NOT_SELECTED = 40 % unselected neuron marker size
-        MARKER_SIZE_SELECTED = 200 % selected neuron marker size
-        LINE_SIZE_NOT_SELECTED = 1 % unselected neuron line size
-        LINE_SIZE_SELECTED = 4 % selected neuron line size
     end
 
     methods (Static)
@@ -159,16 +150,25 @@ classdef Neuron < handle
         function color = get_marker_color(obj)
             %GET_MARKER_COLORS specifies the marker color of the current
             %neuron according to the annotation confidence.
+            color = Neurons.Neuron.NO_CONFIDENCE_COLOR;
+            
+            % Neuron selected.
             if obj.is_selected
-                color = [1,1,1]; % neuron selected (white)
-            elseif obj.annotation_confidence == 0
-                color = [1,0,0]; % user added neuron but no ID yet (red)
-            elseif obj.annotation_confidence == 1
-                color = [0,1,0]; % user ID'd neuron as 100% correct (green)
-            elseif obj.annotation_confidence == 0.5
-                color = [1,1,0]; % user ID'd neuron as low probability (yellow)
-            elseif obj.annotation_confidence == -1
-                color = [1,0.5,0]; % model ID'd neuron (orange)
+                color = Neurons.Neuron.SELECTED_COLOR;
+                
+            % Neuron has a user ID.
+            elseif ~isempty(obj.annotation)
+                if obj.annotation_confidence == 1
+                color = Neurons.Neuron.HIGH_CONFIDENCE_COLOR;
+                elseif obj.annotation_confidence == 0.5
+                    color = Neurons.Neuron.LOW_CONFIDENCE_COLOR;
+                elseif obj.annotation_confidence <= 0
+                    color = Neurons.Neuron.NO_CONFIDENCE_COLOR;
+                end
+                
+            % Neuron has a model ID.
+            elseif ~isempty(obj.deterministic_id)
+                color = Neurons.Neuron.AUTO_ID_COLOR;
             end
         end
 
@@ -176,21 +176,11 @@ classdef Neuron < handle
             %GET_MARKER_SIZE specifies the marker size of the current
             %neuron according to whether it is selected in the software or
             %not.
-            if ~obj.is_selected
-                size = obj.MARKER_SIZE_NOT_SELECTED;
+            dot_prefs = Program.GUIPreferences.instance().neuron_dot;
+            if obj.is_selected
+                size = dot_prefs.marker.selected;
             else
-                size = obj.MARKER_SIZE_SELECTED;
-            end
-        end
-
-        function size = get_line_size(obj)
-            %GET_MARKER_SIZE specifies the line size of the current
-            %neuron according to whether it is selected in the software or
-            %not.
-            if ~obj.is_selected
-                size = obj.LINE_SIZE_NOT_SELECTED;
-            else
-                size = obj.LINE_SIZE_SELECTED;
+                size = dot_prefs.marker.unselected;
             end
         end
 
@@ -207,5 +197,20 @@ classdef Neuron < handle
                 zeros(size(obj.color)), ... % baseline mean
                 obj.truncation); % truncation
         end
+    end
+    
+    
+    %% PRIVATE.
+    properties (Access = private)
+        brain
+    end
+
+    properties (Constant, Access = private)
+        % Neuron dot colors.
+        SELECTED_COLOR = [1,1,1]; % neuron selected (white)
+        NO_CONFIDENCE_COLOR = [1,0,0]; % user added neuron but no ID yet (red)
+        HIGH_CONFIDENCE_COLOR = [0,1,0]; % user ID'd neuron as 100% correct (green)
+        LOW_CONFIDENCE_COLOR = [1,1,0]; % user ID'd neuron as low probability (yellow)
+        AUTO_ID_COLOR = [1,0.5,0]; % model ID'd neuron (orange)
     end
 end

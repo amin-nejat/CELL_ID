@@ -31,10 +31,9 @@ classdef GUIPreferences < handle
                  obj.image_dir = user_dir.path;
                  
                  % Initilaize the neurons dots.
-                 obj.neuron_dot.unselected.marker = 40; % unselected neuron marker size
-                 obj.neuron_dot.unselected.line = 1; % unselected neuron line size
-                 obj.neuron_dot.selected.marker = 200; % selected neuron marker size
-                 obj.neuron_dot.selected.line = 4; % selected neuron line size
+                 obj.neuron_dot.marker.unselected = 40; % unselected neuron marker size
+                 obj.neuron_dot.marker.selected = 200; % selected neuron marker size
+                 obj.neuron_dot.line = 2; % neuron line size
                  
                  % Save the instantiation.
                  instance = obj;
@@ -93,12 +92,10 @@ classdef GUIPreferences < handle
             title = 'Neuron Dots';
             prompt = {'Selected neuron dot size:', ...
                 'Unselected neuron dot size:', ...
-                'Selected neuron line size:', ...
-                'Unselected neuron line size:'};
-            definput = {num2str(obj.neuron_dot.selected.marker), ...
-                num2str(obj.neuron_dot.unselected.marker), ...
-                num2str(obj.neuron_dot.selected.line), ...
-                num2str(obj.neuron_dot.unselected.line)};
+                'Neuron line size:'};
+            definput = {num2str(obj.neuron_dot.marker.selected), ...
+                num2str(obj.neuron_dot.marker.unselected), ...
+                num2str(obj.neuron_dot.line)};
             dims = [1 35];
             
             % Get the user input.
@@ -109,30 +106,25 @@ classdef GUIPreferences < handle
             end
             
             % Parse the user input.
-            dot.selected.marker = round(str2double(answer{1}));
-            dot.unselected.marker = round(str2double(answer{2}));
-            dot.selected.line = round(str2double(answer{3}));
-            dot.unselected.line = round(str2double(answer{4}));
+            dot.marker.selected = round(str2double(answer{1}));
+            dot.marker.unselected = round(str2double(answer{2}));
+            dot.line = round(str2double(answer{3}));
             
             % Check the user input.
-            if dot.selected.marker < 1
-                dot.selected.marker = obj.neuron_dot.selected.marker;
+            if dot.marker.selected < 1
+                dot.marker.selected = 1;
             end
-            if dot.unselected.marker < 1
-                dot.unselected.marker = obj.neuron_dot.unselected.marker;
+            if dot.marker.unselected < 1
+                dot.marker.unselected = 1;
             end
-            if dot.selected.line < 1
-                dot.selected.line = obj.neuron_dot.selected.line;
-            end
-            if dot.unselected.line < 1
-                dot.unselected.line = obj.neuron_dot.unselected.line;
+            if dot.line < 1
+                dot.line = obj.neuron_dot.line;
             end
             
             % Store the user input.
-            obj.neuron_dot.selected.marker = dot.selected.marker;
-            obj.neuron_dot.unselected.marker = dot.unselected.marker;
-            obj.neuron_dot.selected.line = dot.selected.line;
-            obj.neuron_dot.unselected.line = dot.unselected.line;
+            obj.neuron_dot.marker.selected = dot.marker.selected;
+            obj.neuron_dot.marker.unselected = dot.marker.unselected;
+            obj.neuron_dot.line = dot.line;
         end
         
         function color = inputGFPColor()
