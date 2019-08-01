@@ -10,15 +10,43 @@ classdef Illustration
     
    % Public methods.
     methods (Static)
-        function saveIDImage(file, data, neurons, um_scale, ...
-                start_z, end_z, z_MIP, image_size, font_size)
+        function saveIDImage(file, data, neurons, um_scale)
             %SAVEIDIMAGE save an image with neuron IDs to a PDF.
             
             % Initialize.
             import Output.*;
             
-            % Sanitize the input values.
+            % What is the z limit?
             max_z = size(data,3);
+            max_z_str = num2str(max_z);
+            range_z_str = ['(1-' max_z_str ')'];
+            
+            % Worm neurons are ~2-4um in diameter so default to 8um MIP z-slices.
+            z_MIP_def = num2str(round(8 / um_scale(3)));
+            
+            % Prompt the user for the parameters.
+            start_z_str = ['Start Z-slice ' range_z_str];
+            end_z_str = ['End Z-slice ' range_z_str];
+            z_MIP_str = ['Z-slice thickness ' range_z_str];
+            size_str = 'Image size (default = 1x)';
+            font_str = 'Font size';
+            prompt = {start_z_str, end_z_str, z_MIP_str, size_str, font_str};
+            title = 'Save ID Image';
+            dims = [1 35];
+            definput = {'1', max_z_str, z_MIP_def, '2', '4'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if isempty(answer)
+                return;
+            end
+            
+            % Format the user input.
+            start_z = round(str2double(answer{1}));
+            end_z = round(str2double(answer{2}));
+            z_MIP = round(str2double(answer{3}));
+            image_size = str2double(answer{4});
+            font_size = round(str2double(answer{5}));
+            
+            % Sanitize the input values.
             if start_z < 1 || start_z > max_z
                 start_z = 1;
             end
@@ -59,11 +87,13 @@ classdef Illustration
             scale_bar_str_y = sum(scale_bar_y)/2;
             
             % Get the neuron info.
-            neuron_name = arrayfun(@(x) x.annotation, neurons, 'UniformOutput' , false);
             neuron_pos = vertcat(neurons.position);
-            neuron_pos(:,1:2) = neuron_pos(:,1:2) * image_size;
-            neuron_conf = arrayfun(@(x) x.annotation_confidence, neurons);
-            neuron_on = arrayfun(@(x) x.is_annotation_on, neurons);
+            if ~isempty(neuron_pos)
+                neuron_name = arrayfun(@(x) x.annotation, neurons, 'UniformOutput' , false);
+                neuron_pos(:,1:2) = neuron_pos(:,1:2) * image_size;
+                neuron_conf = arrayfun(@(x) x.annotation_confidence, neurons);
+                neuron_on = arrayfun(@(x) x.is_annotation_on, neurons);
+            end
             
             % Save the PDFs.
             page = 1;
@@ -91,7 +121,11 @@ classdef Illustration
                 hold on;
                 
                 % Find the neurons in these z-slices.
-                neuron_z = find(neuron_pos(:,3) >= i & neuron_pos(:,3) <= (i+z_MIP-1));
+                neuron_z = [];
+                if ~isempty(neuron_pos)
+                    neuron_z = find(neuron_pos(:,3) >= i & ...
+                        neuron_pos(:,3) <= (i+z_MIP-1));
+                end
                 
                 % Draw the neuron IDs.
                 for j = 1:length(neuron_z)
