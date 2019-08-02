@@ -8,17 +8,17 @@ classdef Neuron < handle
     properties
         % Neuron position & color.
         position % neuron pixel position (x,y,z)
-        color % neuron color based on fitting (R,G,B,W,...), W = white channel, values=[0-255]
+        color = nan(1,4); % neuron color based on fitting (R,G,B,W,...), W = white channel, values=[0-255]
         color_readout % neuron color based on readout from the image
-        baseline % baseline noise values (R,G,B,W,...), values=[-1,1]
-        covariance % 3x3 covariance matrix that's fit to the neuron
-        truncation = 0 % Gaussian truncation value that defines the sharpness of the edge of neuron
+        baseline = nan(1,4); % baseline noise values (R,G,B,W,...), values=[-1,1]
+        covariance = nan(1,3,3); % 3x3 covariance matrix that's fit to the neuron
+        truncation = nan; % Gaussian truncation value that defines the sharpness of the edge of neuron
         aligned_xyzRGB % the neuron's position & color, aligned to the global model
                 
         % User neuron ID.
         annotation = '' % neuron user selected annotation
-        is_annotation_on = NaN % is the neuron's annotation ON, OFF, or neither (empty)
-        annotation_confidence = -1 % user confidence about annotation
+        is_annotation_on = nan; % is the neuron's annotation ON, OFF, or neither (empty)
+        annotation_confidence = -1; % user confidence about annotation
         
         % Auto neuron ID.
         deterministic_id  % neuron ID assigned by the deterministic model

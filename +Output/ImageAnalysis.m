@@ -86,9 +86,16 @@ classdef ImageAnalysis
             GFP_fmt = '%f\n';
             out_fmt = [id_fmt, real_position_fmt, real_color_fmt, ...
                 aligned_position_fmt, aligned_color_fmt, GFP_fmt];
-                        
-            % Write the neurons.
+            
+            % Sort the neurons by position.
             ns = neurons.neurons;
+            positions = neurons.get_positions();
+            positions = positions(:,[2,1,3]);
+            [~, sort_i] = sortrows(positions);
+            ns = ns(sort_i);
+            
+            % Write the neurons.
+            um_scale = um_scale';
             fprintf(fileID, out_str);
             for i = 1:length(ns)
                 n = ns(i);

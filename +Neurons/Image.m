@@ -229,43 +229,27 @@ classdef Image < handle
                 return;
             end
             
-            % Match indices to reduce computation.
-            RGBW_match = [];
-            RGBW_miss = [];
-            for i=1:length(old_RGBW)
-                j = find(new_RGBW(i) == old_RGBW ,1);
-                
-                % Old RGBW does NOT have the data.
-                if isempty(j)
-                    RGBW_miss(end + 1) = i;
-                    
-                % Old RGBW has the data.
-                else
-                    RGBW_match(end + 1,:) = [i,j];
-                end
-            end
+            % Determine the new data.
+            data = data(:,:,:,new_RGBW);
+            
+            % Set the neuron patch size.
+            patch_hsize = [3,3,0];
             
             % Update the color channels.
             for i = 1:length(obj.neurons)
                 
-                % Delete the aligned RGB data.
-               neuron.aligned_xyzRGB = [];
-                
-                % Store the matching data.
+                % Delete the old RGB data.
                 neuron = obj.neurons(i);
-                for j = 1:length(RGBW_match)
-                    neuron.color(RGBW_match(:,1)) = ...
-                        neuron.color(RGBW_match(:,2));
-                    neuron.color_readout(RGBW_match(:,1)) = ...
-                        neuron.color_readout(RGBW_match(:,2));
-                    neuron.baseline(RGBW_match(:,1)) = ...
-                        neuron.baseline(RGBW_match(:,2));
-                end
+                neuron.color = nan(1,4);
+                neuron.baseline = nan(1,4);
+                neuron.aligned_xyzRGB = [];
                 
-                % Compute the missing data.
-                for j = 1:length(RGBW_miss)
-                    % AMIN FILL ME IN :)
-                end
+                % Compute the color.
+                patch = Methods.Utils.subcube(data, ...
+                    round(neuron.position), patch_hsize);
+                neuron.color_readout = ...
+                    nanmedian(reshape(patch, ...
+                    [numel(patch)/size(patch, 4), size(patch, 4)]));
             end
         end
         
