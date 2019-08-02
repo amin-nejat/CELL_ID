@@ -172,6 +172,7 @@ classdef Image < handle
         
         function colors = get_colors(obj)
             %GET_COLORS getter of neuron colors.
+            % *** NOTE: THIS FUNCTION MAY RETURN NANS!!!
             colors = [];
             if isempty(obj.neurons)
                 return;
@@ -190,6 +191,7 @@ classdef Image < handle
 
         function baselines = get_baselines(obj)
             %GET_BASELINES getter of neuron baselines.
+            % *** NOTE: THIS FUNCTION MAY RETURN NANS!!!
             baselines = [];
             if isempty(obj.neurons)
                 return;
@@ -199,6 +201,7 @@ classdef Image < handle
 
         function covariances = get_covariances(obj)
             %GET_COVARIANCES getter of neuron covariances.
+            % *** NOTE: THIS FUNCTION MAY RETURN NANS!!!
             covariances = [];
             if isempty(obj.neurons)
                 return;
@@ -209,6 +212,7 @@ classdef Image < handle
         
         function truncations = get_truncations(obj)
             %GET_TRUNCATIONS getter of neuron truncations.
+            % *** NOTE: THIS FUNCTION MAY RETURN NANS!!!
             truncations  = [];
             if isempty(obj.neurons)
                 return;
@@ -285,6 +289,7 @@ classdef Image < handle
         
         function annotations = get_annotations(obj)
             %GET_ANNOTATIONS getter of neuron annotations.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             annotations = [];
             if isempty(obj.neurons)
                 return;
@@ -329,6 +334,7 @@ classdef Image < handle
 
         function deterministic_ids = get_deterministic_ids(obj)
             %GET_DETERMINISTIC_IDS getter of neuron deterministic_ids.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             deterministic_ids = vertcat({obj.neurons.deterministic_id});
         end
 
@@ -341,6 +347,7 @@ classdef Image < handle
 
         function probabilistic_ids = get_probabilistic_ids(obj)
             %GET_PROBABILISTIC_IDS getter of neuron probabilistic_ids.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             probabilistic_ids = [];
             if isempty(obj.neurons)
                 return;
@@ -357,6 +364,7 @@ classdef Image < handle
 
         function probabilistic_probs = get_probabilistic_probs(obj)
             %GET_PROBABILISTIC_PROBS getter of neuron probabilistic_probs.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             probabilistic_probs = [];
             if isempty(obj.neurons)
                 return;
@@ -379,6 +387,7 @@ classdef Image < handle
 
         function ranks = get_ranks(obj)
             %GET_RANKS getter of neuron ranks.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             ranks = [];
             if isempty(obj.neurons)
                 return;
@@ -398,6 +407,7 @@ classdef Image < handle
         
         function aligned_xyzRGBs = get_aligned_xyzRGBs(obj)
             %GET_ALIGNED_XYZRGBS getter of aligned neuron positions +  colors.
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             aligned_xyzRGBs = [];
             if isempty(obj.neurons)
                 return;
@@ -408,6 +418,7 @@ classdef Image < handle
         function aligned = get_neurons_aligned(obj)
             %GET_NEURONS_ALIGNED get the aligned neuron position & color
             %data (x,y,z,R,G,B,W)
+            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
             aligned = [];
             if isempty(obj.neurons)
                 return;
