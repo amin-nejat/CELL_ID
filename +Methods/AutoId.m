@@ -525,6 +525,7 @@ classdef AutoId < handle
             end
             
             % reduce rank to match aligned
+            % CHECKING ALIGNED HERE, WE'RE GOOD!!!
             if size(aligned,1) < size(col,1)
                 is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
                 col = col(is_aligned,:);
