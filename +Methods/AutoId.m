@@ -8,7 +8,7 @@ classdef AutoId < handle
         ncandidates         = 7;
         annotation_weight   = 0.5;
         
-        iter_sinkhorn       = 2000;
+        iter_sinkhorn       = 500;
         iter_rwc            = 10;
         
         lambda              = 0.5;
@@ -379,10 +379,8 @@ classdef AutoId < handle
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
             
-            obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
-            for i=1:size(annotated,1)
-                obj.log_likelihood(annotated(i,1),annotated(i,2))= Methods.AutoId.max_log_likelihood;
-            end
+            % update the log likelihood
+            obj.update_log_likelihood(im);
             
             % compute probabilistic/deterministic assignments
             obj.compute_assignments();
@@ -392,18 +390,14 @@ classdef AutoId < handle
             obj.add_to_image(im);
         end
         
-        function update_id(obj, im, neuron_i, neuron)
+        function update_id(obj, im)
             % update_auto_id changes the properties of auto_id given human has given 
             % the identity neuron to the neuron_i-th neuron (with the mp order).
             % it also updates the image object accordingly.
-            import Methods.*;
             
             % Update the log likelihood.
-            obj.log_likelihood(neuron_i,:)= AutoId.min_log_likelihood;
-            neuron_names = obj.atlas.(lower(im.bodypart)).N;
-            if ~strcmp(neuron, 'NaN')
-                obj.log_likelihood(neuron_i, strcmp(neuron_names, neuron))  = AutoId.max_log_likelihood;
-            end
+            obj.update_log_likelihood(im);
+            
             obj.compute_assignments();
             
             % convert the assignments to names and update the information
@@ -502,8 +496,33 @@ classdef AutoId < handle
             [theta_idx] = find(cost==max(cost(:)));
             pos = positions{theta_idx};
             col = colors{theta_idx};
-            obj.log_likelihood = -AutoId.pdist2_maha([pos col], model.mu, model.sigma);
+            
             aligned = [pos col];
+        end
+        
+        function update_log_likelihood(obj, im)
+            % read the model and aligned information
+            model = obj.atlas.(lower(im.bodypart)).model;
+            aligned = im.get_aligned_xyzRGBs();
+            
+            % find the already annotated neurons
+            annotations = im.get_annotations();
+            annotation_confidences = im.get_annotation_confidences();
+            [annotations{annotation_confidences<=0.5}] = deal('');
+            
+            annotated = [];
+            annotated(:,1) = find(cellfun(@(x) ~isempty(x), annotations));
+            annotated(:,2) = cellfun(@(x) find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), annotations(annotated(:,1)));
+            
+            % update the log likelihood based on Mahalanobis distance
+            obj.log_likelihood = -Methods.AutoId.pdist2_maha(aligned, model.mu, model.sigma);
+            
+            % set the likelihood of annotated neurons to MIN_LL and the NaN
+            % ones to MAX_LL
+            obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
+            for i=1:size(annotated,1)
+                obj.log_likelihood(annotated(i,1),annotated(i,2))= Methods.AutoId.max_log_likelihood;
+            end
         end
         
         function visualize(obj,im,varargin)
