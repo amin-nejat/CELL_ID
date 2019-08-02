@@ -414,17 +414,6 @@ classdef Image < handle
             end
             aligned_xyzRGBs = vertcat(obj.neurons.aligned_xyzRGB);
         end
-        
-        function aligned = get_neurons_aligned(obj)
-            %GET_NEURONS_ALIGNED get the aligned neuron position & color
-            %data (x,y,z,R,G,B,W)
-            % *** NOTE: THIS FUNCTION MAY RETURN < NUM(NEURONS)!!!
-            aligned = [];
-            if isempty(obj.neurons)
-                return;
-            end
-            aligned = vertcat(obj.neurons.aligned_xyzRGB);
-        end
 
         
         %% NEURON META DATA.

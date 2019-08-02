@@ -518,7 +518,8 @@ classdef AutoId < handle
             pos = im.get_positions().*im.scale;
             
             % aligned data
-            aligned = im.get_neurons_aligned;
+            % CHECK ME!!! THIS ASSUMES ALL NEURONS ARE ALIGNED!!!
+            aligned = im.get_aligned_xyzRGBs();
             if isempty(aligned)
                 return;
             end
