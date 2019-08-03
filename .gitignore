@@ -79,7 +79,6 @@ octave-core
 # pictures
 *.jpg
 *.jpeg
-*.png
 *.gif
 
 # movies
