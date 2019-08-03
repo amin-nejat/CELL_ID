@@ -7,7 +7,7 @@ classdef PNGViewer
             
             % Show the PNG.
             hFig = figure('Name', name, ...
-                'Toolbar', 'none', 'Menubar', 'none');
+                'Menubar', 'none', 'Toolbar', 'none');
             hIm = imshow(file);
             
             % Create a scroll panel for the PNG.
