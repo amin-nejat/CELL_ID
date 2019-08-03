@@ -29,6 +29,7 @@ classdef GUIPreferences < handle
                  obj = Program.GUIPreferences();
                  if ismac
                      user_dir = what('~/');
+                     obj.prefs_file = ['/Applications/' obj.prefs_file];
                  else
                      user_dir = what('/');
                  end

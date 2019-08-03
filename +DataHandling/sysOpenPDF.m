@@ -1,16 +1,14 @@
-function openpdf(fileName)
+function sysOpenPDF(fileName)
 %OPENPDF Opens a PDF file in the appropriate viewer/editor.
 
 %   Copyright 1984-2009 The MathWorks, Inc.
-
 if ~exist(fileName, 'file')
     error(message('MATLAB:openpdf:noSuchFile', fileName));
 end
-
 if ispc
     winopen(fileName);
 elseif strncmp(computer,'MAC',3) 
-    unix(['open "' fileName '" &']);
+    unix(['/usr/bin/open "' fileName '" &']);
 else
     command = 'acroread';
     if (usejava('mwt') == 1)
