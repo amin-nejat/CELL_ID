@@ -94,3 +94,4 @@ External_Dependencies
 visualize
 *.prj
 .NeuroPAL_ID_prefs.mat
+visualize_resources/icon.icns
