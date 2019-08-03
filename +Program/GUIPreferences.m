@@ -25,11 +25,20 @@ classdef GUIPreferences < handle
              persistent instance;
              if isempty(instance)
                  
-                 % Add the image directory.
+                 % Instantiate the class.
                  obj = Program.GUIPreferences();
+                 
+                 % Setup the preferences file location.
+                 if isdeployed
+                     pref_dir = ctfroot;
+                     i = strfind(pref_dir, '/');
+                     pref_dir = pref_dir(1:i(end));
+                     obj.prefs_file = [pref_dir obj.prefs_file];
+                 end
+                 
+                 % Add the image directory.
                  if ismac
                      user_dir = what('~/');
-                     obj.prefs_file = ['/Applications/' obj.prefs_file];
                  else
                      user_dir = what('/');
                  end
