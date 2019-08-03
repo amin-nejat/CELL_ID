@@ -1,16 +1,24 @@
 classdef GUIPreferences < handle
     %GUIPreferences GUI preferences.
     
-    % GUI properties.
-    properties (Access = public)
+    % Constant GUI properties.
+    properties (Constant, Access = public)
         
         % Version.
         %version = Program.ProgramInfo.version;
         
-        % Preferences file.
-        prefs_file = '.NeuroPAL_ID_prefs.mat';
+        % Preferences file info.
+        prefs_dir = ''; %'NeuroPAL_ID/appdata/';
+        prefs_name = '.NeuroPAL_ID_prefs.mat';
+    end
+    
+    % User GUI properties.
+    properties (Access = public)
         
-        % Image directory info.
+        % Preferences file.
+        prefs_file = [];
+        
+        % Image directory.
         image_dir = [];
         
         % Display info.
@@ -29,11 +37,14 @@ classdef GUIPreferences < handle
                  obj = Program.GUIPreferences();
                  
                  % Setup the preferences file location.
-                 if isdeployed
-                     pref_dir = ctfroot;
-                     i = strfind(pref_dir, '/');
-                     pref_dir = pref_dir(1:i(end));
-                     obj.prefs_file = [pref_dir obj.prefs_file];
+                 if ~isdeployed
+                     obj.prefs_file = obj.prefs_name;
+                 else
+                     prefs_root = ctfroot;
+                     i = strfind(prefs_root, '/');
+                     prefs_root = prefs_root(1:i(end));
+                     obj.prefs_file = ...
+                         [prefs_root obj.prefs_dir obj.prefs_name];
                  end
                  
                  % Add the image directory.
