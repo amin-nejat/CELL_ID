@@ -7,6 +7,7 @@ classdef ProgramInfo
         version = 1.1; % software version
         version_URL = 'https://raw.githubusercontent.com/amin-nejat/CELL_ID/master/version.info';
         website_URL = 'http://hobertlab.org/neuropal/';
+        bug_URL = 'https://github.com/amin-nejat/CELL_ID/issues';
     end
     
    % Public methods.
