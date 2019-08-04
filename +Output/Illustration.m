@@ -20,6 +20,7 @@ classdef Illustration
             max_z = size(data,3);
             max_z_str = num2str(max_z);
             range_z_str = ['(1-' max_z_str ')'];
+            range_z_ID_str = ['(0-' max_z_str ')'];
             
             % Worm neurons are ~2-4um in diameter so default to 8um MIP z-slices.
             z_MIP_def = num2str(round(8 / um_scale(3)));
@@ -28,12 +29,14 @@ classdef Illustration
             start_z_str = ['Start Z-slice ' range_z_str];
             end_z_str = ['End Z-slice ' range_z_str];
             z_MIP_str = ['Z-slice thickness ' range_z_str];
+            z_ID_str = ['Z-slice ID thickness ' range_z_ID_str];
             size_str = 'Image size (default = 1x)';
             font_str = 'Font size';
-            prompt = {start_z_str, end_z_str, z_MIP_str, size_str, font_str};
+            prompt = {start_z_str, end_z_str, z_MIP_str, z_ID_str, ...
+                size_str, font_str};
             title = 'Save ID Image';
             dims = [1 35];
-            definput = {'1', max_z_str, z_MIP_def, '2', '4'};
+            definput = {'1', max_z_str, z_MIP_def, '1', '2', '4'};
             answer = inputdlg(prompt, title, dims, definput);
             if isempty(answer)
                 return;
@@ -43,8 +46,9 @@ classdef Illustration
             start_z = round(str2double(answer{1}));
             end_z = round(str2double(answer{2}));
             z_MIP = round(str2double(answer{3}));
-            image_size = str2double(answer{4});
-            font_size = round(str2double(answer{5}));
+            z_ID_offset = round(str2double(answer{4}));
+            image_size = str2double(answer{5});
+            font_size = round(str2double(answer{6}));
             
             % Sanitize the input values.
             if start_z < 1 || start_z > max_z
@@ -55,6 +59,9 @@ classdef Illustration
             end
             if z_MIP < 1 || z_MIP > max_z
                 z_MIP = 1;
+            end
+            if z_ID_offset < 0 || z_ID_offset > max_z
+                z_ID_offset = 1;
             end
             if start_z > end_z
                 tmp = start_z;
@@ -122,9 +129,11 @@ classdef Illustration
                 
                 % Find the neurons in these z-slices.
                 neuron_z = [];
-                if ~isempty(neuron_pos)
-                    neuron_z = find(neuron_pos(:,3) >= i & ...
-                        neuron_pos(:,3) <= (i+z_MIP-1));
+                if z_ID_offset > 0 && ~isempty(neuron_pos)
+                    min_z_ID = i - z_ID_offset + 1;
+                    max_z_ID = i + z_MIP + z_ID_offset - 2;
+                    neuron_z = find(neuron_pos(:,3) >= min_z_ID & ...
+                        neuron_pos(:,3) <= max_z_ID);
                 end
                 
                 % Draw the neuron IDs.
