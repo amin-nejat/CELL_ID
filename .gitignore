@@ -94,3 +94,7 @@ visualize
 *.prj
 .NeuroPAL_ID_prefs.mat
 visualize_resources/icon.icns
+Backup
+M_visualize*
+mac_visualize*
+NeuroPAL_ID_resources

@@ -41,17 +41,26 @@ classdef GUIPreferences < handle
                      obj.prefs_file = obj.prefs_name;
                  else
                      prefs_root = ctfroot;
-                     i = strfind(prefs_root, '/');
-                     prefs_root = prefs_root(1:i(end));
+                     
+                     % Determine the file separator.
+                     filesep = [];
+                     if ispc
+                         filesep = '\';
+                         %i = strfind(prefs_root, '\');
+                     else
+                         filesep = '/';
+                         %i = strfind(prefs_root, '/');
+                     end
+                     %prefs_root = prefs_root(1:i(end));
                      obj.prefs_file = ...
-                         [prefs_root obj.prefs_dir obj.prefs_name];
+                         [prefs_root filesep obj.prefs_name];
                  end
                  
                  % Add the image directory.
-                 if ismac
-                     user_dir = what('~/');
+                 if ispc
+                     user_dir = what('\');
                  else
-                     user_dir = what('/');
+                     user_dir = what('~/');
                  end
                  obj.image_dir = user_dir.path;
                  
