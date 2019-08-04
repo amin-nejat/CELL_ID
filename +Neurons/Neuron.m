@@ -57,8 +57,10 @@ classdef Neuron < handle
             % User neuron ID.
             if isfield(sp, 'annotation')
                 neuron.annotation = sp.annotation{i};
-                neuron.is_annotation_on = sp.is_annotation_on(i);
                 neuron.annotation_confidence = sp.annotation_confidence(i);
+                if isfield(sp, 'is_annotation_on')
+                    neuron.is_annotation_on = sp.is_annotation_on(i);
+                end
             end
             
             % Auto neuron ID.
