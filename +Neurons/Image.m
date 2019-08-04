@@ -107,17 +107,22 @@ classdef Image < handle
             end
             
             % Delete the neuron.
-            neuron_rank = obj.neurons(neuron_i).rank;
+            del_rank = obj.neurons(neuron_i).rank;
             obj.neurons(neuron_i) = [];
             
-            % Adjust the ranks.
-            if isempty(neuron_rank)
+            % No ranks.
+            if isempty(del_rank)
                 return;
             end
-            ranks = obj.get_ranks();
-            ranks_i = ranks > neuron_rank;
-            ranks(ranks_i) = ranks(ranks_i) - 1;
-            obj.add_ranks(ranks);
+            
+            % Adjust the ranks.
+            % Note: newly added neurons may have no rank.
+            for i = 1:length(obj.neurons)
+                neuron = obj.neurons(i);
+                if neuron.rank > del_rank
+                    neuron.rank = neuron.rank - 1;
+                end
+            end
         end
         
 
