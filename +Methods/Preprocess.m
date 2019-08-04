@@ -248,15 +248,31 @@ classdef Preprocess < handle
 
         end
         
-        function mask = manual_artefact_removal(data)
-            image(squeeze(max(data(:,:,:,[1,2,3]), [], 3)));
-            set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
-            daspect([1,1,1]);
-            axis off;
+        function mask = manual_artifact_removal(data)
+            %MANUAL_ARTIFACT_REMOVAL manually remove image artifacts.
             
-            h = drawpolygon('FaceAlpha',0);
-
-            mask = poly2mask(h.Position(:,1), h.Position(:,2), size(data,1), size(data,2));
+            % Draw the max projection.
+            im = image(squeeze(max(data(:,:,:,[1,2,3]), [], 3)));
+            
+            % Setup the figure info.
+            ax = im.Parent;
+            fig = ax.Parent;
+            
+            % Correct the aspect ratio.
+            set(fig, 'units', 'normalized', 'outerposition', [0 0 1 1]);
+            daspect([1,1,1]);
+            ax.Visible = 'off';
+            
+            % Get the artifact polygon.
+            h = drawpolygon(ax, 'FaceAlpha',0);
+            
+            % Generate the polygon mask.
+            mask = [];
+            if ~isempty(h)
+                mask = poly2mask(h.Position(:,1), h.Position(:,2), ...
+                    size(data,1), size(data,2));
+            end
+            close(fig);
         end
 
     end

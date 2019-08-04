@@ -59,6 +59,8 @@ classdef AutoId < handle
                 [~, ~, ~, worm, ~, neurons, np_file, id_file] = ...
                     DataHandling.NeuroPALImage.open(file);
             catch
+                % For now, don't throw exceptions from threads.
+                warning('Cannot read: "%s"', file);
                 return;
             end
             

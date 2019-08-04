@@ -275,12 +275,7 @@ classdef NeuroPALImage
             
             % Open the file.
             np_file = [];
-            try
-                [image_data, ~] = DataHandling.imreadCZI(czi_file);
-            catch
-                warning('Cannot read: "%s"', czi_file);
-                return;
-            end
+            [image_data, ~] = DataHandling.imreadCZI(czi_file);
             
             % Check the image orientation.
             data = image_data.data;
@@ -378,12 +373,7 @@ classdef NeuroPALImage
             
             % Open the file.
             np_file = [];
-            try
-                [image_data, ~] = DataHandling.imreadND2(nd2_file);
-            catch
-                warning('Cannot read: "%s"', nd2_file);
-                return;
-            end
+            [image_data, ~] = DataHandling.imreadND2(nd2_file);
             
             % Check the image orientation.
             data = image_data.data;
@@ -481,12 +471,7 @@ classdef NeuroPALImage
             
             % Open the file.
             np_file = [];
-            try
-                [image_data, ~] = DataHandling.imreadAny(any_file);
-            catch
-                warning('Cannot read: "%s"', any_file);
-                return;
-            end
+            [image_data, ~] = DataHandling.imreadAny(any_file);
             
             % Check the image orientation.
             data = image_data.data;
