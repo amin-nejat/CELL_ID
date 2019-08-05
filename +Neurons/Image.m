@@ -125,6 +125,66 @@ classdef Image < handle
             end
         end
         
+        function rank_neuron_max(obj, neuron_i)
+            %RANK_NEURON_MAX Give a neuron the maximum rank.
+            
+            % Is the index in range?
+            if neuron_i > length(obj.neurons)
+                return;
+            end
+            
+            % No ranks.
+            if length(obj.get_ranks()) <= 1
+                return;
+            end
+            
+            % Adjust the ranks.
+            % Note: newly added neurons may have no rank.
+            neuron = obj.neurons(neuron_i);
+            old_rank = neuron.rank;
+            neuron.rank = [];
+            for i = 1:length(obj.neurons)
+                neuron = obj.neurons(i);
+                if neuron.rank > old_rank
+                    neuron.rank = neuron.rank - 1;
+                end
+            end
+            
+            % Give the neuron the maximum rank.
+            obj.neurons(neuron_i).rank = max(obj.get_ranks()) + 1;
+        end
+        
+        function unrank_neuron(obj, neuron_i)
+            %UNRANK_NEURON Remove the neuron's rank.
+            
+            % Is the index in range?
+            if neuron_i > length(obj.neurons)
+                return;
+            end
+            
+            % Unrank the neuron.
+            neuron = obj.neurons(neuron_i);
+            old_rank = neuron.rank;
+            neuron.rank = [];
+            neuron.deterministic_id = [];
+            neuron.probabilistic_ids = [];
+            neuron.probabilistic_probs = [];
+            
+            % No ranks.
+            ranks = obj.get_ranks();
+            if isempty(ranks)
+                return;
+            end
+            
+            % Adjust the ranks.
+            % Note: newly added neurons may have no rank.
+            for i = 1:length(obj.neurons)
+                neuron = obj.neurons(i);
+                if neuron.rank > old_rank
+                    neuron.rank = neuron.rank - 1;
+                end
+            end
+        end
 
         %% COUNT NEURONS.
 

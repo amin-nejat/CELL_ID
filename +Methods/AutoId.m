@@ -364,10 +364,19 @@ classdef AutoId < handle
             annotation_confidences = im.get_annotation_confidences();
             [annotations{annotation_confidences<=0.5}] = deal('');
             
+            % find the annotated neurons
             annotated = [];
             annotated(:,1) = find(cellfun(@(x) ~isempty(x), annotations));
-            annotated(:,2) = cellfun(@(x) find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), annotations(annotated(:,1)));
             
+            % find the annotated neurons in the atlas
+            atlas_annotations = cellfun(@(x) ...
+                find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), ...
+                annotations(annotated(:,1)), 'UniformOutput', false);
+            
+            % remove neurons that are not in the atlas
+            remove_i = cellfun(@isempty, atlas_annotations);
+            annotated(remove_i) = [];
+            annotated(:,2) = cell2mat(atlas_annotations(~remove_i));
             
             % read features of the current image
             colors = im.get_colors_readout();
@@ -376,7 +385,6 @@ classdef AutoId < handle
             % align the image to statistical atlas
             aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
-            
             for neuron=1:length(im.neurons)
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
@@ -512,9 +520,19 @@ classdef AutoId < handle
             annotation_confidences = im.get_annotation_confidences();
             [annotations{annotation_confidences<=0.5}] = deal('');
             
+            % find the annotated neurons
             annotated = [];
             annotated(:,1) = find(cellfun(@(x) ~isempty(x), annotations));
-            annotated(:,2) = cellfun(@(x) find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), annotations(annotated(:,1)));
+            
+            % find the annotated neurons in the atlas
+            atlas_annotations = cellfun(@(x) ...
+                find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), ...
+                annotations(annotated(:,1)), 'UniformOutput', false);
+            
+            % remove neurons that are not in the atlas
+            remove_i = cellfun(@isempty, atlas_annotations);
+            annotated(remove_i) = [];
+            annotated(:,2) = cell2mat(atlas_annotations(~remove_i));
             
             % update the log likelihood based on Mahalanobis distance
             obj.log_likelihood = -Methods.AutoId.pdist2_maha(aligned, model.mu, model.sigma);
