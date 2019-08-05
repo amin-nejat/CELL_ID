@@ -376,7 +376,7 @@ classdef AutoId < handle
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
-            annotated(:,2) = cell2mat(atlas_annotations(~remove_i));
+            annotated(:,2) = atlas_annotations{~remove_i};
             
             % read features of the current image
             colors = im.get_colors_readout();
@@ -515,6 +515,35 @@ classdef AutoId < handle
             model = obj.atlas.(lower(im.bodypart)).model;
             aligned = im.get_aligned_xyzRGBs();
             
+            % the case where new neurons added without running AutoID
+            if size(aligned,1) < length(im.neurons)
+                % read out the index of the aligned neurons
+                is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
+                
+                % read out colors and positions for all neurons
+                col = im.get_colors_readout(); col = col(:,[1 2 3]);
+                pos = im.get_positions().*im.scale;
+                
+                % get the colors and positions of aligned subset
+                col_aligned = col(is_aligned,:);
+                pos_aligned = pos(is_aligned,:);
+                
+                % compute the transformation between aligned and
+                % non-aligned from aligned subset
+                beta = linsolve([pos_aligned col_aligned ones(size(pos_aligned,1),1)], ...
+                                [aligned ones(size(pos_aligned,1),1)]);
+                            
+                % transform all the points based on the recovered
+                % transformation
+                aligned = [pos col ones(size(pos,1),1)]*beta;
+                aligned = aligned(:,1:6);
+                
+                % write the aligned information into neurons
+                for neuron=1:length(im.neurons)
+                    im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
+                end
+            end
+            
             % find the already annotated neurons
             annotations = im.get_annotations();
             annotation_confidences = im.get_annotation_confidences();
@@ -532,7 +561,7 @@ classdef AutoId < handle
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
-            annotated(:,2) = cell2mat(atlas_annotations(~remove_i));
+            annotated(:,2) =  atlas_annotations{~remove_i};
             
             % update the log likelihood based on Mahalanobis distance
             obj.log_likelihood = -Methods.AutoId.pdist2_maha(aligned, model.mu, model.sigma);
