@@ -365,8 +365,9 @@ classdef AutoId < handle
             [annotations{annotation_confidences<=0.5}] = deal('');
             
             % find the annotated neurons
-            annotated = [];
-            annotated(:,1) = find(cellfun(@(x) ~isempty(x), annotations));
+            nempty_annotations = find(cellfun(@(x) ~isempty(x), annotations));
+            annotated = zeros(length(nempty_annotations), 2);
+            annotated(:,1) = nempty_annotations;
             
             % find the annotated neurons in the atlas
             atlas_annotations = cellfun(@(x) ...
@@ -376,7 +377,9 @@ classdef AutoId < handle
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
-            annotated(:,2) = atlas_annotations{~remove_i};
+            if ~isempty(~remove_i)
+            	annotated(:,2) = atlas_annotations{~remove_i};
+            end
             
             % read features of the current image
             colors = im.get_colors_readout();
@@ -561,7 +564,9 @@ classdef AutoId < handle
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
-            annotated(:,2) =  atlas_annotations{~remove_i};
+            if ~isempty(~remove_i)
+                annotated(:,2) =  atlas_annotations{~remove_i};
+            end
             
             % update the log likelihood based on Mahalanobis distance
             obj.log_likelihood = -Methods.AutoId.pdist2_maha(aligned, model.mu, model.sigma);
