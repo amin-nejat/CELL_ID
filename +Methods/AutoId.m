@@ -378,7 +378,7 @@ classdef AutoId < handle
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
             if ~isempty(~remove_i)
-            	annotated(:,2) = atlas_annotations{~remove_i};
+            	annotated(:,2) = [atlas_annotations{~remove_i}];
             end
             
             % read features of the current image
@@ -565,7 +565,7 @@ classdef AutoId < handle
             remove_i = cellfun(@isempty, atlas_annotations);
             annotated(remove_i) = [];
             if ~isempty(~remove_i)
-                annotated(:,2) =  atlas_annotations{~remove_i};
+                annotated(:,2) =  [atlas_annotations{~remove_i}];
             end
             
             % update the log likelihood based on Mahalanobis distance
