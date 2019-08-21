@@ -376,7 +376,7 @@ classdef AutoId < handle
             
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
-            annotated(remove_i) = [];
+            annotated(remove_i,:) = [];
             if ~isempty(~remove_i)
             	annotated(:,2) = [atlas_annotations{~remove_i}];
             end
@@ -563,7 +563,7 @@ classdef AutoId < handle
             
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
-            annotated(remove_i) = [];
+            annotated(remove_i,:) = [];
             if ~isempty(~remove_i)
                 annotated(:,2) =  [atlas_annotations{~remove_i}];
             end

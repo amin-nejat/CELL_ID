@@ -676,7 +676,7 @@ classdef Image < handle
             %   Gaussian functions and stitching them together.
             image = zeros(sz);
             for i=1:length(obj.neurons)
-                image = Utils.superpose(image, round(obj.neurons(i).position), obj.neurons(i).get_3d_reconstruction(nsz));
+                image = Methods.Utils.superpose(image, round(obj.neurons(i).position), obj.neurons(i).get_3d_reconstruction(nsz));
             end
         end
         

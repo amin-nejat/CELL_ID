@@ -43,7 +43,7 @@ classdef Neuron < handle
             neuron.color = sp.color(i,:);
             neuron.color_readout = sp.color_readout(i,:);
             neuron.baseline = sp.baseline(i,:);
-            neuron.covariance = sp.covariances(i,:,:);
+            neuron.covariance = squeeze(sp.covariances(i,:,:));
             if isfield(sp, 'truncation')
                 neuron.truncation = sp.truncation(i,:);
             end
@@ -192,7 +192,7 @@ classdef Neuron < handle
             %   nsz: size of the reconstructed image
             %   trunc: truncation value used for reconstruction.
             %   recon: (X,Y,Z,C) 4D double array.
-            recon = Utils.simulate_gaussian(2*nsz+1, ... % size
+            recon = Methods.Utils.simulate_gaussian(2*nsz+1, ... % size
                 nsz+1+obj.position-round(obj.position), ... % center
                 obj.covariance, ... % cov
                 obj.color, ... % colors

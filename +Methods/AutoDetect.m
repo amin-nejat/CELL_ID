@@ -81,12 +81,24 @@ classdef AutoDetect < handle
                warning('Image preprocessing was canceled.');
            end
            
+            mmpp = 0.4; 
+            if strcmp(worm.age, 'L1')
+                mmpp = 0.25;
+            elseif strcmp(worm.age, 'L2')
+                mmpp = 0.25;
+            elseif strcmp(worm.age, 'L3')
+                mmpp = 0.3;
+            elseif strcmp(worm.age, 'L4')
+                mmpp = 0.3;
+            elseif strcmp(worm.age, 'Adult')
+                mmpp = 0.4;
+            end
+           
            % Detect the neurons.
            mp.k = num_neurons;
-           filter = Methods.AutoDetect.get_filter(mp.hnsz(:)', mp.hnsz(:)', 0);
-           sp = Methods.AutoDetect.instance().detect(file, data_zscored, ...
-               filter, mp.k, mp.min_eig_thresh, info.scale', mp.exclusion_radius);
-           
+           [sp, mp] = Methods.AutoDetect.instance().detect(file, data_zscored, ...
+                mp.k, mp.min_eig_thresh, info.scale', mp.exclusion_radius, mmpp);
+                
            % Save the neurons.
            version = Program.ProgramInfo.version;
            mp_params = mp;
@@ -201,15 +213,19 @@ classdef AutoDetect < handle
                 positions = image.get_positions();
                 positions = positions(1:i,:);
 
-                distances = pdist2(positions.*scale', centers.*scale');
+                distances = pdist2(positions.*scale(:)', centers.*scale(:)');
                 distances(distances > precision) = Inf;
 
                 if i == 1
                     tp = any(~isinf(distances));
                 else
-                    [~,~,assign] = Methods.munkres(distances);
-                    [~,cols] = find(assign);
-                    tp = length(cols);
+                    if all(isinf(distances(:)))
+                        tp = 0;
+                    else
+                        [~,~,assign] = Methods.munkres(distances);
+                        [~,cols] = find(assign);
+                        tp = length(cols);
+                    end
                 end
 
                 fn = size(centers,1)-tp;
@@ -225,42 +241,83 @@ classdef AutoDetect < handle
                 eval.centers.f1(end+1) = 2*tp/(2*tp+fp+fn);
                 eval.centers.precision(end+1) = tp/(tp+fp);
                 eval.centers.recall(end+1) = tp/(tp+fn);
-                eval.centers.mean_closest_distance(end+1) = mean(min(pdist2(positions.*scale', centers.*scale')));
+                eval.centers.mean_closest_distance(end+1) = mean(min(pdist2(positions.*scale(:)', centers.*scale(:)')));
             end
         end
         
    end
    
    methods % Public Access
-        function supervoxels = detect(obj, file, volume, filter, n_objects, cov_threshold, scale, exclusion)
+        function [supervoxels, params] = detect(obj, titlestr, volume, k, min_eig_thresh, scale, exclusion_radius, mmpp)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
         % fits to input dataset. The algorithm runs greedy by subtracting off the
         % brightest Gaussian at each iteration.
         %
+        % INPUTS
+        % ======
+        % titlestr: a string that is shown in the progress bar
+        % volume: 4D image array (x,y,z,c), doesn't need to be z-scored
+        % k: number of objects that the algorithm finds
+        % min_eig_thresh (in microns): if the minimum eigenvalue of the
+        %   covariance of an object is less than this the object will be
+        %   removed in the procedure but is not accepted as a neuron
+        % scale (micron per pixel): scaling between image and micron spaces
+        % exclusion_radius (in microns): no pair of objects can have distances
+        %   less that the exclusion
+        % mmpp (sum microns per pixel): image downsampling parameter; the
+        %   resulting downsampled image has scale with MIN(scale) = mpp
+        %   meaning that the min of physical lengths of dimensions for each
+        %   pixel is mmpp
+        %
+        % OUTPUTS
+        % =======
+        % supervoxels: struct containing the locations (positions), shape
+        %   parameters (covariances), colors (colors), basline color
+        %   (baseline), truncation values (trunc), and readout color from
+        %   the image (color_readout)
+        % params: struct contining the parameters chosen for running the
+        %   algorithm; parameters are half size of a neuron in microns
+        %   (hnsz), number of objects (k), threshold for minimum eigenvalue
+        %   (min_eig_thresh), exclusion radius (exclusion_radius)
+        %
         % Amin Nejat
-            obj.scale = scale;
             
             % Setup the progress bar.
             wait_title = 'Detecting Neurons';
-            wb = waitbar(0, {file, 'Initializing ...'}, 'Name', wait_title);
+            wb = waitbar(0, {titlestr, 'Initializing ...'}, 'Name', wait_title);
             wb.Children.Title.Interpreter = 'none';
             
             obj.supervoxels = [];
-
-            volume = double(volume);
-
+            sz = [size(volume), 1];
+            spatial_factor = min(scale)/mmpp;
+            obj.scale = scale/spatial_factor;
+            
+            volume = Methods.Preprocess.zscore_frame(...
+                Methods.Preprocess.decimate_frame(double(volume), ...
+                round(sz(1:3)*spatial_factor), 'linear'));
+            
             obj.szext = [size(volume), 1];
+            
+            % Determine the matching pursuit parameters.
+            params                  = [];
+            params.k                = k;
+            params.mmpp             = mmpp;
+            params.hnsz             = round(round(3./obj.scale)/2)*2+1;
+            params.min_eig_thresh   = min_eig_thresh; % microns
+            params.exclusion_radius = exclusion_radius; % microns
+            
+            filter = Methods.AutoDetect.get_filter(params.hnsz, params.hnsz, 0);
+            
             obj.fsize = size(filter)-1;
-
             rho = Methods.Preprocess.filter_frame(volume, filter);
 
             % Detect the neurons.
             N = 0;
-            while N < n_objects && max(rho(:)) > 0.1
+            while N < k
                 try
-                    waitbar((N+1)/n_objects,wb,...
-                        {file, ...
-                        sprintf('%d%% completed ...', int16(100*(N+1)/n_objects))}, ...
+                    waitbar((N+1)/k,wb,...
+                        {titlestr, ...
+                        sprintf('%d%% completed ...', int16(100*(N+1)/k))}, ...
                         'Name', wait_title);
                 catch
                     break;
@@ -273,7 +330,7 @@ classdef AutoDetect < handle
                 bpatch = Methods.Utils.subcube(volume, [x,y,z], obj.fsize);
 
                 [shape, sp] = obj.fit_gaussian(bpatch, squeeze(rho(x,y,z,:))', [x,y,z]);
-                                
+                
                 fshape = imfilter(shape, filter, 'full');
                 residual = Methods.Utils.placement(obj.szext(1:3), [x,y,z], fshape);
 
@@ -282,9 +339,9 @@ classdef AutoDetect < handle
                 end
                 
                 
-                exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.positions-sp.positions).*obj.scale).^2, 2))) > exclusion;
+                exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.positions-sp.positions).*obj.scale).^2, 2))) > exclusion_radius;
                 
-                if min(eig(squeeze(sp.covariances).*obj.scale)) > cov_threshold && exclusion_condition
+                if min(eig(squeeze(sp.covariances).*obj.scale)) > min_eig_thresh && exclusion_condition
                     cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
                     sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                     obj.supervoxels = Methods.Utils.union_sp(obj.supervoxels, sp);
@@ -298,6 +355,11 @@ classdef AutoDetect < handle
             catch
                 warning('The detection was canceled.');
             end
+            
+            
+            obj.supervoxels.positions = obj.supervoxels.positions/spatial_factor;
+            obj.supervoxels.covariances = obj.supervoxels.covariances/spatial_factor;
+            
             supervoxels = obj.supervoxels;
         end
 
@@ -354,7 +416,7 @@ classdef AutoDetect < handle
 
             [shape, ~, ~, cov, col] = Methods.AutoDetect.get_gaussian(x_hat, [2*obj.fsize+1, obj.szext(4)], norm);
             bas = x_hat(12+obj.szext(4):11+2*obj.szext(4))*x_hat(11);
-
+            
             relative_position = (x_hat(1:3)-x0(1:3))./norm(1:3);
 
             sp.positions = relative_position+absolute_position;
