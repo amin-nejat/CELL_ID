@@ -179,7 +179,7 @@ classdef AutoId < handle
             P = P(1:n1,1:n2);
         end
         
-        function P = update_permutation(colors, positions, model, known)
+        function [P,varargout] = update_permutation(colors, positions, model, known)
             import Methods.*;
             
             M = model.mu;
@@ -203,7 +203,13 @@ classdef AutoId < handle
                     log_likelihoodhat(known(i,1),known(i,2)) = AutoId.min_log_likelihood;
                 end
             end
-            P = munkres(log_likelihoodhat);
+            
+            if nargout > 0
+                [P,cost,~] = munkres(log_likelihoodhat);
+                varargout{1} = cost;
+            else
+                P = munkres(log_likelihoodhat);
+            end
         end
         
         function [col,pos,cost] = local_alignment(col,pos,model,theta,sgn,annotated)
@@ -212,9 +218,6 @@ classdef AutoId < handle
             import Methods.AutoId;
             
             POS = pos;
-            
-            % GMM for computing the likelihood of current local alignment
-            gm = gmdistribution(model.mu,model.sigma);
             
             % standardize positions by axis aligning it
             pos = AutoId.major_axis_align(pos,sgn);
@@ -258,9 +261,9 @@ classdef AutoId < handle
                 col = [col ones(size(col,1),1)]*beta_col;
             end
             
-            % compute the cost based on log likelihood of current local
-            % alignment and GMM distribution
-            cost = nansum(log(gm.pdf([pos col])));
+            % compute the cost based on Hungarian
+            [~,cost] = AutoId.update_permutation(col,pos,model,annotated);
+            cost=-cost;
         end
         
     end
