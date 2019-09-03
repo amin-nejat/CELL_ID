@@ -45,7 +45,7 @@ classdef Image < handle
             
             % Are there neurons?
             if isempty(superpixels)
-                obj.neurons = [];
+                obj.neurons = Neurons.Neuron.empty;
                 return;
             end
 
