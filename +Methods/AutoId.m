@@ -89,6 +89,11 @@ classdef AutoId < handle
             % mahalanobis distance between a set of points and the
             % components of a GMM
             D=zeros(size(X,1),size(Y,1));
+            
+            if isempty(X)
+                return;
+            end
+            
             for i=1:size(Y,1)
                 D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i));
             end
@@ -522,7 +527,7 @@ classdef AutoId < handle
             aligned = im.get_aligned_xyzRGBs();
             
             % the case where new neurons added without running AutoID
-            if size(aligned,1) < length(im.neurons)
+            if size(aligned,1) < length(im.neurons) && ~isempty(aligned)
                 % read out the index of the aligned neurons
                 is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
                 
