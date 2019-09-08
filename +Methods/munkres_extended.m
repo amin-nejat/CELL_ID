@@ -11,7 +11,7 @@ Cost = Cost - log(p1);
 Cost(:,n2+1:n2+n1) = -log(p2);
 
 
-[P, cost] = munkres(Cost);
+[P, cost] = Methods.munkres(Cost);
 P_full = P;
 P= P_full(:,1:n2);
 
