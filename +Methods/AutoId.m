@@ -393,6 +393,9 @@ classdef AutoId < handle
             colors = im.get_colors_readout();
             colors = colors(:,[1 2 3]);
             
+            if size(colors,1) < 4
+                error('Number of neurons is not enough for AutoID, please detect at least 4 neurons.');
+            end
             % align the image to statistical atlas
             aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
@@ -553,6 +556,10 @@ classdef AutoId < handle
                 for neuron=1:length(im.neurons)
                     im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
                 end
+            elseif isempty(aligned)
+                col = im.get_colors_readout(); col = col(:,[1 2 3]);
+                pos = im.get_positions().*im.scale;
+                aligned = [pos col];
             end
             
             % find the already annotated neurons
