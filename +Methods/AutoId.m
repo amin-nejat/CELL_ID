@@ -13,8 +13,14 @@ classdef AutoId < handle
         
         lambda              = 0.5;
         
-        min_log_likelihood  = -1e9
-        max_log_likelihood  = 1e5
+        min_log_likelihood  = -1e9;
+        max_log_likelihood  = 1e5;
+        
+        %parameters for automatic detection of false positives. pf=prob of
+        %a detect being a false positive. max_fp is the maximum posible
+        %number of false positives.
+        p_fp = 10^(-1); %if p = 10^(-Large number) no neuron is a false positive. 
+        max_fp = 10; %chosen a larger number slows down computations cubicly.
         
         theta               = 0: 0.25: 2*pi
     end
@@ -89,11 +95,9 @@ classdef AutoId < handle
             % mahalanobis distance between a set of points and the
             % components of a GMM
             D=zeros(size(X,1),size(Y,1));
-            
-            if isempty(X)
+             if isempty(X)
                 return;
             end
-            
             for i=1:size(Y,1)
                 D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i));
             end
@@ -167,7 +171,8 @@ classdef AutoId < handle
             n2 = size(logP,2);
 
             logP2 =(a-10000)*ones(max(n1,n2), max(n1,n2));
-
+            logP2 =-10^(-100)*ones(max(n1,n2), max(n1,n2));
+           
             if(n1<n2)
                 logP2(1:n1,:)=logP;
             elseif(n1>n2)
@@ -183,6 +188,23 @@ classdef AutoId < handle
             P = exp(logP2);
             P = P(1:n1,1:n2);
         end
+        
+        
+        function P = sinkhorn_logspace_extended(logP,niter, p, n1)
+            
+            logP = -logP;
+            n2 = size(logP,2);
+            p2 = p/n1;
+            p1 = (1-p)/n2;
+            logP = logP - log(p1);
+
+
+            logP(:,n2+1:n2+n1) = -log(p2);
+            
+            P = Methods.AutoId.sinkhorn_logspace(-logP, niter);
+            P = P(:,1:n2);
+        end
+        
         
         function [P,varargout] = update_permutation(colors, positions, model, known)
             import Methods.*;
@@ -210,10 +232,10 @@ classdef AutoId < handle
             end
             
             if nargout > 0
-                [P,cost,~] = munkres(log_likelihoodhat);
+                [P,cost,~] = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
                 varargout{1} = cost;
             else
-                P = munkres(log_likelihoodhat);
+                P = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             end
         end
         
@@ -318,12 +340,12 @@ classdef AutoId < handle
        
         function compute_assignments(obj)
            % compute_assignments computes some secondary properties of auto_id object
-            [obj.assignments,~] = Methods.munkres(-obj.log_likelihood);
+            [obj.assignments,~,~] = Methods.munkres_extended(-obj.log_likelihood, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             
             obj.assignment_prob_ranks = [];
             obj.assignment_prob_probs = [];
             
-            P = Methods.AutoId.sinkhorn_logspace(obj.log_likelihood, Methods.AutoId.iter_sinkhorn);
+            P =  Methods.AutoId.sinkhorn_logspace_extended(obj.log_likelihood, Methods.AutoId.iter_sinkhorn, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             
             assignment_det = zeros(1,size(P,1));
             for i=1:size(P,1)
