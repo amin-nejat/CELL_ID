@@ -19,7 +19,7 @@ classdef AutoId < handle
         %parameters for automatic detection of false positives. pf=prob of
         %a detect being a false positive. max_fp is the maximum posible
         %number of false positives.
-        p_fp = 10^(-1); %if p = 10^(-Large number) no neuron is a false positive. 
+        p_fp = 10^(-5); %if p = 10^(-Large number) no neuron is a false positive. 
         max_fp = 10; %chosen a larger number slows down computations cubicly.
         
         theta               = 0: 0.25: 2*pi
