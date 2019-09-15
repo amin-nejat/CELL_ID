@@ -35,8 +35,10 @@ metadata.values = values;
 metadata.hashtable = hashtable;
 
 % Initialize the image volume information.
-xPixelsI = find(contains(keys, 'Global uiWidth'), 1);
-yPixelsI = find(contains(keys, 'Global uiHeight'), 1);
+xPixelsI = find(contains(keys, 'Global uiWidth') ...
+    & ~contains(keys, 'Bytes'), 1);
+yPixelsI = find(contains(keys, 'Global uiHeight') ...
+    & ~contains(keys, 'Bytes'), 1);
 numZSlicesI = find(contains(keys, 'Global uiCount'), 1);
 xyScaleI = find(contains(keys, 'Global dCalibration'), 1);
 zScaleI = find(contains(keys, 'Global dZStep'), 1);
