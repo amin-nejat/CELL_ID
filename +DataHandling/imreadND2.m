@@ -81,8 +81,7 @@ image.dicChannel = nan;
 % Initialize the image excitation/emission information.
 lasersI = find(contains(keys, ...
     'Global m_uiMultiLaserLineWavelength0-0'));
-emissionsI = find(contains(keys, ...
-    'Global Lambda 10-B, Filter #'));
+emissionsI = find(contains(keys, 'Lambda') & contains(keys, 'Filter'));
 
 % Extract the image excitation/emission information.
 laserKeys = keys(lasersI);
