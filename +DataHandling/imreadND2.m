@@ -72,9 +72,9 @@ end
 % Nikon format is RGBW?
 % Note: can't find color info in the metafile, assumming the order is RGBW.
 image.colors = nan(numChannels,3);
-image.colors(1,:) = [1,0,0];
+image.colors(3,:) = [1,0,0];
 image.colors(2,:) = [0,1,0];
-image.colors(3,:) = [0,0,1];
+image.colors(1,:) = [0,0,1];
 for i = 4:numChannels
     image.colors(i,:) = [1,1,1];
 end
