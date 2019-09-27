@@ -75,6 +75,8 @@ classdef NeuroPALImage
                         NeuroPALImage.convertND2(file);
                     case {'.lif'} % Leica format
                         NeuroPALImage.convertAny(file);
+                    case {'.ims'} % Imaris format
+                        NeuroPALImage.convertAny(file);
                     case {'.tif','.tiff'} % TIFF format
                         NeuroPALImage.convertAny(file);
                     otherwise % Unknown format

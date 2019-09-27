@@ -35,8 +35,10 @@ metadata.values = values;
 metadata.hashtable = hashtable;
 
 % Initialize the image volume information.
-xPixelsI = find(contains(keys, 'Global uiWidth'), 1);
-yPixelsI = find(contains(keys, 'Global uiHeight'), 1);
+xPixelsI = find(contains(keys, 'Global uiWidth') ...
+    & ~contains(keys, 'Bytes'), 1);
+yPixelsI = find(contains(keys, 'Global uiHeight') ...
+    & ~contains(keys, 'Bytes'), 1);
 numZSlicesI = find(contains(keys, 'Global uiCount'), 1);
 xyScaleI = find(contains(keys, 'Global dCalibration'), 1);
 zScaleI = find(contains(keys, 'Global dZStep'), 1);
@@ -70,9 +72,9 @@ end
 % Nikon format is RGBW?
 % Note: can't find color info in the metafile, assumming the order is RGBW.
 image.colors = nan(numChannels,3);
-image.colors(1,:) = [1,0,0];
+image.colors(3,:) = [1,0,0];
 image.colors(2,:) = [0,1,0];
-image.colors(3,:) = [0,0,1];
+image.colors(1,:) = [0,0,1];
 for i = 4:numChannels
     image.colors(i,:) = [1,1,1];
 end
@@ -81,8 +83,7 @@ image.dicChannel = nan;
 % Initialize the image excitation/emission information.
 lasersI = find(contains(keys, ...
     'Global m_uiMultiLaserLineWavelength0-0'));
-emissionsI = find(contains(keys, ...
-    'Global Lambda 10-B, Filter #'));
+emissionsI = find(contains(keys, 'Lambda') & contains(keys, 'Filter'));
 
 % Extract the image excitation/emission information.
 laserKeys = keys(lasersI);
