@@ -11,18 +11,16 @@ classdef AutoId < handle
         iter_sinkhorn       = 500;
         iter_rwc            = 10;
         
-        lambda              = 0.5;
-        
         min_log_likelihood  = -1e9;
         max_log_likelihood  = 1e5;
         
         %parameters for automatic detection of false positives. pf=prob of
         %a detect being a false positive. max_fp is the maximum posible
         %number of false positives.
-        p_fp = 10^(-5); %if p = 10^(-Large number) no neuron is a false positive. 
+        p_fp = 1e-20; %if p = 10^(-Large number) no neuron is a false positive. 
         max_fp = 10; %chosen a larger number slows down computations cubicly.
         
-        theta               = 0: 0.25: 2*pi
+        theta = 0: 0.25: 2*pi
     end
     
     properties
@@ -99,7 +97,7 @@ classdef AutoId < handle
                 return;
             end
             for i=1:size(Y,1)
-                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i));
+                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)).^2/2;
             end
         end
         
@@ -115,6 +113,9 @@ classdef AutoId < handle
             % Sigma - covariances for each row of Y (d x d x n)
             % Solving: \sum_i \|Y_i - X_i \beta\|_{sigma_i}^2
             
+            nanind = any(isnan(X),2) | any(isnan(Y),2);
+            
+            X = X(~nanind,:); Y = Y(~nanind,:);
             % variables
             d1 = size(Y,2); d2 = size(X,2); n = size(Y,1);
             
@@ -233,9 +234,11 @@ classdef AutoId < handle
             
             if nargout > 0
                 [P,cost,~] = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
+                P = double(P); P(:,~any(P)) = NaN;
                 varargout{1} = cost;
             else
                 P = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
+                P = double(P); P(:,~any(P)) = NaN;
             end
         end
         
@@ -245,6 +248,9 @@ classdef AutoId < handle
             import Methods.AutoId;
             
             POS = pos;
+            
+            % GMM for computing the likelihood of current local alignment
+%             gm = gmdistribution(model.mu,model.sigma);
             
             % standardize positions by axis aligning it
             pos = AutoId.major_axis_align(pos,sgn);
@@ -258,6 +264,9 @@ classdef AutoId < handle
             % to roughly align it
             pos(:,[2 3]) = pos(:,[2 3])*AutoId.rotmat(theta);
             pos = pos*coeff_mu'+mu_mu;
+            
+            % standardize positions by axis aligning it
+            pos = AutoId.major_axis_align(pos,1);
             
             % upweighting already annotated neurons
             weights = ones(1,size(model.mu,1));
@@ -288,9 +297,12 @@ classdef AutoId < handle
                 col = [col ones(size(col,1),1)]*beta_col;
             end
             
-            % compute the cost based on Hungarian
+            % compute the cost based on log likelihood of current local
+            % alignment and GMM distribution
+%             cost = nansum(-log(gm.pdf([pos col])));
+
+%             % compute the cost based on Hungarian
             [~,cost] = AutoId.update_permutation(col,pos,model,annotated);
-            cost=-cost;
         end
         
     end
@@ -309,8 +321,8 @@ classdef AutoId < handle
             neuron_names = obj.atlas.(lower(im.bodypart)).N;
             % convert assignment (probabilistic/deterministic) to neuron
             % names
-            ids = repmat({'NaN'}, size(obj.assignments,1),1);
-            ids_prob = repmat({'NaN'}, size(obj.assignments,1),obj.ncandidates);
+            ids = repmat({'Artifact'}, size(obj.assignments,1),1);
+            ids_prob = repmat({'Artifact'}, size(obj.assignments,1),obj.ncandidates);
 
             [rows, cols] = find(obj.assignments);
             ids(rows) = neuron_names(cols);
@@ -323,8 +335,8 @@ classdef AutoId < handle
                 end
             end
 
-            ids(cellfun(@isempty, ids)) = {'NaN'};
-            ids_prob(cellfun(@isempty, ids_prob)) = {'NaN'};
+            ids(cellfun(@isempty, ids)) = {'Artifact'};
+            ids_prob(cellfun(@isempty, ids_prob)) = {'Artifact'};
             
             
             % update image information
@@ -340,7 +352,7 @@ classdef AutoId < handle
        
         function compute_assignments(obj)
            % compute_assignments computes some secondary properties of auto_id object
-            [obj.assignments,~,~] = Methods.munkres_extended(-obj.log_likelihood, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
+           [obj.assignments,~,~] = Methods.munkres_extended(-obj.log_likelihood, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             
             obj.assignment_prob_ranks = [];
             obj.assignment_prob_probs = [];
@@ -421,6 +433,8 @@ classdef AutoId < handle
             % align the image to statistical atlas
             aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
                                obj.atlas.(lower(im.bodypart)).model, annotated);
+            
+            
             for neuron=1:length(im.neurons)
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
@@ -539,7 +553,7 @@ classdef AutoId < handle
             end
             
             % Find the best alignment.
-            [theta_idx] = find(cost==max(cost(:)));
+            [theta_idx] = find(cost==min(cost(:)));
             pos = positions{theta_idx};
             col = colors{theta_idx};
             
@@ -608,12 +622,13 @@ classdef AutoId < handle
             % update the log likelihood based on Mahalanobis distance
             obj.log_likelihood = -Methods.AutoId.pdist2_maha(aligned, model.mu, model.sigma);
             
-            % set the likelihood of annotated neurons to MIN_LL and the NaN
+            % set the likelihood of annotated neurons to MIN_LL and the nan
             % ones to MAX_LL
             obj.log_likelihood(annotated(:,1),:)= Methods.AutoId.min_log_likelihood;
             for i=1:size(annotated,1)
                 obj.log_likelihood(annotated(i,1),annotated(i,2))= Methods.AutoId.max_log_likelihood;
             end
+            
         end
         
         function visualize(obj,im,varargin)
@@ -626,6 +641,7 @@ classdef AutoId < handle
             model = obj.atlas.(lower(im.bodypart)).model;
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
+            det_ids = im.get_deterministic_ids();
             
             % aligned data
             % CHECK ME!!! THIS ASSUMES ALL NEURONS ARE ALIGNED!!!
@@ -640,6 +656,7 @@ classdef AutoId < handle
                 is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
                 col = col(is_aligned,:);
                 pos = pos(is_aligned,:);
+                det_ids = det_ids(is_aligned);
             end
             
             % find transformation between original and aligned data
@@ -659,8 +676,9 @@ classdef AutoId < handle
             
             if ~any(strcmp(varargin,'ax'))
                 scatter3(model.mu(:,1),model.mu(:,2),model.mu(:,3), sizes, atlas_color, 'o', 'LineWidth', 3);
-                text(model.mu(:,1),model.mu(:,2),model.mu(:,3), obj.atlas.(lower(im.bodypart)).N, 'Color', 'r');
+                text(model.mu(:,1),model.mu(:,2),model.mu(:,3), obj.atlas.(lower(im.bodypart)).N, 'Color', 'r', 'fontsize', 10);
                 scatter3(pos(:,1),pos(:,2),pos(:,3), 100, col./max(col), '.');
+                text(pos(:,1),pos(:,2),pos(:,3), det_ids, 'Color', 'b', 'fontsize', 10);
 
                 daspect([1,1,1]); grid on; set(gca,'color',[0.3,0.3,0.3]); view(-30,-20);
                 drawnow;
@@ -673,6 +691,7 @@ classdef AutoId < handle
                 scatter(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),...
                     sizes(current_z_indices), atlas_color(current_z_indices,:), 'o', 'LineWidth', 3);
                 text(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),obj.atlas.(lower(im.bodypart)).N(current_z_indices), 'Color', 'r');
+                
             end
         end
 
