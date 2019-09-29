@@ -3,6 +3,7 @@ classdef AutoDetect < handle
    properties % Public Access
         options = []
         supervoxels = []
+        artifacts = []
         
         fsize
         szext
@@ -236,7 +237,7 @@ classdef AutoDetect < handle
    
    methods % Public Access
        
-       function [loc, varargout] = get_next_location(obj, data, sp, method, params, varargin)
+       function [loc, varargout] = get_next_location(obj, data, method, params, varargin)
            if strcmp(method, 'max')
                rho_mag = max(data, [], 4);
                [~, lmidx] = max(rho_mag(:));
@@ -249,14 +250,14 @@ classdef AutoDetect < handle
                 
                 if nargout > 1
                     bodypart = varargin{find(strcmp(varargin,'bodypart'))+1};
-                    im = Neurons.Image(sp, bodypart, 'scale', obj.scale);
+                    im = Neurons.Image(obj.superpixels, bodypart, 'scale', obj.scale);
                     titlestr = varargin{find(strcmp(varargin,'titlestr'))+1};
                     Methods.AutoId.instance().id(titlestr, im);
                     varargout{1} = im;
                 else
                     im = varargin{find(strcmp(varargin,'im'))+1};
-                    if size(sp.color,1) > size(im.neurons)
-                        im.neurons(end+1) = Neurons.Neuron.unmarshall(sp, size(sp.color,1));
+                    if size(obj.superpixels.color,1) > size(im.neurons)
+                        im.neurons(end+1) = Neurons.Neuron.unmarshall(obj.superpixels, size(obj.superpixels.color,1));
                         Methods.AutoId.instance().update_id(im);
                     end
                 end
@@ -369,6 +370,7 @@ classdef AutoDetect < handle
         
         % Initialize the image size info.
         obj.supervoxels = [];
+        obj.artifacts = [];
         sz = [size(volume), 1];
         spatial_factor = min(scale)/detect_scale;
         obj.scale = scale(:)'/spatial_factor;
@@ -409,12 +411,12 @@ classdef AutoDetect < handle
             end
             
             if N < 0.65*k
-                loc = obj.get_next_location(rho, obj.supervoxels, 'max', params);
+                loc = obj.get_next_location(rho, obj.supervoxels, obj.artifacts, 'max', params);
             else
                 if isempty(im)
-                    [loc, im] = obj.get_next_location(volume, obj.supervoxels, 'atlas_guided', params, 'bodypart', worm.body, 'titlestr', titlestr);
+                    [loc, im] = obj.get_next_location(volume, obj.supervoxels, obj.artifacts, 'atlas_guided', params, 'bodypart', worm.body, 'titlestr', titlestr);
                 else
-                    loc = obj.get_next_location(volume, obj.supervoxels, 'atlas_guided', params, 'im', im);
+                    loc = obj.get_next_location(volume, obj.supervoxels, obj.artifacts, 'atlas_guided', params, 'im', im);
                 end
             end
             
@@ -439,6 +441,8 @@ classdef AutoDetect < handle
                 sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                 obj.supervoxels = Methods.Utils.union_sp(obj.supervoxels, sp);
                 N = size(obj.supervoxels.positions, 1);
+            else
+                obj.artifacts = Methods.Utils.union_sp(obj.supervoxels, sp);
             end
         end
         
@@ -494,8 +498,8 @@ classdef AutoDetect < handle
                 noisevec, ... % noise
                 0]);
             
-            lb = [x0(1:3)-0.01*ones(1,3), zeros(1,6), 0, 0, zeros(1,obj.szext(4)), -ones(1,obj.szext(4)), 0];
-            ub = [x0(1:3)+0.01*ones(1,3), 100*ones(1,6), 20, 0.1, ones(1,2*obj.szext(4)), 1000];
+            lb = [x0(1:3)-0.3*ones(1,3), zeros(1,6), 0, 0, zeros(1,obj.szext(4)), -ones(1,obj.szext(4)), 0];
+            ub = [x0(1:3)+0.3*ones(1,3), 100*ones(1,6), 20, 0.1, ones(1,2*obj.szext(4)), 1000];
             
             
             A_eq = [zeros(1, 11), ones(1, obj.szext(4)), zeros(1, obj.szext(4)), 0; ...
