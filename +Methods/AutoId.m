@@ -17,7 +17,7 @@ classdef AutoId < handle
         %parameters for automatic detection of false positives. pf=prob of
         %a detect being a false positive. max_fp is the maximum posible
         %number of false positives.
-        p_fp = 1e-20; %if p = 10^(-Large number) no neuron is a false positive. 
+        p_fp = 1e-50; %if p = 10^(-Large number) no neuron is a false positive. 
         max_fp = 10; %chosen a larger number slows down computations cubicly.
         
         theta = 0: 0.25: 2*pi
@@ -283,8 +283,8 @@ classdef AutoId < handle
                 P = AutoId.update_permutation(col,pos,model,annotated);
                 
                 % align point to sample
-                beta_pos = AutoId.MCR_solver(Z(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:));
-                beta_col = AutoId.MCR_solver(Z(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:));
+                beta_pos = AutoId.MCR_solver(model.mu(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:));
+                beta_col = AutoId.MCR_solver(model.mu(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:));
 
                 beta = AutoId.MCR_solver([pos(:,[1 2 3]) ones(size(pos,1),1)]*beta_pos,[POS ones(size(pos,1),1)],repmat(eye(3),1,1,size(pos,1)));
                 
