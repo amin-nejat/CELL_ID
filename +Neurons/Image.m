@@ -192,7 +192,29 @@ classdef Image < handle
             %NUM_NEURONS the number of neurons in the image
             num = length(obj.neurons);
         end
+        function [index_neurons, tests] = getOutliers(obj, p)
+            %index_neurons indexes the neurons that are outliers
+            t = nan*ones(obj.num_neurons(),1);
+             for i =1:obj.num_neurons()
+                 n=obj.neurons(i);
+                 if(~isempty(n.outlier))
+                 t(i) = n.outlier.global_test;
+                 end
+                 
+             end
+             
+             index_neurons = find(t<p);
+            for i=1:length(index_neurons)
+                n = obj.neurons(index_neurons(i));
+                tests.global_test(i) = n.outlier.global_test;
+                tests.position_test.global(i) = n.outlier.position_test.global;
+                tests.position_test.individual(i,:) = n.outlier.position_test.individual;
+                tests.color_test.global(i,:) = n.outlier.color_test.global;
+                tests.color_test.individual(i,:) = n.outlier.color_test.individual;
+            end
+        end    
 
+            
         function num = num_user_id_neurons(obj)
             %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
