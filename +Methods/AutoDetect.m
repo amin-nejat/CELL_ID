@@ -155,7 +155,7 @@ classdef AutoDetect < handle
             filt = reshape(mvnpdf(pos, fmu, fsigma), sz);
             filt(filt < prctile(filt(:), trunc)) = 0;
 
-            filter = filt/sqrt(sum(filt(:).*filt(:)));
+            filter = filt/sum(sqrt(filt(:).*filt(:)));
         end
         
         function eval = evaluation(image, volume, mp_params, centers, scale, precision)
@@ -195,7 +195,8 @@ classdef AutoDetect < handle
             eval.centers.precision = [];
             eval.centers.recall = [];
             eval.centers.mean_closest_distance = [];
-
+            eval.centers.assign = {};
+            
             for i=1:size(image.get_positions(),1)
                 positions = image.get_positions();
                 positions = positions(1:i,:);
@@ -205,9 +206,11 @@ classdef AutoDetect < handle
 
                 if i == 1
                     tp = any(~isinf(distances));
+                    assign = [];
                 else
                     if all(isinf(distances(:)))
                         tp = 0;
+                        assign = [];
                     else
                         [~,~,assign] = Methods.munkres(distances);
                         [~,cols] = find(assign);
@@ -223,6 +226,7 @@ classdef AutoDetect < handle
                 eval.centers.fp(end+1) = fp;
                 eval.centers.tn(end+1) = tn;
                 eval.centers.fn(end+1) = fn;
+                eval.centers.assign{end+1} = assign;
 
                 eval.centers.accuracy(end+1) = (tp+tn)/(tp+fp+tn+fn);
                 eval.centers.f1(end+1) = 2*tp/(2*tp+fp+fn);
@@ -235,6 +239,99 @@ classdef AutoDetect < handle
    end
    
    methods % Public Access
+       
+       function [loc, varargout] = get_next_location(obj, data, method, params, varargin)
+           if strcmp(method, 'max')
+               rho_mag = max(data, [], 4);
+               [~, lmidx] = max(rho_mag(:));
+               [x,y,z] = ind2sub(size(rho_mag), lmidx);
+               loc = [x,y,z];
+           elseif strcmp(method, 'atlas_guided')
+                ws = load('atlas.mat');
+                atlas = ws.atlas;
+                
+                
+                if nargout > 1
+                    bodypart = varargin{find(strcmp(varargin,'bodypart'))+1};
+                    im = Neurons.Image(obj.supervoxels, bodypart, 'scale', obj.scale);
+                    titlestr = varargin{find(strcmp(varargin,'titlestr'))+1};
+                    Methods.AutoId.instance().id(titlestr, im);
+                    
+                    
+                    artifact_indices = find(strcmp(im.get_deterministic_ids(), 'Artifact'));
+                    neuron_indices = setdiff(1:size(obj.supervoxels.positions,1), artifact_indices);
+                    obj.supervoxels = Methods.Utils.sub_sp(obj.supervoxels, neuron_indices);
+                    im.neurons = im.neurons(neuron_indices);
+                    varargout{1} = im;
+                else
+                    im = varargin{find(strcmp(varargin,'im'))+1};
+                    if size(obj.supervoxels.color,1) > size(im.neurons)
+                        im.neurons(end+1) = Neurons.Neuron.unmarshall(obj.supervoxels, size(obj.supervoxels.color,1));
+                        Methods.AutoId.instance().update_id(im);
+                    end
+                end
+                
+                
+                model = atlas.(lower(im.bodypart)).model;
+                col = im.get_colors_readout(); col = col(:,[1 2 3]);
+                pos = im.get_positions().*im.scale;
+
+                aligned = im.get_aligned_xyzRGBs();
+                if ~isempty(aligned)
+                    is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
+                    col = col(is_aligned,:);
+                    pos = pos(is_aligned,:);
+
+                    beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
+                    
+                    
+                    
+                    model.mu = [model.mu ones(size(model.mu,1),1)]*beta;
+                    model.mu = model.mu(:,1:end-1);
+                    for i=1:size(model.sigma,3)
+                        model.sigma(1:6,1:6,i) = beta(1:6,1:6)*model.sigma(1:6,1:6,i)*beta(1:6,1:6)';
+                    end
+                    
+                    sz = size(data);
+                    pix_pos = [];
+                    [pix_pos(:,1), pix_pos(:,2), pix_pos(:,3)] = ind2sub(sz(1:3), find(ones(sz(1:3))));
+                    pix_col = reshape(data, prod(sz(1:3)), []);
+                    pix_col = pix_col(:,1:3);
+                    
+                    pix_pos = pix_pos(max(pix_col,[],2) > 3,:);
+                    pix_col = pix_col(max(pix_col,[],2) > 3,:);
+
+                    min_dist = min(pdist2(pix_pos.*obj.scale, round(obj.supervoxels.positions).*im.scale) , [], 2);
+                    
+                    
+                    pix_col = pix_col(min_dist > params.exclusion_radius,:);
+                    pix_pos = pix_pos(min_dist > params.exclusion_radius,:);
+                    
+                    
+                    remaining = arrayfun(@(x) ~any(strcmp({im.get_deterministic_ids{is_aligned}}, x)), atlas.(lower(im.bodypart)).N);
+
+                    
+                    gm_rem = gmdistribution(model.mu(remaining,:),model.sigma(:,:,remaining));
+                    gm_nrem = gmdistribution(model.mu(~remaining,:),model.sigma(:,:,~remaining));
+                    ll = log(gm_rem.pdf([pix_pos.*obj.scale, pix_col])) - log(gm_nrem.pdf([pix_pos.*obj.scale, pix_col]));
+                    [mll, pix_idx] = max(ll.*max(pix_col,[],2));
+                    
+                    
+                    
+                    
+                    if isempty(mll) || isinf(mll)
+                        rho_mag = max(data, [], 4);
+                       [~, lmidx] = max(rho_mag(:));
+                       [x,y,z] = ind2sub(size(rho_mag), lmidx);
+                       loc = [x,y,z];
+                    else
+                        loc = pix_pos(pix_idx,:);
+                    end
+                end
+                
+           end
+       end
+       
         function [supervoxels, params] = detect(obj, titlestr, volume, ...
                 k, min_eig_thresh, scale, worm, exclusion_radius)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
@@ -293,7 +390,7 @@ classdef AutoDetect < handle
         obj.supervoxels = [];
         sz = [size(volume), 1];
         spatial_factor = min(scale)/detect_scale;
-        obj.scale = scale/spatial_factor;
+        obj.scale = scale(:)'/spatial_factor;
         
         % Z-score & rescale the image.
         volume = Methods.Preprocess.zscore_frame(...
@@ -305,15 +402,17 @@ classdef AutoDetect < handle
         params                  = [];
         params.k                = k;
         params.detect_scale     = detect_scale;
-        params.hnsz             = round(round(3./obj.scale)/2)*2+1;
+        params.hnsz             = round(round(3./obj.scale(:)')/2)*2+1;
         params.min_eig_thresh   = min_eig_thresh; % microns
         params.exclusion_radius = exclusion_radius; % microns
+        
+%         im = [];
+        
         
         % Smooth the image using a Gaussian.
         filter = Methods.AutoDetect.get_filter(params.hnsz, params.hnsz, 0);
         obj.fsize = size(filter)-1;
         rho = Methods.Preprocess.filter_frame(volume, filter);
-        
         % Detect the neurons.
         % Amin, we could use some comments here to explain what's happening.
         N = 0;
@@ -327,30 +426,38 @@ classdef AutoDetect < handle
                 break;
             end
             
-            rho_mag = max(rho, [], 4);
-            [~, lmidx] = max(rho_mag(:));
-            [x,y,z] = ind2sub(size(rho_mag), lmidx);
+%             if N <= 0.9*k
+%                 loc = obj.get_next_location(rho, 'max', params);
+%             else
+%                 if isempty(im)
+%                     [loc, im] = obj.get_next_location(rho, 'atlas_guided', params, 'bodypart', worm.body, 'titlestr', titlestr);
+%                 else
+%                     loc = obj.get_next_location(rho, 'atlas_guided', params, 'im', im);
+%                 end
+%             end
             
-            bpatch = Methods.Utils.subcube(volume, [x,y,z], obj.fsize);
+            loc = obj.get_next_location(rho, 'max', params);
+            bpatch = Methods.Utils.subcube(volume, loc, obj.fsize);
             
-            [shape, sp] = obj.fit_gaussian(bpatch, squeeze(rho(x,y,z,:))', [x,y,z]);
+            [shape, sp] = obj.fit_gaussian(bpatch, squeeze(rho(loc(1),loc(2),loc(3),:))', loc);
             
             fshape = imfilter(shape, filter, 'full');
-            residual = Methods.Utils.placement(obj.szext(1:3), [x,y,z], fshape);
+            fresidual = Methods.Utils.placement(obj.szext(1:3), loc, fshape);
             
             for ch = 1: size(rho, 4)
-                rho(:,:,:,ch) = rho(:,:,:,ch)-residual*sp.color(ch);
+                rho(:,:,:,ch) = rho(:,:,:,ch)-fresidual*sp.color(ch);
             end
-            
-            
-            exclusion_condition = isempty(obj.supervoxels) || min(sqrt(sum(((obj.supervoxels.positions-sp.positions).*obj.scale).^2, 2))) > exclusion_radius;
+                        
+            exclusion_condition = isempty(obj.supervoxels) || ...
+                min(pdist2(round(obj.supervoxels.positions).*obj.scale, round(loc).*obj.scale)) > exclusion_radius;
             
             if min(eig(squeeze(sp.covariances).*obj.scale)) > min_eig_thresh && exclusion_condition
                 cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
                 sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                 obj.supervoxels = Methods.Utils.union_sp(obj.supervoxels, sp);
-                N = size(obj.supervoxels.positions, 1);
             end
+            
+            N = size(obj.supervoxels.positions, 1);
         end
         
         % Done.

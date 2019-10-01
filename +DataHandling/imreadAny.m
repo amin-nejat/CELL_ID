@@ -45,6 +45,7 @@ end
 
 % Get the image z slices.
 zStr = zcData{end-1};
+zStr = strrep(zStr, '?', '');
 zI = strfind(zStr, '/');
 if ~contains(zStr, 'Z=') || isempty(zI)
     f = uifigure;
@@ -64,6 +65,7 @@ end
 
 % Get the image color channels.
 cStr = zcData{end};
+cStr = strrep(cStr, '?', '');
 cI = strfind(cStr, '/');
 if ~contains(cStr, 'C=') || isempty(cI)
     f = uifigure;
@@ -139,6 +141,8 @@ for i=1:size(imageData,1)
     dataStrs = split(imageData{i,2}, ';');
     zStr = strtrim(dataStrs{end-1});
     cStr = strtrim(dataStrs{end});
+    zStr = strrep(zStr, '?', '');
+    cStr = strrep(cStr, '?', '');
     
     % Assemble the image.
     z = sscanf(zStr,'Z=%f');
