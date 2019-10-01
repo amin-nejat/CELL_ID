@@ -19,11 +19,10 @@ classdef AutoId < handle
         %parameters for automatic detection of false positives. pf=prob of
         %a detect being a false positive. max_fp is the maximum posible
         %number of false positives.
-        p_fp = 10^(-1); %if p = 10^(-Large number) no neuron is a false positive. 
-        max_fp = 100; %chosen a larger number slows down computations cubicly.
+        p_fp = 10^(-5); %if p = 10^(-Large number) no neuron is a false positive. 
+        max_fp = 10; %chosen a larger number slows down computations cubicly.
         
-        %theta               = 0: 0.25: 2*pi
-        theta               = 0:0.5:2*pi
+        theta               = 0: 0.25: 2*pi
     end
     
     properties
@@ -34,7 +33,6 @@ classdef AutoId < handle
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
         assignment_prob_ranks % n_obsx7 matrix with the 7 most likely assignment
         assignment_prob_probs % n_obsx7 matrix with the corresponding probabilities of assignment_prob_ranks
-        
     end
     
     methods(Static)
@@ -101,7 +99,7 @@ classdef AutoId < handle
                 return;
             end
             for i=1:size(Y,1)
-                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)).^2/2;
+                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i));
             end
         end
         
@@ -234,13 +232,10 @@ classdef AutoId < handle
             end
             
             if nargout > 0
-                %[P,cost,~] = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
-                 [P,cost,~] = Methods.munkres(log_likelihoodhat);
-               
+                [P,cost,~] = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
                 varargout{1} = cost;
             else
-                %P = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
-                P = Methods.munkres(log_likelihoodhat);
+                P = Methods.munkres_extended(log_likelihoodhat, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             end
         end
         
@@ -345,8 +340,7 @@ classdef AutoId < handle
        
         function compute_assignments(obj)
            % compute_assignments computes some secondary properties of auto_id object
-            %[obj.assignments,~,~] = Methods.munkres_extended(-obj.log_likelihood, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
-            [obj.assignments,~,~] = Methods.munkres(-obj.log_likelihood);
+            [obj.assignments,~,~] = Methods.munkres_extended(-obj.log_likelihood, Methods.AutoId.p_fp, Methods.AutoId.max_fp);
             
             obj.assignment_prob_ranks = [];
             obj.assignment_prob_probs = [];
@@ -583,17 +577,6 @@ classdef AutoId < handle
                 % write the aligned information into neurons
                 for neuron=1:length(im.neurons)
                     im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
-                    im.neurons(neuron).annotation
-                    if(~isempty(im.neurons(neuron).annotation))
-                        neuron_index = find(strcmp(obj.atlas.(lower(im.bodypart)).N, im.neurons(neuron).annotation));
-                        if(~isempty(neuron_index))
-                            
-                            mu = obj.atlas.(lower(im.bodypart)).model.mu(neuron_index,:);
-                            sigma = squeeze(obj.atlas.(lower(im.bodypart)).model.sigma(:,:,neuron_index));
-                            im.neurons(neuron).outlier = Methods.find_outlier(aligned(neuron,:), mu, sigma);
-                            im.neurons(neuron).outlier.global_test
-                        end
-                    end
                 end
             elseif isempty(aligned)
                 col = im.get_colors_readout(); col = col(:,[1 2 3]);
