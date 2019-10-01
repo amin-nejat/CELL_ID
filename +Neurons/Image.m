@@ -193,7 +193,22 @@ classdef Image < handle
             num = length(obj.neurons);
         end
         function [index_neurons, tests] = getOutliers(obj, p)
-            %index_neurons indexes the neurons that are outliers
+            %index_neurons indexes the neurons that are outliers at the
+            %significance level p.
+            %tests containts the results of all individual tests performed,
+            %for each of the outliers
+            %test(i).global is the p-value of the global test (using color +
+            %position), based on chi^2 with 6 df for the i-th outlier.
+            %test(i).position_test and tests(i).color_test contain position and color specific 
+            %tests.
+            %
+            %tests(i).position_test.global and tests(i).color_test.global are global tests 
+            %based on chi^2 with 3 df.
+            %
+            %tests(i).position_test.individual and tests(i).color_test.individual contain
+            %the 3 tests (each) forevery position and color coordinates, each based
+            %on a chi^2 with one degree of freedom.
+            
             t = nan*ones(obj.num_neurons(),1);
              for i =1:obj.num_neurons()
                  n=obj.neurons(i);
@@ -206,11 +221,11 @@ classdef Image < handle
              index_neurons = find(t<p);
             for i=1:length(index_neurons)
                 n = obj.neurons(index_neurons(i));
-                tests.global_test(i) = n.outlier.global_test;
-                tests.position_test.global(i) = n.outlier.position_test.global;
-                tests.position_test.individual(i,:) = n.outlier.position_test.individual;
-                tests.color_test.global(i,:) = n.outlier.color_test.global;
-                tests.color_test.individual(i,:) = n.outlier.color_test.individual;
+                tests(i).global_test = n.outlier.global_test;
+                tests(i).position_test.global = n.outlier.position_test.global;
+                tests(i).position_test.individual = n.outlier.position_test.individual;
+                tests(i).color_test.global = n.outlier.color_test.global;
+                tests(i).color_test.individual = n.outlier.color_test.individual;
             end
         end    
 
