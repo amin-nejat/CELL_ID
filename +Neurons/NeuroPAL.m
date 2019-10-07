@@ -114,8 +114,8 @@ classdef NeuroPAL
                 return;
             end
             
-            % Is the neuron asymetrically colored?
-            if any(strcmp(name, Neurons.NeuroPAL.asym_LR_neurons))
+            % Is the neuron deterministically asymetrically colored?
+            if any(strcmp(name, Neurons.NeuroPAL.asym_deterministic_LR_neurons))
                 return;
             end
             
@@ -639,10 +639,14 @@ classdef NeuroPAL
             'SDQR'
             };
         
-        % Asymmetric neurons.
-        asym_LR_neurons = {
+        % Asymmetrically deterministic neurons.
+        asym_deterministic_LR_neurons = {
             'ASEL'
             'ASER'
+            };
+        
+        % Asymmetrically stochastic neurons.
+        asym_stochastic_LR_neurons = {
             'AWCL'
             'AWCR'
             };
