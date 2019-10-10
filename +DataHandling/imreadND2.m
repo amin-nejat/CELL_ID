@@ -69,14 +69,18 @@ for i = 1:numChannels
     image.channels{i} = channelValues{channelI};
 end
 
-% Nikon format is RGBW?
-% Note: can't find color info in the metafile, assumming the order is RGBW.
+% Default to BGRW.
+% Note: can't find color info in the metafile.
+red = [1,0,0];
+green = [0,1,0];
+blue = [0,0,1];
+white = [1,1,1];
 image.colors = nan(numChannels,3);
-image.colors(3,:) = [1,0,0];
-image.colors(2,:) = [0,1,0];
-image.colors(1,:) = [0,0,1];
+image.colors(1,:) = blue;
+image.colors(2,:) = green;
+image.colors(3,:) = red;
 for i = 4:numChannels
-    image.colors(i,:) = [1,1,1];
+    image.colors(i,:) = white;
 end
 image.dicChannel = nan;
 
@@ -102,6 +106,27 @@ for i=1:numChannels
     emissionI = find(endsWith(emissionKeys, num2str(i)), 1);
     image.emissions{i} = emissionValues{emissionI};  
 end
+
+% % Use the lasers to determine the color channels.
+% % Note: assume initial color channel assignments take precedence.
+% for i=flip(1:size(image.lasers,1))
+%     % mTagBFP2
+%     if image.lasers(i) < 440
+%         image.colors(i,:) = blue;
+%     % CyOFP (or GFP).
+%     elseif image.lasers(i) < 530
+%         image.colors(i,:) = green;
+%     % TagRFP-T
+%     elseif image.lasers(i) < 570
+%         image.colors(i,:) = white;
+%     % mNeptune2.5
+%     elseif image.lasers(i) < 650
+%         image.colors(i,:) = red;
+%     % Anything else.
+%     else
+%         image.colors(i,:) = white;
+%     end
+% end
 
 % Organize the image volume.
 %numC = numChannels;
