@@ -42,7 +42,7 @@ classdef ImageEdit
                 bimage(:,:,:,dsts) = bimage(:,:,:,dsts) - ...
                     bimage(:,:,:,srcs) * scales;
                 
-                % De-bleed each channel using its individual scale.
+            % De-bleed each channel using its individual scale.
             else
                 for i=1:length(scales)
                     bimage(:,:,:,dsts(i)) = bimage(:,:,:,dsts(i)) - ...
@@ -157,6 +157,30 @@ classdef ImageEdit
                 for z = 1:size(nimage, 3)
                     I = squeeze(nimage(:,:,z,c));
                     nimage(:,:,z,c) = imdiffusefilt(I);
+                end
+            end
+        end
+        
+        function rimage = register(rimage, dsts, srcs)
+            %REGISTER Register the destination channel(s)to their source
+            % channel(s).
+            
+            % Pre-allocate registration.
+            persistent optimizer;
+            persistent metric;
+            if isempty(optimizer)
+                [optimizer, metric] = imregconfig('monomodal');
+            end
+            
+            % Are we registering each color channel separately?
+            srcs((length(srcs)+1):length(dsts)) = srcs(1);
+            
+            % Register the color channels.
+            for z = 1:size(rimage, 3)
+                for i = 1:length(dsts)
+                    rimage(:,:,z,dsts(i)) = ...
+                        imregister(rimage(:,:,z,dsts(i)), ...
+                        rimage(:,:,z,srcs(i)), 'rigid',  optimizer, metric);
                 end
             end
         end
