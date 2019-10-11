@@ -161,7 +161,7 @@ classdef ImageEdit
             end
         end
         
-        function rimage = register(rimage, dsts, srcs)
+        function rimage = register(rimage, dsts, srcs, varargin)
             %REGISTER Register the destination channel(s)to their source
             % channel(s).
             
@@ -172,17 +172,59 @@ classdef ImageEdit
                 [optimizer, metric] = imregconfig('monomodal');
             end
             
+            % Are we registering across Z?
+            is_register_z = false;
+            if ~isempty(varargin)
+                is_register_z = varargin{1};
+            end
+            
+            % Register across Z.
+            if is_register_z
+                
+                % Find the center Z.
+                center = round(size(rimage, 3)/2);
+                
+                % Register from the center out.
+                h = waitbar(0, 'Registering images ...');
+                for z = flip(2:center)
+                    waitstr = ['Registering Z-slices #' num2str(z)];
+                    waitbar(double(center - z + 1)/size(rimage, 3), h, ...
+                        waitstr);
+                    for i = 1:length(srcs)
+                        rimage(:,:,z,srcs(i)) = ...
+                            imregister(rimage(:,:,z-1,srcs(i)), ...
+                            rimage(:,:,z,srcs(i)), 'rigid', ...
+                            optimizer, metric);
+                    end
+                end
+                for z = center:(size(rimage, 3)-1)
+                    waitstr = ['Registering Z-slices #' num2str(z)];
+                    waitbar(double(z)/size(rimage, 3), h, waitstr);
+                    for i = 1:length(srcs)
+                        rimage(:,:,z,srcs(i)) = ...
+                            imregister(rimage(:,:,z+1,srcs(i)), ...
+                            rimage(:,:,z,srcs(i)), 'rigid', ...
+                            optimizer, metric);
+                    end
+                end
+                close(h);
+            end
+            
             % Are we registering each color channel separately?
             srcs((length(srcs)+1):length(dsts)) = srcs(1);
             
             % Register the color channels.
+            h = waitbar(0, 'Registering images ...');
             for z = 1:size(rimage, 3)
+                waitstr = ['Registering channels in Z-slice #' num2str(z)];
+                waitbar(double(z)/size(rimage, 3), h, waitstr);
                 for i = 1:length(dsts)
                     rimage(:,:,z,dsts(i)) = ...
                         imregister(rimage(:,:,z,dsts(i)), ...
-                        rimage(:,:,z,srcs(i)), 'rigid',  optimizer, metric);
+                        rimage(:,:,z,srcs(i)), 'rigid', optimizer, metric);
                 end
             end
+            close(h);
         end
     end
 end
