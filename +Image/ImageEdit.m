@@ -26,13 +26,16 @@ classdef ImageEdit
                 zimage(:,:,:,c,:) = (data - mean(data(:))) / std(data(:));
             end
             
-            % Convert the image to a viewable format.
+            % Convert the image to [0,1].
             zimage = Image.ImageEdit.convert2double01(zimage);
         end
         
         function bimage = deBleed(bimage, dsts, srcs, scales)
             %DEBLEED De-bleed the destination channel(s) of their source
             % channel(s) bleedthrough using the specified scale(s).
+            
+            % Convert the image to uint16.
+            bimage = Image.ImageEdit.convert2uint16(bimage);
             
             % De-bleed every channel using the same scale.
             if length(scales) == 1
@@ -46,6 +49,9 @@ classdef ImageEdit
                         bimage(:,:,:,srcs(i)) * scales(i);
                 end
             end
+            
+            % Convert the image to [0,1].
+            bimage = Image.ImageEdit.convert2double01(bimage);
         end
         
         function aimage = adjust(aimage, lows, highs, gammas)
@@ -113,8 +119,8 @@ classdef ImageEdit
                 himage(:,:,z,RGB) = h2;
             end
             
-            % Convert the image to a viewable format.
-            himage = Image.ImageEdit.convert2uint16(himage);
+            % Convert the image to [0,1].
+            himage = Image.ImageEdit.convert2double01(himage);
         end
         
         function mimage = morphOpen(mimage, varargin)
@@ -140,6 +146,9 @@ classdef ImageEdit
                 I = imopen(I, se);
                 mimage(:,:,:,c) = I;
             end
+            
+            % Convert the image to [0,1].
+            mimage = Image.ImageEdit.convert2double01(mimage);
         end
         
         function nimage = deNoise(nimage)
