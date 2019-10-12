@@ -473,6 +473,11 @@ classdef AutoId < handle
             model = obj.atlas.(lower(im.bodypart)).model;
             N = obj.atlas.(lower(im.bodypart)).N;
             aligned = im.get_aligned_xyzRGBs();
+            
+            % Are the neurons alignes?
+            if isempty(aligned)
+                return;
+            end
            
             for neuron=1:length(im.neurons)
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
