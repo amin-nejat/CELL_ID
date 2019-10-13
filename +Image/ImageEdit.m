@@ -169,13 +169,20 @@ classdef ImageEdit
             persistent optimizer;
             persistent metric;
             if isempty(optimizer)
-                [optimizer, metric] = imregconfig('monomodal');
+                %[optimizer, metric] = imregconfig('monomodal');
+                [optimizer, metric] = imregconfig('multimodal');
             end
             
             % Are we registering across Z?
             is_register_z = false;
             if ~isempty(varargin)
                 is_register_z = varargin{1};
+            end
+            
+            % What type of registration are we using?
+            type = 'rigid';
+            if length(varargin) > 1
+                type = varargin{2};
             end
             
             % Register across Z.
@@ -193,7 +200,7 @@ classdef ImageEdit
                     for i = 1:length(srcs)
                         rimage(:,:,z,srcs(i)) = ...
                             imregister(rimage(:,:,z-1,srcs(i)), ...
-                            rimage(:,:,z,srcs(i)), 'rigid', ...
+                            rimage(:,:,z,srcs(i)), type, ...
                             optimizer, metric);
                     end
                 end
@@ -203,7 +210,7 @@ classdef ImageEdit
                     for i = 1:length(srcs)
                         rimage(:,:,z,srcs(i)) = ...
                             imregister(rimage(:,:,z+1,srcs(i)), ...
-                            rimage(:,:,z,srcs(i)), 'rigid', ...
+                            rimage(:,:,z,srcs(i)), type, ...
                             optimizer, metric);
                     end
                 end
@@ -221,7 +228,7 @@ classdef ImageEdit
                 for i = 1:length(dsts)
                     rimage(:,:,z,dsts(i)) = ...
                         imregister(rimage(:,:,z,dsts(i)), ...
-                        rimage(:,:,z,srcs(i)), 'rigid', optimizer, metric);
+                        rimage(:,:,z,srcs(i)), type, optimizer, metric);
                 end
             end
             close(h);
