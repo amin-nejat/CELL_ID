@@ -49,8 +49,24 @@ classdef ImageAnalysis
             [otsu_thresh, otsu_score] = graythresh(GFP_colors);
             otsu_thresh = otsu_thresh * max(GFP_colors);
             
-            % Write the CSV titles & row data to a file
+            % Get the real neuron colors.
+            neuron_RGBWs = neurons.get_colors_readout(); 
+            neuron_RGBs = neuron_RGBWs(:,[1 2 3]);
+
+            % Get the aligned neuron data.
             aligned_xyzRGBs = neurons.get_aligned_xyzRGBs();
+            if ~isempty(aligned_xyzRGBs)
+                if size(aligned_xyzRGBs,1) < size(neuron_RGBs,1)
+                    is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), neurons.neurons);
+                    neuron_RGBs = neuron_RGBs(is_aligned,:);
+                end
+                
+                % find transformation between original and aligned data
+                beta_col = linsolve([neuron_RGBs ones(size(neuron_RGBs,1),1)],[aligned_xyzRGBs(:,4:end) ones(size(neuron_RGBs,1),1)]);
+                aligned_colors_rgb = [neuron_RGBWs(:,[1,2,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
+                aligned_colors_rab = [neuron_RGBWs(:,[1,4,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
+                aligned_colors = [aligned_colors_rgb(:,1:3), aligned_colors_rab(:,2)];
+            end
             
             % Open the file.
             fileID = fopen(csvfile, 'w');

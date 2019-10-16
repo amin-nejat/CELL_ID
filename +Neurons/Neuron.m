@@ -14,7 +14,8 @@ classdef Neuron < handle
         covariance = nan(1,3,3); % 3x3 covariance matrix that's fit to the neuron
         truncation = nan; % Gaussian truncation value that defines the sharpness of the edge of neuron
         aligned_xyzRGB % the neuron's position & color, aligned to the global model
-                
+        outlier %whenever alignment information is available annotated neurons will be flagged as potential outliers
+        
         % User neuron ID.
         annotation = '' % neuron user selected annotation
         is_annotation_on = nan; % is the neuron's annotation ON, OFF, or neither (empty)
@@ -31,6 +32,8 @@ classdef Neuron < handle
     end
 
     methods (Static)
+        
+            
         function neuron = unmarshall(sp, i)
             % UNMARSHALL Construct the neuron by unmarshalling it.
             % *** LEGACY FUNCTION. DEPRECATED!!!
@@ -84,7 +87,8 @@ classdef Neuron < handle
     end
     
     methods
-        function annotate(obj, name, confidence, is_on)
+        function annotate(obj, name, confidence, is_on, atlas)
+            
             % ANNOTATE annotate the neuron.
             %   name: the neuron name
             %   confidence: the user confidence
@@ -98,6 +102,19 @@ classdef Neuron < handle
             % Annotate the neuron.
             else
                 obj.annotation = name;
+                neuron_names = atlas.N;
+                neuron_index = find(strcmp(neuron_names,name));
+           
+                if(~isempty(obj.aligned_xyzRGB)&&~isempty(neuron_index))
+                    
+                    
+                    aligned = obj.aligned_xyzRGB;
+                    mu = atlas.model.mu(neuron_index,:);
+                    sigma = squeeze(atlas.model.sigma(:,:,neuron_index));
+                    obj.outlier = Methods.find_outlier(aligned, mu, sigma);
+                       
+
+                end
                 obj.annotation_confidence = confidence;
                 obj.is_annotation_on = is_on;
             end

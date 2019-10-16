@@ -49,6 +49,21 @@ classdef NeuroPAL
             end
         end
 
+        function [name, LR] = stripLR(name)
+            %STRIPLR Strip the L/R info from the neuron's name.
+            
+            % Is the neuron a left right neuron?
+            LR = [];
+            if (name(end) ~= 'L' && name(end) ~= 'L') || ...
+                    any(strcmp(name, Neurons.NeuroPAL.non_LR_neurons))
+                return;
+            end
+            
+            % Strip the L/R info from the neuron's name.
+            LR = name(end);
+            name = name(1:(end-1));
+        end
+        
         function [name, is_on] = stripOnOff(name)
             %STRIPONOFF Strip the ON/OFF info from the neuron's name.
             is_on = nan;
@@ -77,6 +92,8 @@ classdef NeuroPAL
             end
         end
 
+        
+        %% Neuron color data.
         function color = getNeuronColor(name)
             %GETNEURONCOLOR Get the neuron's NeuroPAL RGB color.
             color = [];
@@ -87,6 +104,35 @@ classdef NeuroPAL
             end
         end
 
+        
+        function name = getNeuroPALColorClass(name)
+            %GETNEUROPALCOLORCLASS Get the NeuroPAL-limited color class for
+            % the neuron. Most left/right and dorsal/ventral neurons share
+            % equivalent NeuroPAL colors and thus have the same color class.
+            if ~Neurons.NeuroPAL.isNeuron(name)
+                name = [];
+                return;
+            end
+            
+            % Is the neuron deterministically asymetrically colored?
+            if any(strcmp(name, Neurons.NeuroPAL.asym_deterministic_LR_neurons))
+                return;
+            end
+            
+            % Strip the neuron of its L/R designation.
+            name = Neurons.NeuroPAL.stripLR(name);
+            
+            % Does the neuron have 2, 4, or 6 fold symmetry?
+            if name(end) == 'D' || name(end) == 'V'
+                nameNoDV = name(1:(end-1));
+                if any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_2_fold_DV_neurons)) || ...
+                        any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_4_fold_DV_neurons)) || ...
+                        any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_6_fold_DV_neurons))
+                    name = [nameNoDV 'DV'];
+                end
+            end
+        end
+        
 
         %% Neuron data.
         function [names, colors] = getColors()
@@ -168,12 +214,11 @@ classdef NeuroPAL
             classes = Neurons.NeuroPAL.getClasses();
             neuron_class = classes{class_i};
         end
-
         
         function neuron = getNeuroPALName(neuron)
             % GETNEUROPALNAME Get the NeuroPAL-limited name for the neuron.
             % Left/right neurons, within the same ganglia, cannot be
-            % distinguished. Therefore,they have a degenrate neuron name.
+            % distinguished. Therefore,they have a degenerate neuron name.
             % For example, RIGL & RIGR have a NeuroPAL-limited ID of RIG.
             
             % Is this a neuron?
@@ -229,7 +274,6 @@ classdef NeuroPAL
         end
         
 
-        
         %% Neuron counts.
         function num_neurons = numNeurons(body)
             %NUMNEURONS Get the number of neurons for this body part.
@@ -572,12 +616,64 @@ classdef NeuroPAL
 
     %% Constant properties.
     properties (Constant)
+        
+        % Non-neuronal cells.
         non_neuronal_cells = { ...
             'AMSOL'
             'AMSOR'
             'HMC'
             'PHSO1L'
             'PHSO1R'
+            };
+        
+        % Non-left/right neurons.
+        non_LR_neurons = {
+            'ADL'
+            'AQR'
+            'AVL'
+            'OLL'
+            'PQR'
+            'PVR'
+            'RIR'
+            'SDQL'
+            'SDQR'
+            };
+        
+        % Asymmetrically deterministic neurons.
+        asym_deterministic_LR_neurons = {
+            'ASEL'
+            'ASER'
+            };
+        
+        % Asymmetrically stochastic neurons.
+        asym_stochastic_LR_neurons = {
+            'AWCL'
+            'AWCR'
+            };
+        
+        % 2-fold symmetric neurons.
+        sym_2_fold_DV_neurons = {
+            'RME'
+            };
+        
+        % 4-fold symmetric neurons.
+        % Note: the SIBs & SMDs are excluded because their coloring is not
+        % always symmetric for the dorsal and ventral cells.
+        sym_4_fold_DV_neurons = {
+            'CEP'
+            'OLQ'
+            'SAA'
+            'SIA'
+            'SMB'
+            'URA'
+            'URY'
+            };
+
+        % 6-fold symmetric neurons.
+        sym_6_fold_DV_neurons = {
+            'IL1'
+            'IL2'
+            'RMD'
             };
     end
 end

@@ -18,7 +18,7 @@ classdef AutoId < handle
         %a detect being a false positive. max_fp is the maximum posible
         %number of false positives.
         p_fp = 1e-50; %if p = 10^(-Large number) no neuron is a false positive. 
-        max_fp = 10; %chosen a larger number slows down computations cubicly.
+        max_fp = 0; %chosen a larger number slows down computations cubicly.
         
         theta = 0: 0.25: 2*pi
     end
@@ -462,6 +462,38 @@ classdef AutoId < handle
             % convert the assignments to names and update the information
             % in the image
             obj.add_to_image(im);
+        end
+        
+        function update_confidences(obj, im)
+            % update_confidences updates the confidence calculations of
+            % each manually annotated neuron, according to current
+            % alignments
+            
+            model = obj.atlas.(lower(im.bodypart)).model;
+            N = obj.atlas.(lower(im.bodypart)).N;
+            aligned = im.get_aligned_xyzRGBs();
+            
+            % Are the neurons alignes?
+            if isempty(aligned)
+                return;
+            end
+           
+            for neuron=1:length(im.neurons)
+                im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
+                
+                if(~isempty(im.neurons(neuron).annotation))
+                    neuron_index = find(strcmp(N, im.neurons(neuron).annotation));
+                    if(~isempty(neuron_index))
+                        
+                        mu = model.mu(neuron_index,:);
+                        sigma = squeeze(model.sigma(:,:,neuron_index));
+                        im.neurons(neuron).outlier = Methods.find_outlier(aligned(neuron,:), mu, sigma);
+                        
+                    end
+                end
+            end
+            
+            
         end
         
         

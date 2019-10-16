@@ -192,7 +192,44 @@ classdef Image < handle
             %NUM_NEURONS the number of neurons in the image
             num = length(obj.neurons);
         end
+        function [index_neurons, tests] = getOutliers(obj, p)
+            %index_neurons indexes the neurons that are outliers at the
+            %significance level p.
+            %tests containts the results of all individual tests performed,
+            %for each of the outliers
+            %test(i).global is the p-value of the global test (using color +
+            %position), based on chi^2 with 6 df for the i-th outlier.
+            %test(i).position_test and tests(i).color_test contain position and color specific 
+            %tests.
+            %
+            %tests(i).position_test.global and tests(i).color_test.global are global tests 
+            %based on chi^2 with 3 df.
+            %
+            %tests(i).position_test.individual and tests(i).color_test.individual contain
+            %the 3 tests (each) forevery position and color coordinates, each based
+            %on a chi^2 with one degree of freedom.
+            
+            t = nan*ones(obj.num_neurons(),1);
+             for i =1:obj.num_neurons()
+                 n=obj.neurons(i);
+                 if(~isempty(n.outlier))
+                 t(i) = n.outlier.global_test;
+                 end
+                 
+             end
+             
+             index_neurons = find(t<p);
+            for i=1:length(index_neurons)
+                n = obj.neurons(index_neurons(i));
+                tests(i).global_test = n.outlier.global_test;
+                tests(i).position_test.global = n.outlier.position_test.global;
+                tests(i).position_test.individual = n.outlier.position_test.individual;
+                tests(i).color_test.global = n.outlier.color_test.global;
+                tests(i).color_test.individual = n.outlier.color_test.individual;
+            end
+        end    
 
+            
         function num = num_user_id_neurons(obj)
             %NUM_USER_ID_NEURONS the number of user ID'd neurons in the image
             num = sum(arrayfun(@(x) ~isempty(x.annotation), obj.neurons));
