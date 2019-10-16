@@ -334,8 +334,11 @@ classdef AutoDetect < handle
                 break;
             end
             
-            
-            loc = obj.get_next_location(rho, 'max', params);
+            rho_mag = max(rho, [], 4);
+            [~, lmidx] = max(rho_mag(:));
+            [x,y,z] = ind2sub(size(rho_mag), lmidx);
+            loc = [x,y,z];
+
             bpatch = Methods.Utils.subcube(volume, loc, obj.fsize);
             
             [shape, sp] = obj.fit_gaussian(bpatch, squeeze(rho(loc(1),loc(2),loc(3),:))', loc);
@@ -355,8 +358,9 @@ classdef AutoDetect < handle
                 sp.color_readout = median(reshape(cpatch, [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
                 obj.supervoxels = Methods.Utils.union_sp(obj.supervoxels, sp);
             end
-            
-            N = size(obj.supervoxels.positions, 1);
+            if ~isempty(obj.supervoxels)
+                N = size(obj.supervoxels.positions, 1);
+            end
         end
         
         % Done.

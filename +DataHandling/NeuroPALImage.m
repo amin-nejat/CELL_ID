@@ -473,7 +473,11 @@ classdef NeuroPALImage
             
             % Open the file.
             np_file = [];
-            [image_data, ~] = DataHandling.imreadAny(any_file);
+            if strcmp(any_file(end-3:end), '.lif')
+                [image_data, ~] = DataHandling.imreadLif(any_file);
+            else
+                [image_data, ~] = DataHandling.imreadAny(any_file);
+            end
             
             % Check the image orientation.
             data = image_data.data;
