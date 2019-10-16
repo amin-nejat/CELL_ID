@@ -240,98 +240,6 @@ classdef AutoDetect < handle
    
    methods % Public Access
        
-       function [loc, varargout] = get_next_location(obj, data, method, params, varargin)
-           if strcmp(method, 'max')
-               rho_mag = max(data, [], 4);
-               [~, lmidx] = max(rho_mag(:));
-               [x,y,z] = ind2sub(size(rho_mag), lmidx);
-               loc = [x,y,z];
-           elseif strcmp(method, 'atlas_guided')
-                ws = load('atlas.mat');
-                atlas = ws.atlas;
-                
-                
-                if nargout > 1
-                    bodypart = varargin{find(strcmp(varargin,'bodypart'))+1};
-                    im = Neurons.Image(obj.supervoxels, bodypart, 'scale', obj.scale);
-                    titlestr = varargin{find(strcmp(varargin,'titlestr'))+1};
-                    Methods.AutoId.instance().id(titlestr, im);
-                    
-                    
-                    artifact_indices = find(strcmp(im.get_deterministic_ids(), 'Artifact'));
-                    neuron_indices = setdiff(1:size(obj.supervoxels.positions,1), artifact_indices);
-                    obj.supervoxels = Methods.Utils.sub_sp(obj.supervoxels, neuron_indices);
-                    im.neurons = im.neurons(neuron_indices);
-                    varargout{1} = im;
-                else
-                    im = varargin{find(strcmp(varargin,'im'))+1};
-                    if size(obj.supervoxels.color,1) > size(im.neurons)
-                        im.neurons(end+1) = Neurons.Neuron.unmarshall(obj.supervoxels, size(obj.supervoxels.color,1));
-                        Methods.AutoId.instance().update_id(im);
-                    end
-                end
-                
-                
-                model = atlas.(lower(im.bodypart)).model;
-                col = im.get_colors_readout(); col = col(:,[1 2 3]);
-                pos = im.get_positions().*im.scale;
-
-                aligned = im.get_aligned_xyzRGBs();
-                if ~isempty(aligned)
-                    is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), im.neurons);
-                    col = col(is_aligned,:);
-                    pos = pos(is_aligned,:);
-
-                    beta = linsolve([aligned ones(size(pos,1),1)],[pos col ones(size(pos,1),1)]);
-                    
-                    
-                    
-                    model.mu = [model.mu ones(size(model.mu,1),1)]*beta;
-                    model.mu = model.mu(:,1:end-1);
-                    for i=1:size(model.sigma,3)
-                        model.sigma(1:6,1:6,i) = beta(1:6,1:6)*model.sigma(1:6,1:6,i)*beta(1:6,1:6)';
-                    end
-                    
-                    sz = size(data);
-                    pix_pos = [];
-                    [pix_pos(:,1), pix_pos(:,2), pix_pos(:,3)] = ind2sub(sz(1:3), find(ones(sz(1:3))));
-                    pix_col = reshape(data, prod(sz(1:3)), []);
-                    pix_col = pix_col(:,1:3);
-                    
-                    pix_pos = pix_pos(max(pix_col,[],2) > 3,:);
-                    pix_col = pix_col(max(pix_col,[],2) > 3,:);
-
-                    min_dist = min(pdist2(pix_pos.*obj.scale, round(obj.supervoxels.positions).*im.scale) , [], 2);
-                    
-                    
-                    pix_col = pix_col(min_dist > params.exclusion_radius,:);
-                    pix_pos = pix_pos(min_dist > params.exclusion_radius,:);
-                    
-                    
-                    remaining = arrayfun(@(x) ~any(strcmp({im.get_deterministic_ids{is_aligned}}, x)), atlas.(lower(im.bodypart)).N);
-
-                    
-                    gm_rem = gmdistribution(model.mu(remaining,:),model.sigma(:,:,remaining));
-                    gm_nrem = gmdistribution(model.mu(~remaining,:),model.sigma(:,:,~remaining));
-                    ll = log(gm_rem.pdf([pix_pos.*obj.scale, pix_col])) - log(gm_nrem.pdf([pix_pos.*obj.scale, pix_col]));
-                    [mll, pix_idx] = max(ll.*max(pix_col,[],2));
-                    
-                    
-                    
-                    
-                    if isempty(mll) || isinf(mll)
-                        rho_mag = max(data, [], 4);
-                       [~, lmidx] = max(rho_mag(:));
-                       [x,y,z] = ind2sub(size(rho_mag), lmidx);
-                       loc = [x,y,z];
-                    else
-                        loc = pix_pos(pix_idx,:);
-                    end
-                end
-                
-           end
-       end
-       
         function [supervoxels, params] = detect(obj, titlestr, volume, ...
                 k, min_eig_thresh, scale, worm, exclusion_radius)
         % Matching pursuit algorithm for finding the best mixture of Gaussians that
@@ -426,15 +334,6 @@ classdef AutoDetect < handle
                 break;
             end
             
-%             if N <= 0.9*k
-%                 loc = obj.get_next_location(rho, 'max', params);
-%             else
-%                 if isempty(im)
-%                     [loc, im] = obj.get_next_location(rho, 'atlas_guided', params, 'bodypart', worm.body, 'titlestr', titlestr);
-%                 else
-%                     loc = obj.get_next_location(rho, 'atlas_guided', params, 'im', im);
-%                 end
-%             end
             
             loc = obj.get_next_location(rho, 'max', params);
             bpatch = Methods.Utils.subcube(volume, loc, obj.fsize);

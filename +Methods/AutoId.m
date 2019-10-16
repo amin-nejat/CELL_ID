@@ -171,8 +171,7 @@ classdef AutoId < handle
             n1 = size(logP,1);
             n2 = size(logP,2);
 
-            logP2 =(a-10000)*ones(max(n1,n2), max(n1,n2));
-            logP2 =-10^(-100)*ones(max(n1,n2), max(n1,n2));
+            logP2 =-1e-100*ones(max(n1,n2), max(n1,n2));
            
             if(n1<n2)
                 logP2(1:n1,:)=logP;

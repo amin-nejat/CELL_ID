@@ -107,7 +107,7 @@ classdef Preprocess < handle
             zvideo = zeros(size(video));
             for ch = 1: size(video,4)
                 data = double(video(:,:,:,ch,:));
-                zvideo(:,:,:,ch,:) = (data-mean(data(:)))/std(data(:));
+                zvideo(:,:,:,ch,:) = (data-nanmean(data(:)))/nanstd(data(:));
             end
         end
         
