@@ -54,7 +54,8 @@ classdef NeuroPAL
             
             % Is the neuron a left right neuron?
             LR = [];
-            if (name(end) ~= 'L' && name(end) ~= 'L') || ...
+            name = upper(name);
+            if (name(end) ~= 'L' && name(end) ~= 'R') || ...
                     any(strcmp(name, Neurons.NeuroPAL.non_LR_neurons))
                 return;
             end
@@ -62,6 +63,25 @@ classdef NeuroPAL
             % Strip the L/R info from the neuron's name.
             LR = name(end);
             name = name(1:(end-1));
+        end
+        
+        function name = flipLR(name)
+            %FLIPLR Flip the L/R info in the neuron's name.
+            
+            % Is the neuron a left right neuron?
+            name = upper(name);
+            if (name(end) ~= 'L' && name(end) ~= 'R') || ...
+                    any(strcmp(name, Neurons.NeuroPAL.non_LR_neurons))
+                return;
+            end
+            
+            % Flip the L/R info in the neuron's name.
+            switch name(end)
+                case 'L'
+                    name(end) = 'R';
+                case 'R'
+                    name(end) = 'L';
+            end
         end
         
         function [name, is_on] = stripOnOff(name)
