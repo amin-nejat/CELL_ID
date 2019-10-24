@@ -313,9 +313,7 @@ classdef AutoDetect < handle
         params.hnsz             = round(round(3./obj.scale(:)')/2)*2+1;
         params.min_eig_thresh   = min_eig_thresh; % microns
         params.exclusion_radius = exclusion_radius; % microns
-        
-%         im = [];
-        
+                
         
         % Smooth the image using a Gaussian.
         filter = Methods.AutoDetect.get_filter(params.hnsz, params.hnsz, 0);
@@ -349,9 +347,9 @@ classdef AutoDetect < handle
             for ch = 1: size(rho, 4)
                 rho(:,:,:,ch) = rho(:,:,:,ch)-fresidual*sp.color(ch);
             end
-                        
+            
             exclusion_condition = isempty(obj.supervoxels) || ...
-                min(pdist2(round(obj.supervoxels.positions).*obj.scale, round(loc).*obj.scale)) > exclusion_radius;
+                min(pdist2(obj.supervoxels.positions.*obj.scale, loc.*obj.scale)) > exclusion_radius;
             
             if min(eig(squeeze(sp.covariances).*obj.scale)) > min_eig_thresh && exclusion_condition
                 cpatch = Methods.Utils.subcube(volume, round(sp.positions), [1,1,0]);
