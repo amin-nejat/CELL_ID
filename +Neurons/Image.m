@@ -417,6 +417,14 @@ classdef Image < handle
             annotation_confidences = vertcat(obj.neurons.annotation_confidence);
         end
         
+        function flipLR_annotations(obj)
+            %FLIPLR_ANNOTATIONS flip the L/R annotation for all user IDs.
+            for i = 1:length(obj.neurons)
+                obj.neurons(i).annotation = ...
+                    Neurons.NeuroPAL.flipLR(obj.neurons(i).annotation);
+            end
+        end
+        
         function delete_annotations(obj)
             %DELETE_ANNOTATIONS delete all user IDs.
             for i = 1:length(obj.neurons)
