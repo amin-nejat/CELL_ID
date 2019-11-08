@@ -178,11 +178,31 @@ classdef ImageEdit
             if ~isempty(varargin)
                 is_register_z = varargin{1};
             end
+            if isempty(is_register_z)
+                is_register_z = false;
+            end
+            
+            % Are we registering a subset of Z planes?
+            z_planes = 1:size(rimage, 3);
+            if length(varargin) > 1
+                z_planes = varargin{2};
+                
+                % Sanitize the input.
+                z_planes = sort(z_planes);
+                z_planes(z_planes < 1) = [];
+                z_planes(z_planes > size(rimage, 3)) = [];
+            end
+            if isempty(z_planes)
+                z_planes = 1:size(rimage, 3);
+            end
             
             % What type of registration are we using?
             type = 'rigid';
-            if length(varargin) > 1
-                type = varargin{2};
+            if length(varargin) > 2
+                type = varargin{3};
+            end
+            if isempty(type)
+                type = 'rigid';
             end
             
             % Register across Z.
@@ -222,7 +242,7 @@ classdef ImageEdit
             
             % Register the color channels.
             h = waitbar(0, 'Registering images ...');
-            for z = 1:size(rimage, 3)
+            for z = z_planes
                 waitstr = ['Registering channels in Z-slice #' num2str(z)];
                 waitbar(double(z)/size(rimage, 3), h, waitstr);
                 for i = 1:length(dsts)
