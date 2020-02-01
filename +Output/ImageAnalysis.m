@@ -11,12 +11,16 @@ classdef ImageAnalysis
         function saveID2CSV(csvfile, prefs, data, data_zscored, neurons, um_scale)
             %SAVEID2CSV save the IDs, position, & colors to a CSV file.
 
+            % Get the GFP channel.
+            % Note: we translate the z-score to >= 0. Negative GFP
+            % intensities confuse users.
+            GFP_i = prefs.GFP;
+            GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
+            GFP_image = GFP_image - min(GFP_image(:));
+            
             % Measure the 8 image corners to determine an appropriate
             % GFP background threshold.
             GFP_bg_size = Output.ImageAnalysis.GFP_bg_size;
-            GFP_i = prefs.GFP;
-            GFP_image = double(squeeze(data(:,:,:,GFP_i)));
-            GFP_image = (GFP_image - mean(GFP_image(:))) / std(GFP_image(:));
             [x,y,z] = size(GFP_image);
             x1 = 1:GFP_bg_size;
             x2 = (x - GFP_bg_size + 1):x;
@@ -34,15 +38,23 @@ classdef ImageAnalysis
             corner(8) = median(GFP_image(x2,y2,z2), 'all');
             min_corner = min(corner);
             
-            % Measure the neurons GFP channel.
+            % Take a minimal patch around the neuron center.
+            % Note: we need to walk a thin line of being robust against
+            % off-center dots, while not violating neighboring neurons.
+            cube_size = [1,1,1];
+            % Take a 1 micron radius around the neuron centers.
+            % Note: users are way too sloppy for us to use this :(
+            %cube_size = round([1,1,1] ./ um_scale');
+            
+            % Measure the GFP channel for the neurons.
+            intensity_prctile = 75;
             ns = neurons.neurons;
-            GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
             GFP_colors = nan(length(ns),1);
             for i=1:length(ns)
                 cpatch = Methods.Utils.subcube(GFP_image, ...
-                    round(ns(i).position), [1,1,0]);
-                GFP_colors(i) = median(reshape(cpatch, ...
-                    [numel(cpatch)/size(cpatch, 4), size(cpatch, 4)]));
+                    round(ns(i).position), cube_size);
+                GFP_colors(i) = mean(cpatch(cpatch > prctile(cpatch(:), ...
+                    intensity_prctile)));
             end
             
             % Measure the neurons to determine an appropriate GFP Otsu threshold.
@@ -105,11 +117,11 @@ classdef ImageAnalysis
             
             % Sort the neurons by position.
             % Note: x & y are reversed.
-            ns = neurons.neurons;
             positions = neurons.get_positions();
             positions = positions(:,[2,1,3]);
             [~, sort_i] = sortrows(positions);
             ns = ns(sort_i);
+            GFP_colors = GFP_colors(sort_i);
             
             % Write the neurons.
             um_scale = um_scale';
