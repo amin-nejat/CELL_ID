@@ -57,35 +57,46 @@ classdef ImageAnalysis
                     intensity_prctile)));
             end
             
-            % Measure the neurons to determine an appropriate GFP Otsu threshold.
+            % Compute an appropriate GFP Otsu threshold.
             [otsu_thresh, otsu_score] = graythresh(GFP_colors);
             otsu_thresh = otsu_thresh * max(GFP_colors);
             
-            % Get the real neuron colors.
-            neuron_RGBWs = neurons.get_colors_readout(); 
-            neuron_RGBs = neuron_RGBWs(:,[1 2 3]);
+            % Compute an appropriate GFP linear change threshold.
+            GFP_sorted = sort(GFP_colors);
+            [change_point, change_residual] = findchangepts(GFP_sorted, ...
+                'MaxNumChanges', 1, 'Statistic', 'linear');
+            change_thresh = nan;
+            change_i = round(change_point);
+            if change_i > 1 && change_i < length(GFP_sorted)
+                change_thresh = GFP_sorted(change_i);
+            end
 
             % Get the aligned neuron data.
             aligned_xyzRGBs = neurons.get_aligned_xyzRGBs();
-            if ~isempty(aligned_xyzRGBs)
-                if size(aligned_xyzRGBs,1) < size(neuron_RGBs,1)
-                    is_aligned = arrayfun(@(x) ~isempty(x.aligned_xyzRGB), neurons.neurons);
-                    neuron_RGBs = neuron_RGBs(is_aligned,:);
-                end
+            %if ~isempty(aligned_xyzRGBs)
                 
-                % find transformation between original and aligned data
-                beta_col = linsolve([neuron_RGBs ones(size(neuron_RGBs,1),1)],[aligned_xyzRGBs(:,4:end) ones(size(neuron_RGBs,1),1)]);
-                aligned_colors_rgb = [neuron_RGBWs(:,[1,2,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
-                aligned_colors_rab = [neuron_RGBWs(:,[1,4,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
-                aligned_colors = [aligned_colors_rgb(:,1:3), aligned_colors_rab(:,2)];
-            end
+                % Get the real neuron colors.
+                %neuron_RGBWs = neurons.get_colors_readout();
+                %neuron_RGBs = neuron_RGBWs(:,[1 2 3]);
+            
+                % Find transformation between original and aligned data.
+                %beta_col = linsolve([neuron_RGBs ones(size(neuron_RGBs,1),1)],...
+                %    [aligned_xyzRGBs(:,4:end) ones(size(neuron_RGBs,1),1)]);
+                %aligned_colors_rgb = [neuron_RGBWs(:,[1,2,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
+                %aligned_colors_rab = [neuron_RGBWs(:,[1,4,3]) ones(size(neuron_RGBWs,1),1)]*beta_col;
+                %aligned_colors = [aligned_colors_rgb(:,1:3), aligned_colors_rab(:,2)];
+            %end
             
             % Open the file.
             fileID = fopen(csvfile, 'w');
             
             % Write the background and Otsu thresholds.
-            fprintf(fileID, 'Atlas Version,,Background Threshold,,Otsu Threshold,Otsu Score\n');
-            fprintf(fileID, '%f,,%f,,%f,%f\n\n', neurons.atlas_version, min_corner, otsu_thresh, otsu_score);
+            fprintf(fileID, ['Atlas Version,,Background Threshold,,' ...
+                'Otsu Threshold,Otsu Score,,' ...
+                'Linear Change Point,Change Residual\n']);
+            fprintf(fileID, '%f,,%f,,%f,%f,,%f,%f\n\n', neurons.atlas_version, ...
+                min_corner, otsu_thresh, otsu_score, ...
+                change_thresh, change_residual);
             
             % Determine the header output.
             id_str = 'User ID,User Confidence,Auto ID,Auto Confidence,,';
