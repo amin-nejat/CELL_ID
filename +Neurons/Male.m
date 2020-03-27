@@ -1,31 +1,31 @@
-classdef NeuroPAL
-    %NEUROPAL NeuroPAL and worm related data.
+classdef Male
+    %MALE Male related data.
 
     methods (Static)
         %% Utility functions.
         function is_neuron = isNeuron(name)
             %ISNEURON Is this a neuron name?
             is_neuron = ...
-                ~isempty(find(strcmp(name, Neurons.NeuroPAL.getNeurons()),1));
+                ~isempty(find(strcmp(name, Neurons.Male.getNeurons()),1));
         end
 
         function is_cell = isCell(name)
             %ISCELL Is this a cell name?
 
             % Is this AWC?
-            %is_cell = Neurons.NeuroPAL.isAWC(name);
+            %is_cell = Neurons.Male.isAWC(name);
             is_cell = false;
 
             % Is this another neuron's name?
             if ~is_cell
                 is_cell = ...
-                    ~isempty(find(strcmp(name, Neurons.NeuroPAL.getNeurons()),1));
+                    ~isempty(find(strcmp(name, Neurons.Male.getNeurons()),1));
             end
 
             % Is this a non-neuronal name?
             if ~is_cell
                 is_cell = ...
-                    ~isempty(find(strcmp(name, Neurons.NeuroPAL.non_neuronal_cells),1));
+                    ~isempty(find(strcmp(name, Neurons.Male.non_neuronal_cells),1));
             end
         end
 
@@ -61,7 +61,7 @@ classdef NeuroPAL
             % Is the neuron a left right neuron?
             name = upper(name);
             if (name(end) ~= 'L' && name(end) ~= 'R') || ...
-                    any(strcmp(name, Neurons.NeuroPAL.non_LR_neurons))
+                    any(strcmp(name, Neurons.Male.non_LR_neurons))
                 return;
             end
             
@@ -81,7 +81,7 @@ classdef NeuroPAL
             % Is the neuron a left right neuron?
             name = upper(name);
             if (name(end) ~= 'L' && name(end) ~= 'R') || ...
-                    any(strcmp(name, Neurons.NeuroPAL.non_LR_neurons))
+                    any(strcmp(name, Neurons.Male.non_LR_neurons))
                 return;
             end
             
@@ -115,7 +115,7 @@ classdef NeuroPAL
         function names = neuronStartsWith(str)
             %NEURONSTARTSWITH Which neurons start with this string?
             names = [];
-            neurons = Neurons.NeuroPAL.getNeurons();
+            neurons = Neurons.Male.getNeurons();
             i = startsWith(neurons, str);
             if ~isempty(i)
                 names = neurons(i);
@@ -127,7 +127,7 @@ classdef NeuroPAL
         function color = getNeuronColor(name)
             %GETNEURONCOLOR Get the neuron's NeuroPAL RGB color.
             color = [];
-            [names, colors] = Neurons.NeuroPAL.getColors();
+            [names, colors] = Neurons.Male.getColors();
             i = find(strcmp(names, name), 1);
             if ~isempty(i)
                 color = colors{i};
@@ -139,25 +139,25 @@ classdef NeuroPAL
             %GETNEUROPALCOLORCLASS Get the NeuroPAL-limited color class for
             % the neuron. Most left/right and dorsal/ventral neurons share
             % equivalent NeuroPAL colors and thus have the same color class.
-            if ~Neurons.NeuroPAL.isNeuron(name)
+            if ~Neurons.Male.isNeuron(name)
                 name = [];
                 return;
             end
             
             % Is the neuron deterministically asymetrically colored?
-            if any(strcmp(name, Neurons.NeuroPAL.asym_deterministic_LR_neurons))
+            if any(strcmp(name, Neurons.Male.asym_deterministic_LR_neurons))
                 return;
             end
             
             % Strip the neuron of its L/R designation.
-            name = Neurons.NeuroPAL.stripLR(name);
+            name = Neurons.Male.stripLR(name);
             
             % Does the neuron have 2, 4, or 6 fold symmetry?
             if name(end) == 'D' || name(end) == 'V'
                 nameNoDV = name(1:(end-1));
-                if any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_2_fold_DV_neurons)) || ...
-                        any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_4_fold_DV_neurons)) || ...
-                        any(strcmp(nameNoDV, Neurons.NeuroPAL.sym_6_fold_DV_neurons))
+                if any(strcmp(nameNoDV, Neurons.Male.sym_2_fold_DV_neurons)) || ...
+                        any(strcmp(nameNoDV, Neurons.Male.sym_4_fold_DV_neurons)) || ...
+                        any(strcmp(nameNoDV, Neurons.Male.sym_6_fold_DV_neurons))
                     name = [nameNoDV 'DV'];
                 end
             end
@@ -184,7 +184,7 @@ classdef NeuroPAL
             %GETNEURONS Get a list of neurons.
             persistent neurons_data;
             if isempty(neurons_data)
-                load('herm_data.mat', 'neurons');
+                load('male_data.mat', 'neurons');
                 neurons_data = neurons;
             end
             neurons = neurons_data;
@@ -195,7 +195,7 @@ classdef NeuroPAL
             % ganglia combining left & right ganglia.
             persistent neurons_data;
             if isempty(neurons_data)
-                load('herm_data.mat', 'neuronsOrderedByGanglia');
+                load('male_data.mat', 'neuronsOrderedByGanglia');
                 neurons_data = neuronsOrderedByGanglia;
             end
             neurons = neurons_data;
@@ -206,7 +206,7 @@ classdef NeuroPAL
             % ganglia separating left & right ganglia.
             persistent neurons_data;
             if isempty(neurons_data)
-                load('herm_data.mat', 'neuronsOrderedByGangliaLR');
+                load('male_data.mat', 'neuronsOrderedByGangliaLR');
                 neurons_data = neuronsOrderedByGangliaLR;
             end
             neurons = neurons_data;
@@ -216,7 +216,7 @@ classdef NeuroPAL
             %GETCLASSES Get a list of neuron classes.
             persistent classes_data;
             if isempty(classes_data)
-                load('herm_data.mat', 'classes');
+                load('male_data.mat', 'classes');
                 classes_data = classes;
             end
             classes = classes_data;
@@ -228,20 +228,20 @@ classdef NeuroPAL
             % Load the data.
             persistent neurons2classes_data;
             if isempty(neurons2classes_data)
-                load('herm_data.mat', 'neurons2classes');
+                load('male_data.mat', 'neurons2classes');
                 neurons2classes_data = neurons2classes;
             end
             
             % Find the neuron.
             neuron_class = [];
-            neuron_i = strcmpi(neuron, Neurons.NeuroPAL.getNeurons());
+            neuron_i = strcmpi(neuron, Neurons.Male.getNeurons());
             if all(neuron_i == 0)
                 return;
             end
             
             % Find the neuron's class.
             class_i = neurons2classes_data(neuron_i);
-            classes = Neurons.NeuroPAL.getClasses();
+            classes = Neurons.Male.getClasses();
             neuron_class = classes{class_i};
         end
         
@@ -252,7 +252,7 @@ classdef NeuroPAL
             % For example, RIGL & RIGR have a NeuroPAL-limited ID of RIG.
             
             % Is this a neuron?
-            if ~Neurons.NeuroPAL.isNeuron(neuron)
+            if ~Neurons.Male.isNeuron(neuron)
                 neuron = [];
                 return;
             end
@@ -312,17 +312,17 @@ classdef NeuroPAL
                 case 'whole worm'
                     num_neurons = 300;
                 case 'head'
-                    num_neurons = Neurons.NeuroPAL.numHeadNeurons();
+                    num_neurons = Neurons.Male.numHeadNeurons();
                 case 'midbody'
-                    num_neurons = Neurons.NeuroPAL.numMidbodyNeurons();
+                    num_neurons = Neurons.Male.numMidbodyNeurons();
                 case 'anterior midbody'
-                    num_neurons = Neurons.NeuroPAL.numAnteriorMidbodyNeurons();
+                    num_neurons = Neurons.Male.numAnteriorMidbodyNeurons();
                 case 'central midbody'
-                    num_neurons = Neurons.NeuroPAL.numCentralMidbodyNeurons();
+                    num_neurons = Neurons.Male.numCentralMidbodyNeurons();
                 case 'posterior midbody'
-                    num_neurons = Neurons.NeuroPAL.numPosteriorMidbodyNeurons();
+                    num_neurons = Neurons.Male.numPosteriorMidbodyNeurons();
                 case 'tail'
-                    num_neurons = Neurons.NeuroPAL.numTailNeurons();
+                    num_neurons = Neurons.Male.numTailNeurons();
             end
         end
         
@@ -331,15 +331,15 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getAnteriorPharynx()) + ...
-                    length(NeuroPAL.getPosteriorPharynx()) + ...
-                    length(NeuroPAL.getLeftAnteriorGanglion()) + ...
-                    length(NeuroPAL.getRightAnteriorGanglion()) + ...
-                    length(NeuroPAL.getDorsalGanglion()) + ...
-                    length(NeuroPAL.getLeftLateralGanglion()) + ...
-                    length(NeuroPAL.getRightLateralGanglion()) + ...
-                    length(NeuroPAL.getVentralGanglion()) + ...
-                    length(NeuroPAL.getRetroVesicularGanglion());
+                num = length(Male.getAnteriorPharynx()) + ...
+                    length(Male.getPosteriorPharynx()) + ...
+                    length(Male.getLeftAnteriorGanglion()) + ...
+                    length(Male.getRightAnteriorGanglion()) + ...
+                    length(Male.getDorsalGanglion()) + ...
+                    length(Male.getLeftLateralGanglion()) + ...
+                    length(Male.getRightLateralGanglion()) + ...
+                    length(Male.getVentralGanglion()) + ...
+                    length(Male.getRetroVesicularGanglion());
             end
             num_neurons = num;
         end
@@ -349,10 +349,10 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getAnteriorMidbody()) + ...
-                    length(NeuroPAL.getCentralMidbody()) + ...
-                    length(NeuroPAL.getPosteriorMidbody()) + ...
-                    length(NeuroPAL.getVentralNerveCord());
+                num = length(Male.getAnteriorMidbody()) + ...
+                    length(Male.getCentralMidbody()) + ...
+                    length(Male.getPosteriorMidbody()) + ...
+                    length(Male.getVentralNerveCord());
             end
             num_neurons = num;
         end
@@ -363,8 +363,8 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getAnteriorMidbody()) + ...
-                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+                num = length(Male.getAnteriorMidbody()) + ...
+                    round(length(Male.getVentralNerveCord()) / 3);
             end
             num_neurons = num;
         end
@@ -375,8 +375,8 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getCentralMidbody()) + ...
-                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+                num = length(Male.getCentralMidbody()) + ...
+                    round(length(Male.getVentralNerveCord()) / 3);
             end
             num_neurons = num;
         end
@@ -387,8 +387,8 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getPosteriorMidbody()) + ...
-                    round(length(NeuroPAL.getVentralNerveCord()) / 3);
+                num = length(Male.getPosteriorMidbody()) + ...
+                    round(length(Male.getVentralNerveCord()) / 3);
             end
             num_neurons = num;
         end
@@ -398,10 +398,10 @@ classdef NeuroPAL
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(NeuroPAL.getPreAnalGanglion()) + ...
-                    length(NeuroPAL.getDorsoRectalGanglion()) + ...
-                    length(NeuroPAL.getLeftLumbarGanglion()) + ...
-                    length(NeuroPAL.getRightLumbarGanglion());
+                num = length(Male.getPreAnalGanglion()) + ...
+                    length(Male.getDorsoRectalGanglion()) + ...
+                    length(Male.getLeftLumbarGanglion()) + ...
+                    length(Male.getRightLumbarGanglion());
             end
             num_neurons = num;
         end
@@ -415,7 +415,7 @@ classdef NeuroPAL
             %   neurons = ganglion neurons
             persistent ganglia_data;
             if isempty(ganglia_data)
-                load('herm_data.mat', 'ganglia');
+                load('male_data.mat', 'ganglia');
                 ganglia_data = ganglia;
             end
             ganglia = ganglia_data;
@@ -425,7 +425,7 @@ classdef NeuroPAL
             %GETGANGLIONNAMES Get a list of ganglion names.
             persistent ganglion_names;
             if isempty(ganglion_names)
-                ganglia = Neurons.NeuroPAL.getGanglia();
+                ganglia = Neurons.Male.getGanglia();
                 ganglion_names = {ganglia.name}';
             end
             names = ganglion_names;
@@ -437,8 +437,8 @@ classdef NeuroPAL
             %GETANTERIORPHARYNX A list of anterior pharynx neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Anterior Pharyngeal Bulb'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -449,8 +449,8 @@ classdef NeuroPAL
             %GETPOSTERIORPHARYNX A list of posterior pharynx neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Posterior Pharyngeal Bulb'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -463,8 +463,8 @@ classdef NeuroPAL
             %GETLEFTANTERIORGANGLION A list of left anterior ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Anterior Ganglion (Left)'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -475,8 +475,8 @@ classdef NeuroPAL
             %GETRIGHTANTERIORGANGLION A list of right anterior ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Anterior Ganglion (Right)'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -487,8 +487,8 @@ classdef NeuroPAL
             %GETDORSALGANGLION A list of dorsal ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Dorsal Ganglion'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -499,8 +499,8 @@ classdef NeuroPAL
             %GETLEFTLATERALGANGLION A list of left lateral ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Lateral Ganglion (Left)'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -511,8 +511,8 @@ classdef NeuroPAL
             %GETRIGHTLATERALGANGLION A list of right lateral ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Lateral Ganglion (Right)'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -523,8 +523,8 @@ classdef NeuroPAL
             %GETVENTRALGANGLION A list of ventral ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Ventral Ganglion'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -534,8 +534,8 @@ classdef NeuroPAL
             %GETRETROVESICULARGANGLION A list of retro-vesicular ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Retro-Vesicular Ganglion'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -548,8 +548,8 @@ classdef NeuroPAL
             %GETANTERIORMIDBODY A list of anterior midbody neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Anterior Midbody'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -560,8 +560,8 @@ classdef NeuroPAL
             %GETCENTRALRMIDBODY A list of central midbody neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Central Midbody'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -572,8 +572,8 @@ classdef NeuroPAL
             %GETPOSTERIORMIDBODY A list of posterior midbody neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Posterior Midbody'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -584,8 +584,8 @@ classdef NeuroPAL
             %GETVENTRALNERVECORD A list of ventral nerve cord neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Ventral Nerve Cord'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -598,8 +598,8 @@ classdef NeuroPAL
             %GETPREANALGANGLION A list of pre-anal ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Pre-Anal Ganglion'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -610,8 +610,8 @@ classdef NeuroPAL
             %GETDORSORECTALGANGLION A list of dorso-rectal ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Dorso-Rectal Ganglion'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -622,8 +622,8 @@ classdef NeuroPAL
             %GETLEFTLUMBARGANGLION A list of left lumbar ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Lumbar Ganglion (Left)'), 1);
                 neurons = ganglia(i).neurons;
             end
@@ -634,8 +634,8 @@ classdef NeuroPAL
             %GETRIGHTLUMBARGANGLION A list of right lumbar ganglion neurons.
             persistent neurons;
             if isempty(neurons)
-                ganglia = Neurons.NeuroPAL.getGanglia();
-                i = find(strcmp(Neurons.NeuroPAL.getGanglionNames(), ...
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Lumbar Ganglion (Right)'), 1);
                 neurons = ganglia(i).neurons;
             end
