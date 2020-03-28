@@ -401,7 +401,11 @@ classdef Male
                 num = length(Male.getPreAnalGanglion()) + ...
                     length(Male.getDorsoRectalGanglion()) + ...
                     length(Male.getLeftLumbarGanglion()) + ...
-                    length(Male.getRightLumbarGanglion());
+                    length(Male.getRightLumbarGanglion()) + ...
+                    length(Male.getLeftRays()) + ...
+                    length(Male.getRightRays()) + ...
+                    length(Male.getLeftCloacalGanglion()) + ...
+                    length(Male.getRightCloacalGanglion());
             end
             num_neurons = num;
         end
@@ -637,6 +641,54 @@ classdef Male
                 ganglia = Neurons.Male.getGanglia();
                 i = find(strcmp(Neurons.Male.getGanglionNames(), ...
                     'Lumbar Ganglion (Right)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getLeftRays()
+            %GETLEFTRAYS A list of left ray neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
+                    'Rays (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getRightRays()
+            %GETRIGHTRAYS A list of right ray neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
+                    'Rays (Right)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getLeftCloacalGanglion()
+            %GETLEFTCLOACALGANGLION A list of left cloacal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
+                    'Cloacal Ganglion (Left)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
+        function names = getRightCloacalGanglion()
+            %GETRIGHTCLOACALGANGLION A list of right cloacal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
+                    'Cloacal Ganglion (Right)'), 1);
                 neurons = ganglia(i).neurons;
             end
             names = neurons;
