@@ -15,8 +15,12 @@ classdef ImageAnalysis
             % Note: we translate the z-score to >= 0. Negative GFP
             % intensities confuse users.
             GFP_i = prefs.GFP;
-            GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
-            GFP_image = GFP_image - min(GFP_image(:));
+            if isnan(GFP_i)
+                GFP_image = nan(size(data_zscored,1:3));
+            else
+                GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
+                GFP_image = GFP_image - min(GFP_image(:));
+            end
             
             % Measure the 8 image corners to determine an appropriate
             % GFP background threshold.
@@ -28,15 +32,15 @@ classdef ImageAnalysis
             y2 = (y - GFP_bg_size + 1):y;
             z1 = 1;
             z2 = z;
-            corner(1) = median(GFP_image(x1,y1,z1), 'all');
-            corner(2) = median(GFP_image(x2,y1,z1), 'all');
-            corner(3) = median(GFP_image(x1,y2,z1), 'all');
-            corner(4) = median(GFP_image(x1,y1,z2), 'all');
-            corner(5) = median(GFP_image(x2,y2,z1), 'all');
-            corner(6) = median(GFP_image(x2,y1,z2), 'all');
-            corner(7) = median(GFP_image(x1,y2,z2), 'all');
-            corner(8) = median(GFP_image(x2,y2,z2), 'all');
-            min_corner = min(corner);
+            corner(1) = nanmedian(GFP_image(x1,y1,z1), 'all');
+            corner(2) = nanmedian(GFP_image(x2,y1,z1), 'all');
+            corner(3) = nanmedian(GFP_image(x1,y2,z1), 'all');
+            corner(4) = nanmedian(GFP_image(x1,y1,z2), 'all');
+            corner(5) = nanmedian(GFP_image(x2,y2,z1), 'all');
+            corner(6) = nanmedian(GFP_image(x2,y1,z2), 'all');
+            corner(7) = nanmedian(GFP_image(x1,y2,z2), 'all');
+            corner(8) = nanmedian(GFP_image(x2,y2,z2), 'all');
+            min_corner = nanmin(corner);
             
             % Take a minimal patch around the neuron center.
             % Note: we need to walk a thin line of being robust against
@@ -58,17 +62,30 @@ classdef ImageAnalysis
             end
             
             % Compute an appropriate GFP Otsu threshold.
-            [otsu_thresh, otsu_score] = graythresh(GFP_colors);
-            otsu_thresh = otsu_thresh * max(GFP_colors);
+            is_GFP_nan = all(isnan(GFP_colors));
+            otsu_thresh = nan;
+            otsu_score = nan;
+            if ~is_GFP_nan
+                min_GFP = nanmin(GFP_colors);
+                scaled_GFP = double(GFP_colors) - min_GFP;
+                max_GFP = nanmax(GFP_colors);
+                scaled_GFP = scaled_GFP ./ max_GFP;
+                [otsu_thresh, otsu_score] = graythresh(scaled_GFP);
+                otsu_thresh = otsu_thresh * max_GFP + min_GFP;
+            end
             
             % Compute an appropriate GFP linear change threshold.
-            GFP_sorted = sort(GFP_colors);
-            [change_point, change_residual] = findchangepts(GFP_sorted, ...
-                'MaxNumChanges', 1, 'Statistic', 'linear');
             change_thresh = nan;
-            change_i = round(change_point);
-            if change_i > 1 && change_i < length(GFP_sorted)
-                change_thresh = GFP_sorted(change_i);
+            change_residual = nan;
+            if ~is_GFP_nan
+                GFP_sorted = sort(GFP_colors);
+                [change_point, change_residual] = findchangepts(GFP_sorted, ...
+                    'MaxNumChanges', 1, 'Statistic', 'linear');
+                change_thresh = nan;
+                change_i = round(change_point);
+                if change_i > 1 && change_i < length(GFP_sorted)
+                    change_thresh = GFP_sorted(change_i);
+                end
             end
 
             % Get the aligned neuron data.
