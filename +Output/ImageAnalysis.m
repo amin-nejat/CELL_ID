@@ -22,25 +22,46 @@ classdef ImageAnalysis
                 GFP_image = GFP_image - min(GFP_image(:));
             end
             
+            % Compute the z-score info.
+            GFP_mean = nan;
+            GFP_std = nan;
+            if ~isnan(GFP_i)
+                GFP_mean = mean(GFP_image, 'all');
+                GFP_std = std(GFP_image, 0, 'all');
+            end
+            RGBW = prefs.RGBW;
+            RGBW_mean = nan(1,length(RGBW));
+            RGBW_std = nan(1,length(RGBW));
+            for i = 1:length(RGBW)
+                RGBW_mean(i) = mean(data(:,:,:,RGBW(i)), 'all');
+                RGBW_std(i) = std(data(:,:,:,RGBW(i)), 0, 'all');
+            end
+            
             % Measure the 8 image corners to determine an appropriate
             % GFP background threshold.
-            GFP_bg_size = Output.ImageAnalysis.GFP_bg_size;
-            [x,y,z] = size(GFP_image);
-            x1 = 1:GFP_bg_size;
-            x2 = (x - GFP_bg_size + 1):x;
-            y1 = 1:GFP_bg_size;
-            y2 = (y - GFP_bg_size + 1):y;
-            z1 = 1;
-            z2 = z;
-            corner(1) = nanmedian(GFP_image(x1,y1,z1), 'all');
-            corner(2) = nanmedian(GFP_image(x2,y1,z1), 'all');
-            corner(3) = nanmedian(GFP_image(x1,y2,z1), 'all');
-            corner(4) = nanmedian(GFP_image(x1,y1,z2), 'all');
-            corner(5) = nanmedian(GFP_image(x2,y2,z1), 'all');
-            corner(6) = nanmedian(GFP_image(x2,y1,z2), 'all');
-            corner(7) = nanmedian(GFP_image(x1,y2,z2), 'all');
-            corner(8) = nanmedian(GFP_image(x2,y2,z2), 'all');
-            min_corner = nanmin(corner);
+            %GFP_bg_size = Output.ImageAnalysis.GFP_bg_size;
+            %[x,y,z] = size(GFP_image);
+            %x1 = 1:GFP_bg_size;
+            %x2 = (x - GFP_bg_size + 1):x;
+            %y1 = 1:GFP_bg_size;
+            %y2 = (y - GFP_bg_size + 1):y;
+            %z1 = 1;
+            %z2 = z;
+            %corner(1) = median(GFP_image(x1,y1,z1), 'all');
+            %corner(2) = median(GFP_image(x2,y1,z1), 'all');
+            %corner(3) = median(GFP_image(x1,y2,z1), 'all');
+            %corner(4) = median(GFP_image(x1,y1,z2), 'all');
+            %corner(5) = median(GFP_image(x2,y2,z1), 'all');
+            %corner(6) = median(GFP_image(x2,y1,z2), 'all');
+            %corner(7) = median(GFP_image(x1,y2,z2), 'all');
+            %corner(8) = median(GFP_image(x2,y2,z2), 'all');
+            %min_corner = min(corner);
+            %std_corner = std(corner);
+            
+            % Use the 5th percentile to determine an appropriate
+            % GFP background threshold.
+            GFP_bg = prctile(GFP_image(:), 5);
+            GFP_bg_std = std(GFP_image(GFP_image <= GFP_bg), 0, 'all');
             
             % Take a minimal patch around the neuron center.
             % Note: we need to walk a thin line of being robust against
@@ -108,24 +129,37 @@ classdef ImageAnalysis
             fileID = fopen(csvfile, 'w');
             
             % Write the background and Otsu thresholds.
-            fprintf(fileID, ['Atlas Version,,Background Threshold,,' ...
-                'Otsu Threshold,Otsu Score,,' ...
-                'Linear Change Point,Change Residual\n']);
-            fprintf(fileID, '%f,,%f,,%f,%f,,%f,%f\n\n', neurons.atlas_version, ...
-                min_corner, otsu_thresh, otsu_score, ...
+            fprintf(fileID, ['Atlas Version,,' ...
+                'GFP Background,GFP Background S.D.,,' ...
+                'GFP Otsu Threshold,GFP Otsu Score,,' ...
+                'GFP Linear Change Point,GFP Change Residual\n']);
+            fprintf(fileID, '%f,,%f,%f,,%f,%f,,%f,%f\n\n', ...
+                neurons.atlas_version, ...
+                GFP_bg, GFP_bg_std, otsu_thresh, otsu_score, ...
                 change_thresh, change_residual);
+            
+            % Write the z-score information.
+            fprintf(fileID, ['Z-Score Info,,' ...
+                'Red Channel,Green Channel,Blue Channel,White Channel,,' ...
+                'GFP Channel\n']);
+            fprintf(fileID, 'Mean,,%f,%f,%f,%f,,%f\n', ...
+                RGBW_mean(1), RGBW_mean(2), RGBW_mean(3), RGBW_mean(4), ...
+                GFP_mean);
+            fprintf(fileID, 'S.D.,,%f,%f,%f,%f,,%f\n\n', ...
+                RGBW_std(1), RGBW_std(2), RGBW_std(3), RGBW_std(4), ...
+                GFP_std);
             
             % Determine the header output.
             id_str = 'User ID,User Confidence,Auto ID,Auto Confidence,,';
             real_position_str = 'Real X (um),Real Y (um),Real Z (um),,';
-            real_color_str = 'Real Red,Real Green,Real Blue,Real White,,';
+            real_color_str = 'Z-Scored Red,Z-Scored Green,Z-Scored Blue,Z-Scored White,,';
             aligned_position_str = [];
             aligned_color_str = [];
             if ~isempty(aligned_xyzRGBs)
                 aligned_position_str = 'Aligned X (um),Aligned Y (um),Aligned Z (um),,';
                 aligned_color_str = 'Aligned Red,Aligned Green,Aligned Blue,,';
             end
-            GFP_str = 'GFP\n';
+            GFP_str = 'Z-Scored GFP\n';
             out_str = [id_str, real_position_str, real_color_str, ...
                 aligned_position_str, aligned_color_str, GFP_str];
             
