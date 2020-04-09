@@ -11,18 +11,17 @@ classdef ImageAnalysis
         function saveID2CSV(csvfile, prefs, data, data_zscored, neurons, um_scale)
             %SAVEID2CSV save the IDs, position, & colors to a CSV file.
 
-            % Fix the data class.
+            % Get the data class info & fix its class for calculations.
+            data_class = class(data);
+            data_max = intmax(data_class);
             data = double(data);
             
-            % Get the GFP channel.
-            % Note: we translate the z-score to >= 0. Negative GFP
-            % intensities confuse users.
+            % Get the GFP channel & info.
             GFP_i = prefs.GFP;
             if isnan(GFP_i)
-                GFP_image = nan(size(data_zscored,1:3));
+                GFP_image = nan(size(data,1:3));
             else
-                GFP_image = squeeze(data_zscored(:,:,:,GFP_i));
-                GFP_image = GFP_image - min(GFP_image(:));
+                GFP_image = squeeze(data(:,:,:,GFP_i));
             end
             
             % Compute the z-score info.
@@ -77,22 +76,28 @@ classdef ImageAnalysis
             % Measure the GFP channel for the neurons.
             intensity_prctile = 75;
             ns = neurons.neurons;
-            GFP_colors = nan(length(ns),1);
+            GFP_max = nan(length(ns),1);
+            GFP_intensity = nan(length(ns),1);
+            GFP_norm = nan(length(ns),1);
             for i=1:length(ns)
                 cpatch = Methods.Utils.subcube(GFP_image, ...
                     round(ns(i).position), cube_size);
-                GFP_colors(i) = nanmean(cpatch(cpatch >= prctile(cpatch(:), ...
-                    intensity_prctile)));
+                GFP_max(i) = max(cpatch(:));
+                thresh = cpatch >= prctile(cpatch(:), intensity_prctile);
+                GFP_intensity(i) = nanmean(cpatch(cpatch >= thresh));
+                GFP_norm(i) = GFP_intensity(i) / ns(i).color_readout(4);
             end
+            %GFP_Z_max = (GFP_max - GFP_mean) ./ GFP_std;
+            %GFP_Z_intensity = (GFP_intensity - GFP_mean) ./ GFP_std;
             
             % Compute an appropriate GFP Otsu threshold.
-            is_GFP_nan = all(isnan(GFP_colors));
+            is_GFP_nan = all(isnan(GFP_intensity));
             otsu_thresh = nan;
             otsu_score = nan;
             if ~is_GFP_nan
-                min_GFP = nanmin(GFP_colors);
-                scaled_GFP = double(GFP_colors) - min_GFP;
-                max_GFP = nanmax(GFP_colors);
+                min_GFP = nanmin(GFP_intensity);
+                scaled_GFP = double(GFP_intensity) - min_GFP;
+                max_GFP = nanmax(GFP_intensity);
                 scaled_GFP = scaled_GFP ./ max_GFP;
                 [otsu_thresh, otsu_score] = graythresh(scaled_GFP);
                 otsu_thresh = otsu_thresh * max_GFP + min_GFP;
@@ -102,7 +107,7 @@ classdef ImageAnalysis
             change_thresh = nan;
             change_residual = nan;
             if ~is_GFP_nan
-                GFP_sorted = sort(GFP_colors);
+                GFP_sorted = sort(GFP_intensity);
                 [change_point, change_residual] = findchangepts(GFP_sorted, ...
                     'MaxNumChanges', 1, 'Statistic', 'linear');
                 change_thresh = nan;
@@ -133,11 +138,12 @@ classdef ImageAnalysis
             
             % Write the background and Otsu thresholds.
             fprintf(fileID, ['Atlas Version,,' ...
+                'Pixel Type,Max Pixel Value,,' ...
                 'GFP Background,GFP Background S.D.,,' ...
                 'GFP Otsu Threshold,GFP Otsu Score,,' ...
                 'GFP Linear Change Point,GFP Change Residual\n']);
-            fprintf(fileID, '%f,,%f,%f,,%f,%f,,%f,%f\n\n', ...
-                neurons.atlas_version, ...
+            fprintf(fileID, '%f,,%s,%d,,%f,%f,,%f,%f,,%f,%f\n\n', ...
+                neurons.atlas_version, data_class, data_max, ...
                 GFP_bg, GFP_bg_std, otsu_thresh, otsu_score, ...
                 change_thresh, change_residual);
             
@@ -158,13 +164,15 @@ classdef ImageAnalysis
             real_color_str = 'Z-Scored Red,Z-Scored Green,Z-Scored Blue,Z-Scored White,,';
             aligned_position_str = [];
             aligned_color_str = [];
+            %aligned_GFP_str = [];
             if ~isempty(aligned_xyzRGBs)
                 aligned_position_str = 'Aligned X (um),Aligned Y (um),Aligned Z (um),,';
                 aligned_color_str = 'Aligned Red,Aligned Green,Aligned Blue,,';
+                %aligned_GFP_str = 'Pseudo-Aligned GFP,';
             end
-            GFP_str = 'Z-Scored GFP\n';
+            GFP_str = 'Max GFP,Estimated GFP,Normalized GFP';
             out_str = [id_str, real_position_str, real_color_str, ...
-                aligned_position_str, aligned_color_str, GFP_str];
+                aligned_position_str, aligned_color_str, GFP_str, '\n'];
             
             % Determine the data output.
             id_fmt = '%s,%f,%s,%f,,';
@@ -172,13 +180,15 @@ classdef ImageAnalysis
             real_color_fmt = '%f,%f,%f,%f,,';
             aligned_position_fmt = [];
             aligned_color_fmt = [];
+            %aligned_GFP_fmt = [];
             if ~isempty(aligned_xyzRGBs)
                 aligned_position_fmt = '%f,%f,%f,,';
                 aligned_color_fmt = '%f,%f,%f,,';
+                %aligned_GFP_fmt = '%f,';
             end
-            GFP_fmt = '%f\n';
+            GFP_fmt = '%f,%f,%f';
             out_fmt = [id_fmt, real_position_fmt, real_color_fmt, ...
-                aligned_position_fmt, aligned_color_fmt, GFP_fmt];
+                aligned_position_fmt, aligned_color_fmt, GFP_fmt, '\n'];
             
             % Sort the neurons by position.
             % Note: x & y are reversed.
@@ -186,7 +196,9 @@ classdef ImageAnalysis
             positions = positions(:,[2,1,3]);
             [~, sort_i] = sortrows(positions);
             ns = ns(sort_i);
-            GFP_colors = GFP_colors(sort_i);
+            GFP_max = GFP_max(sort_i);
+            GFP_intensity = GFP_intensity(sort_i);
+            GFP_norm = GFP_norm(sort_i);
             
             % Write the neurons.
             um_scale = um_scale';
@@ -209,8 +221,9 @@ classdef ImageAnalysis
                         n.annotation, n.annotation_confidence, ...
                         probabilistic_id, probabilistic_prob, ...
                         pos(2), pos(1), pos(3), ...
-                        n.color_readout(1), n.color_readout(2), n.color_readout(3), n.color_readout(4), ...
-                        GFP_colors(i));
+                        n.color_readout(1), n.color_readout(2), ...
+                        n.color_readout(3), n.color_readout(4), ...
+                        GFP_max(i), GFP_intensity(i), GFP_norm(i));
                     
                 % Write the real & aligned data.
                 else
@@ -218,9 +231,12 @@ classdef ImageAnalysis
                     % Does this neuron have aligned data?
                     aligned_pos = nan(1,3);
                     aligned_RGB = nan(1,3);
+                    %pseudo_aligned_GFP = nan;
                     if ~isempty(n.aligned_xyzRGB)
                         aligned_pos = n.aligned_xyzRGB(1:3) .* um_scale;
                         aligned_RGB = n.aligned_xyzRGB(4:6);
+                        %pseudo_aligned_GFP = GFP_intensity(i) * ...
+                        %    (aligned_RGB(2) / n.color_readout(2));
                     end
                     
                     % Write the real & aligned data.
@@ -232,7 +248,7 @@ classdef ImageAnalysis
                         n.color_readout(3), n.color_readout(4), ...
                         aligned_pos(2), aligned_pos(1), aligned_pos(3), ...
                         aligned_RGB(1), aligned_RGB(2), aligned_RGB(3), ...
-                        GFP_colors(i));
+                        GFP_max(i), GFP_intensity(i), GFP_norm(i));
                 end
             end
             
