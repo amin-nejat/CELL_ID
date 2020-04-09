@@ -11,6 +11,9 @@ classdef ImageAnalysis
         function saveID2CSV(csvfile, prefs, data, data_zscored, neurons, um_scale)
             %SAVEID2CSV save the IDs, position, & colors to a CSV file.
 
+            % Fix the data class.
+            data = double(data);
+            
             % Get the GFP channel.
             % Note: we translate the z-score to >= 0. Negative GFP
             % intensities confuse users.
