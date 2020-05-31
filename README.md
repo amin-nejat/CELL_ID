@@ -1,5 +1,5 @@
-# CELL_ID
-C-elegans Cell Identifier
+# NeuroPAL_ID
+Labeling *C. elegans* Neurons from NeuroPAL Images
 
 **GUI environment** 
 
@@ -36,7 +36,7 @@ For more details about the experimental setup and the methods look at the follow
 }
 ```
 
-Here is a link to biorxiv the paper: [CELL_ID](https://www.biorxiv.org/content/10.1101/676312v1)
+Here is a link to biorxiv the paper: [NeuroPAL_ID](https://www.biorxiv.org/content/10.1101/676312v1)
 
 # Installation
 
