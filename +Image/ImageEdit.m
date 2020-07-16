@@ -65,7 +65,7 @@ classdef ImageEdit
                 highs = 1;
             end
             if isempty(gammas)
-                gammas = 1;
+                gammas = ones(3, 1);
             end
             
             % Are we adjusting each color channel separately?
