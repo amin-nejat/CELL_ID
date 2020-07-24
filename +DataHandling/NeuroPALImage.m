@@ -100,8 +100,8 @@ classdef NeuroPALImage
     properties (Constant, Access = private)
 
         % Default gamma values.
-        gamma_default = 1;
-        CZI_gamma_default = 0.5;
+        gamma_default = ones(3,1);
+        CZI_gamma_default = ones(3,1)/2;
     end
     
     
