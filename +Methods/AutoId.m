@@ -295,7 +295,7 @@ classdef AutoId < handle
                 
                 % align point to sample
                 beta_pos = AutoId.MCR_solver(model.mu(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:),0);
-                beta_col = AutoId.MCR_solver(model.mu(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:),10);
+                beta_col = AutoId.MCR_solver(model.mu(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:),1e5);
                 
                 % making sure that there are no mirror flips
                 det_cost = sign(det(beta_pos(1:3,1:3)));
