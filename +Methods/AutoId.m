@@ -106,7 +106,9 @@ classdef AutoId < handle
             vec_x = x(:);
         end
         
-        function beta = MCR_solver(Y,X,sigma)
+
+        
+        function beta = MCR_solver(Y,X,sigma,lambda)
             % MCR - Multiple covariance regression solver
             % Y - Target (n x d)
             % X - Source (n x p)
@@ -127,6 +129,10 @@ classdef AutoId < handle
                 A(:,:,i) = kron(inv(sigma(:,:,i)),X(i,:)'*X(i,:));
                 B(:,:,i) = X(i,:)'*Y(i,:)/sigma(:,:,i);
             end
+            
+            A(:,:,end+1)=lambda.*eye(size(A,1),size(A,2));
+            B(:,:,end+1)=[lambda*eye(size(B,1)-1,size(B,2));zeros(1,size(B,2))];
+            
             beta = reshape(nansum(A,3)\Methods.AutoId.vec(nansum(B,3)),[size(X,2),size(Y,2)]);
         end
         
@@ -288,8 +294,8 @@ classdef AutoId < handle
                 P = AutoId.update_permutation(col,pos,model,annotated);
                 
                 % align point to sample
-                beta_pos = AutoId.MCR_solver(model.mu(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:));
-                beta_col = AutoId.MCR_solver(model.mu(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:));
+                beta_pos = AutoId.MCR_solver(model.mu(:,1:3), P'*[pos ones(size(pos,1),1)], sigma_weighted(1:3,1:3,:),0);
+                beta_col = AutoId.MCR_solver(model.mu(:,4:end), P'*[col ones(size(col,1),1)], sigma_weighted(4:end,4:end,:),10);
                 
                 % making sure that there are no mirror flips
                 det_cost = sign(det(beta_pos(1:3,1:3)));
