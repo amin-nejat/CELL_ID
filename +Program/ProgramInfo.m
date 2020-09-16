@@ -4,7 +4,7 @@ classdef ProgramInfo
     % Program constants.
     properties (Constant, Access = public)
         name = 'NeuroPAL Auto ID'; % program name
-        version = 1.2; % software version
+        version = 1.3; % software version
         version_URL = 'https://raw.githubusercontent.com/amin-nejat/CELL_ID/master/version.info';
         website_URL = 'http://hobertlab.org/neuropal/';
         bug_URL = 'https://github.com/amin-nejat/CELL_ID/issues';
