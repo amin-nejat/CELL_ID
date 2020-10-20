@@ -9,7 +9,7 @@ function [image, metadata] = imreadVlab(filename)
 %   Outputs:
 %   image - the image, a struct with fields:
 %       pixels     = the number of pixels as (x,y,z)
-%       scale      = the pixel scale, in meters, as (x,y,z)
+%       scale      = the pixel scale, in microns, as (x,y,z)
 %       channels   = the names of the channels
 %       colors     = the color for each channel as (R,G,B)
 %       dicChannel = the DIC channel number
@@ -27,16 +27,28 @@ metadata = [];
 
 % Assume the data is h5
 [folder, ~] = fileparts(filename);
-vlab_meta = load_json(fullfile(folder, "metadata.json"));
+
+% read metadata
+f = fopen(fullfile(folder, "metadata.json"));
+chars = fread(f, '*char');
+fclose(f);
+vlab_meta = jsondecode(chars');
+
 first_frame = h5read(filename, '/data', ...
     [1, 1, 1, 1, 1], ...
     [vlab_meta.shape_x, vlab_meta.shape_y, vlab_meta.shape_z, vlab_meta.shape_c, 1]);
 %image.data = permute(first_frame, [2 1 3 4]);
 image.data = first_frame;
 image.pixels = [vlab_meta.shape_x, vlab_meta.shape_y, vlab_meta.shape_z];
-image.scale = [vlab_meta.xy_microns, ...
-    vlab_meta.xy_microns, ...
-    vlab_meta.z_microns];
+
+if isfield(vlab_meta, 'xy_microns')
+    
+    image.scale = [vlab_meta.xy_microns, ...
+        vlab_meta.xy_microns, ...
+        vlab_meta.z_microns];
+else
+    image.scale = [0.4, 0.4, 1.5];
+end
 
 image.channels = {'red', 'green', 'blue'};
 image.colors(1,:) = [1,0,0];
