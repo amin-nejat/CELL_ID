@@ -79,6 +79,8 @@ classdef NeuroPALImage
                         NeuroPALImage.convertAny(file);
                     case {'.tif','.tiff'} % TIFF format
                         NeuroPALImage.convertAny(file);
+                    case {'.h5'} % Vlab format
+                        NeuroPALImage.convertAny(file);   
                     otherwise % Unknown format
                         error('Unknown image format: "%s"', file);
                 end
@@ -100,8 +102,8 @@ classdef NeuroPALImage
     properties (Constant, Access = private)
 
         % Default gamma values.
-        gamma_default = ones(3,1);
-        CZI_gamma_default = ones(3,1)/2;
+        gamma_default = 1;
+        CZI_gamma_default = 0.5;
     end
     
     
@@ -475,6 +477,8 @@ classdef NeuroPALImage
             np_file = [];
             if strcmp(any_file(end-3:end), '.lif')
                 [image_data, ~] = DataHandling.imreadLif(any_file);
+            elseif strcmp(any_file(end-2:end), '.h5')
+                [image_data, ~] = DataHandling.imreadVlab(any_file);
             else
                 [image_data, ~] = DataHandling.imreadAny(any_file);
             end
