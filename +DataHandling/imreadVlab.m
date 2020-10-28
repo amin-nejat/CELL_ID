@@ -50,16 +50,18 @@ else
     image.scale = [0.4, 0.4, 1.5];
 end
 
-image.channels = {'red', 'green', 'blue'};
+image.channels = {'red', 'green', 'blue', 'RFP', 'GCaMP'};
 image.colors(1,:) = [1,0,0];
 image.colors(2,:) = [0,1,0];
 image.colors(3,:) = [0,0,1];
+image.colors(4,:) = [1,1,1];
+image.colors(5,:) = [1,0,1];
 
 image.dicChannel = nan;
 
 % Initialize the image excitation/emission information.
-image.lasers = nan(3,1);
-image.emissions = nan(3,1);
+image.lasers = nan(5,1);
+image.emissions = nan(5,1);
 
 %write metadata
 hashtable = java.util.Hashtable;
