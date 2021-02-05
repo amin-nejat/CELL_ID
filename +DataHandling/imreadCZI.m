@@ -45,6 +45,33 @@ zScaleI = find(contains(keys, ...
     'Experiment|AcquisitionBlock|AcquisitionModeSetup|ScalingZ #1'), 1);
 numZSlicesI = find(contains(keys, 'Information|Image|SizeZ #1'), 1);
 
+% Did we find the scaling? If not, try Airyscan format.
+if isempty(xScaleI)
+    for i = 1:3
+        
+        % Find the axial scale type.
+        i_str = num2str(i);
+        key_str = ['Global Scaling|Distance|Id #' i_str];
+        scale_str = values{find(contains(keys, key_str), 1)};
+        
+        % Find the axial scale index.
+        key_str = ['Global Scaling|Distance|Value #' i_str];
+        scaleI = find(contains(keys, key_str), 1);
+        
+        % Set the axial scale index.
+        switch lower(scale_str(1))
+            case 'x'
+                xScaleI = scaleI;
+            case 'y'
+                yScaleI = scaleI;
+            case 'z'
+                zScaleI = scaleI;
+            otherwise
+                warning('Unknown CZI axial scale type "%s"!', scale_str);
+        end
+    end
+end
+
 % Extract the image volume information.
 image.pixels = [ ...
     str2double(values{xPixelsI}); ...
@@ -60,6 +87,11 @@ numChannelsI = find(contains(keys, 'Information|Image|SizeC #1'), 1);
 channelsI = find(contains(keys, 'Information|Image|Channel|Name'));
 colorsI = find(contains(keys, ...
     'Experiment|AcquisitionBlock|MultiTrackSetup|TrackSetup|Detector|Color'));
+
+% Did we find the scaling? If not, try Airyscan format.
+if isempty(colorsI)
+    colorsI = find(contains(keys, 'Global Information|Image|Channel|Color'));
+end
 
 % Extract the channel information.
 numChannels = floor(str2double(values{numChannelsI}));
@@ -84,11 +116,23 @@ for i=1:numChannels
 end
 image.dicChannel = find(contains(image.channels, 'PMT'),1);
 
+% Did we find the DIC? If not, try Airyscan format.
+if isempty(image.dicChannel)
+    image.dicChannel = find(contains(image.channels, 'ESID'),1);
+end
+
 % Initialize the image excitation/emission information.
 lasersI = find(contains(keys, ...
     'Information|Image|Channel|ExcitationWavelength'));
 emissionsI = find(contains(keys, ...
     'Information|Image|Channel|DetectionWavelength|Ranges'));
+
+% Did we find enough excitation lasers? If not, try Airyscan format.
+is_DIC = ~isempty(image.dicChannel);
+if length(lasersI) < numChannels - is_DIC
+    lasersI = find(contains(keys, ...
+        'AdditionalDyeInformation|DyeMaxExcitation'));
+end
 
 % Extract the image excitation/emission information.
 laserKeys = keys(lasersI);
