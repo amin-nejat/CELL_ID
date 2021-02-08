@@ -298,8 +298,18 @@ classdef Male
                 % Pre-anal ganglion.
                 case {'PVPL', 'PVPR'}
                     neuron = 'PVP';
+                case {'DX3', 'DX4'}
+                    neuron = 'DX3/4';
+                case {'EF3', 'EF4'}
+                    neuron = 'EF3/4';
                 %case {'VD12', 'VD13'}
                     %neuron = 'VD12/13';
+                    
+                % Dorso-rectal ganglion.
+                case {'DX1', 'DX2'}
+                    neuron = 'DX1/2';
+                case {'EF1', 'EF2'}
+                    neuron = 'EF1/2';
             end
         end
         
