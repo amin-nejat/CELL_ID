@@ -93,9 +93,25 @@ classdef Illustration
             scale_bar_str_x = sum(scale_bar_x)/2;
             scale_bar_str_y = sum(scale_bar_y)/2;
             
+            % Take a minimal patch around the neuron center.
+            % Note: we need to walk a thin line of being robust against
+            % off-center dots, while not violating neighboring neurons.
+            cube_size = [1,1,1];
+                
             % Get the neuron info.
             neuron_pos = vertcat(neurons.position);
             if ~isempty(neuron_pos)
+                
+                % Compute the neuron brightness for overlaying text.
+                neuron_brightness_thresh = 0.7;
+                image_brightness = data(:,:,:,2); % use the green channel
+                neuron_brightness = arrayfun(@(x) median( ...
+                    Methods.Utils.subcube(image_brightness, ...
+                    round(neuron_pos(x,:)), cube_size), 'all'), ...
+                    1:size(neuron_pos,1));
+                
+                % Determine the neuron names, image coordinates, ID
+                % confidence, & ON/OFF annotations.
                 neuron_name = arrayfun(@(x) x.annotation, neurons, 'UniformOutput' , false);
                 neuron_pos(:,1:2) = neuron_pos(:,1:2) * image_size;
                 neuron_conf = arrayfun(@(x) x.annotation_confidence, neurons);
@@ -156,8 +172,14 @@ classdef Illustration
                         name = [name '?'];
                     end
                     
-                    %  Draw the ID.
-                    text(pos(2), pos(1), name, 'Color', 'w', ...
+                    % Are we writing on a bright green background?
+                    text_color = 'w';
+                    if neuron_brightness(k) > neuron_brightness_thresh
+                        text_color = 'k';
+                    end
+                    
+                    % Draw the ID.
+                    text(pos(2), pos(1), name, 'Color', text_color, ...
                         'FontName', Illustration.font_name, ...
                         'FontSize', font_size, ...
                         'FontWeight', Illustration.font_weight, ...
