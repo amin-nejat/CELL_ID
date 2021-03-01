@@ -13,7 +13,10 @@ classdef ImageAnalysis
 
             % Get the data class info & fix its class for calculations.
             data_class = class(data);
-            data_max = intmax(data_class);
+            data_max = intmax('uint16');
+            if contains(data_class, 'int')
+                data_max = intmax(data_class);
+            end
             data = double(data);
             
             % Get the GFP channel & info.
