@@ -1,7 +1,7 @@
 # NeuroPAL_ID
 Labeling *C. elegans* Neurons from NeuroPAL Images
 
-**GUI environment** 
+**GUI environment**
 
 
 ![GUI](https://dl.dropboxusercontent.com/s/0217ga414rpwepk/GUI-labeled.png)
@@ -17,26 +17,15 @@ To build a fast and scalable system we followed object oriented design practices
 ![Package](https://dl.dropboxusercontent.com/s/6en1q28tfdze7h9/Package.png)
 ![Usecase](https://dl.dropboxusercontent.com/s/xmapjhtnlfylozz/Usecase.png)
 
-**Related article** 
+**Related article**
 
-For more details about the experimental setup and the methods look at the following paper:
+For more details about the experimental setup and the methods use the NeuroPAL paper:
 
 ```
-@article {Yemini676312,
-	author = {Yemini, Eviatar and Lin, Albert and Nejatbakhsh, Amin and Varol, Erdem and Sun, Ruoxi and Mena, Gonzalo E. and Samuel, Aravinthan DT and Paninski, Liam and Venkatachalam, Vivek and Hobert, Oliver},
-	title = {NeuroPAL: A Neuronal Polychromatic Atlas of Landmarks for Whole-Brain Imaging in C. elegans},
-	elocation-id = {676312},
-	year = {2019},
-	doi = {10.1101/676312},
-	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {Resolving whole-brain images of neuronal gene expression or neuronal activity patterns to the level of single neuron types with defined identities represents a major challenge. We describe here the development and use of a multicolor Caenorhabditis elegans transgene, called NeuroPAL (a Neuronal Polychromatic Atlas of Landmarks), to resolve unique neural identities in whole-brain images. NeuroPAL worms share a stereotypical multicolor map, permitting complete, unambiguous and automated determination of individual neuron identities in conjunction with GCaMP-based neuronal activity reporters and GFP/YFP/CFP gene-expression reporters. To demonstrate the method and its potential, we use NeuroPAL and GFP-based reporters to map expression for the whole family of metabotropic acetylcholine, glutamate, and GABA neurotransmitter receptors encoded in the C. elegans genome, revealing a vast number of potential molecular connections that go far beyond the anatomically-defined connectome. We then expand the technique to whole-brain activity, employing NeuroPAL and a panneuronal neural-activity sensor (GCaMP6s) for functional analysis. Using this tool we delineate extensive nervous system activity patterns in response to several stimuli with single, identified neuron resolution. We find that attractive odors sensed by the same neuron class exhibit dissimilar activity patterns implying that, despite their shared valence and stimulus modality, these odors drive distinct neural circuitry. Our results also indicate that the connectome is a poor predictor of functional activity, emphasizing the need for comprehensive brain-activity recordings that delineate behavior-specific circuitry. Lastly, we illustrate the NeuroPAL as an unbiased analysis tool for investigating neuronal cell fate in specific mutant backgrounds. With these applications in mind, we establish a high-throughput software pipeline for automated and semi-automated cell identification using NeuroPAL. In conclusion, we demonstrate the power of the NeuroPAL as a tool for decoding whole-brain gene expression and maps of functional activity.},
-	URL = {https://www.biorxiv.org/content/early/2019/06/20/676312},
-	eprint = {https://www.biorxiv.org/content/early/2019/06/20/676312.full.pdf},
-	journal = {bioRxiv}
-}
+@article{PMID:33378642, Title= {NeuroPAL: A Multicolor Atlas for Whole-Brain Neuronal Identification in C.&nbsp;elegans}, Author= {Yemini, Eviatar and Lin, Albert and Nejatbakhsh, Amin and Varol, Erdem and Sun, Ruoxi and Mena, Gonzalo E and Samuel, Aravinthan D T and Paninski, Liam and Venkatachalam, Vivek and Hobert, Oliver}, DOI= {10.1016/j.cell.2020.12.012}, Number= {1}, Volume= {184}, Month= {January}, Year= {2021}, Journal= {Cell}, ISSN= {0092-8674}, Pages= {272—288.e11}, Abstract= {Comprehensively resolving neuronal identities in whole-brain images is a major challenge. We achieve this in C.&nbsp;elegans by engineering a multicolor transgene called NeuroPAL (a neuronal polychromatic atlas of landmarks). NeuroPAL worms share a stereotypical multicolor fluorescence map for the entire hermaphrodite nervous system that resolves all neuronal identities. Neurons labeled with NeuroPAL do not exhibit fluorescence in the green, cyan, or yellow emission channels, allowing the transgene to be used with numerous reporters of gene expression or neuronal dynamics. We showcase three applications that leverage NeuroPAL for nervous-system-wide neuronal identification. First, we determine the brainwide expression patterns of all metabotropic receptors for acetylcholine, GABA, and glutamate, completing a map of this communication network. Second, we uncover changes in cell fate caused by transcription factor mutations. Third, we record brainwide activity in response to attractive and repulsive chemosensory cues, characterizing multimodal coding for these stimuli.}, URL= {https://doi.org/10.1016/j.cell.2020.12.012}}
 ```
 
-Here is a link to biorxiv the paper: [NeuroPAL_ID](https://www.biorxiv.org/content/10.1101/676312v1)
+Here is a link to publication: https://www.cell.com/cell/fulltext/S0092-8674(20)31682-2
 
 # Installation
 
