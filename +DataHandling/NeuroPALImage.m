@@ -172,6 +172,9 @@ classdef NeuroPALImage
             version = 0;
             mp = [];
             mp.hnsz = round(round(3./info.scale')/2)*2+1;
+            if size(mp.hnsz,1) > 1
+                mp.hnsz = mp.hnsz';
+            end
             mp.k = 0;
             mp.exclusion_radius = 1.5;
             mp.min_eig_thresh = 0.1;
