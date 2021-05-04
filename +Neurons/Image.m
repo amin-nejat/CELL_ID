@@ -602,23 +602,23 @@ classdef Image < handle
         %% ROTATE THE IMAGE, NEURONS, OR BOTH.
         
         function rot_image = rotate_X_180(obj, rot_image)
-            %ROTATE_X_180 Rotate everything 180 degrees around the x-axis.
+            %ROTATE_X_180 Rotate everything 180 degrees around the x-axis
             %   image: the image to rotate
-            %   rot_image: the image rotated 180 degrees around the x-axis.
+            %   rot_image: the image rotated 180 degrees around the x-axis
             obj.rotate_neurons_X_180(rot_image);
             rot_image = obj.rotate_image_X_180(rot_image);
         end
 
         function rot_image = rotate_Y_180(obj, rot_image)
-            %ROTATE_Y_180 Rotate everything image 180 degrees around the y-axis.
+            %ROTATE_Y_180 Rotate everything image 180 degrees around the y-axis
             %   image: the image to rotate
-            %   rot_image: the image rotated 180 degrees around the y-axis.
+            %   rot_image: the image rotated 180 degrees around the y-axis
             obj.rotate_neurons_Y_180(rot_image);
             rot_image = obj.rotate_image_Y_180(rot_image);
         end
         
         function rotate_neurons_X_180(obj, rot_image)
-            %ROTATE_NEURONS_X_180 Rotate the neurons 180 degrees around the x-axis.
+            %ROTATE_NEURONS_X_180 Rotate the neurons 180 degrees around the x-axis
             %   image: the image to rotate
             for i=1:length(obj.neurons)
                 position =  obj.neurons(i).position;
@@ -628,7 +628,7 @@ classdef Image < handle
         end
         
         function rotate_neurons_Y_180(obj, rot_image)
-            %ROTATE_NEURONS_Y_180 Rotate the neurons 180 degrees around the y-axis.
+            %ROTATE_NEURONS_Y_180 Rotate the neurons 180 degrees around the y-axis
             %   image: the image to rotate
             for i=1:length(obj.neurons)
                 position =  obj.neurons(i).position;
@@ -638,19 +638,76 @@ classdef Image < handle
         end
         
         function rot_image = rotate_image_X_180(obj, rot_image)
-            %ROTATE_IMAGE_X_180 Rotate an image 180 degrees around the x-axis.
+            %ROTATE_IMAGE_X_180 Rotate an image 180 degrees around the x-axis
             %   image: the image to rotate
-            %   rot_image: the image rotated 180 degrees around the x-axis.
+            %   rot_image: the image rotated 180 degrees around the x-axis
             rot_image = rot_image(:,end:-1:1,end:-1:1,:,:);
         end
         
         function rot_image = rotate_image_Y_180(obj, rot_image)
-            %ROTATE_IMAGE_Y_180 Rotate an image 180 degrees around the y-axis.
+            %ROTATE_IMAGE_Y_180 Rotate an image 180 degrees around the y-axis
             %   image: the image to rotate
-            %   rot_image: the image rotated 180 degrees around the y-axis.
+            %   rot_image: the image rotated 180 degrees around the y-axis
             rot_image = rot_image(end:-1:1,:,end:-1:1,:,:);
         end
         
+        function [rot_image, scale] = rotate_Z_90(obj, rot_image, scale)
+            %ROTATE_Z_90 Rotate everything 90 degrees around the z-axis
+            %   image: the image to rotate
+            %   rot_image: the image rotated 90 degrees around the z-axis
+            %   scale: the image's microns/pixels scale
+            obj.rotate_neurons_Z_90(rot_image);
+            rot_image = obj.rotate_image_Z_90(rot_image, scale);
+        end
+        
+        function [rot_image, scale] = rotate_Z_270(obj, rot_image, scale)
+            %ROTATE_Z_270 Rotate everything 270 degrees around the z-axis
+            %   image: the image to rotate
+            %   rot_image: the image rotated 270 degrees around the z-axis
+            %   scale: the image's microns/pixels scale
+            obj.rotate_neurons_Z_270(rot_image);
+            rot_image = obj.rotate_image_Z_270(rot_image, scale);
+        end
+        
+        function rotate_neurons_Z_90(obj, rot_image)
+            %ROTATE_NEURONS_Z_90 Rotate the neurons 90 degrees around the z-axis
+            %   image: the image to rotate
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(1) = position(2);
+                obj.neurons(i).position(2) = size(rot_image,1) - position(1) + 1;
+            end
+        end
+        
+        function rotate_neurons_Z_270(obj, rot_image)
+            %ROTATE_NEURONS_Z_270 Rotate the neurons 270 degrees around the z-axis
+            %   image: the image to rotate
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(1) = size(rot_image,2) - position(2) + 1;
+                obj.neurons(i).position(2) = position(1);
+            end
+        end
+        
+        function [rot_image, scale] = rotate_image_Z_90(obj, rot_image, scale)
+            %ROTATE_IMAGE_Z_90 Rotate an image 90 degrees around the z-axis
+            %   image: the image to rotate
+            %   rot_image: the image rotated 90 degrees around the z-axis
+            %   scale: the image's microns/pixels scale
+            rot_image = permute(rot_image, [2,1,3,4]);
+            rot_image = rot_image(:,end:-1:1,:,:,:);
+            scale([1,2]) = scale([2,1]);
+        end
+        
+        function [rot_image, scale] = rotate_image_Z_270(obj, rot_image, scale)
+            %ROTATE_IMAGE_Z_270 Rotate an image 270 degrees around the z-axis
+            %   image: the image to rotate
+            %   rot_image: the image rotated 270 degrees around the z-axis
+            %   scale: the image's microns/pixels scale
+            rot_image = permute(rot_image, [2,1,3,4]);
+            rot_image = rot_image(end:-1:1,:,:,:,:);
+            scale([1,2]) = scale([2,1]);
+        end
         
         function rot_image = rotate(obj, image, rot)
             %ROT_IMAGE Rotates the image using parameters specified in rot
@@ -658,7 +715,7 @@ classdef Image < handle
             %   rot: a 4x4 rotation matrix or a 1x3 vector consisting
             %   rotation angles. The rotation will be applied to the full
             %   image and the neurons one by one.
-            %   rot_image: the rotated image.
+            %   rot_image: the rotated image
             if isvector(rot)
                 rot_mat = makehgtform('xrotate',rot(1),'yrotate',rot(2),'zrotate',rot(3));
             else
