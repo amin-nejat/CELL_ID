@@ -657,7 +657,7 @@ classdef Image < handle
             %   rot_image: the image rotated 90 degrees around the z-axis
             %   scale: the image's microns/pixels scale
             obj.rotate_neurons_Z_90(rot_image);
-            rot_image = obj.rotate_image_Z_90(rot_image, scale);
+            [rot_image, scale] = obj.rotate_image_Z_90(rot_image, scale);
         end
         
         function [rot_image, scale] = rotate_Z_270(obj, rot_image, scale)
@@ -666,7 +666,7 @@ classdef Image < handle
             %   rot_image: the image rotated 270 degrees around the z-axis
             %   scale: the image's microns/pixels scale
             obj.rotate_neurons_Z_270(rot_image);
-            rot_image = obj.rotate_image_Z_270(rot_image, scale);
+            [rot_image, scale] = obj.rotate_image_Z_270(rot_image, scale);
         end
         
         function rotate_neurons_Z_90(obj, rot_image)
