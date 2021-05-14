@@ -519,7 +519,7 @@ classdef AutoId < handle
             
             % Do we have the parallelization toolbox?
             is_parallel = true;
-            parallel_tb = ver('distcomp');
+            parallel_tb = ver('parallel');
             if isempty(parallel_tb)
                 is_parallel = false;
             end
