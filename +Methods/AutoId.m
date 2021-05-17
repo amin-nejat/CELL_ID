@@ -31,6 +31,9 @@ classdef AutoId < handle
         assignments % matrix of assignment for each observed neuron to canonical identity. Binary matrix of size n_mp x n_possible
         assignment_prob_ranks % n_obsx7 matrix with the 7 most likely assignment
         assignment_prob_probs % n_obsx7 matrix with the corresponding probabilities of assignment_prob_ranks
+        
+        pool = []; % pool for parallel processing
+        pool_timeout = 1; % parallel processing timeout
     end
     
     methods(Static)
@@ -536,22 +539,25 @@ classdef AutoId < handle
             colors = cell(2*length(AutoId.theta),1);
             positions = cell(2*length(AutoId.theta),1);
             
-            % Get the parallel pool ready.
-            if is_parallel
-                %pool = gcp(); % may want to have a ready-use pool
-            end
-            
-%             is_parallel = false;
-            
             % Compute the alignment.
             num_tests = 2*length(AutoId.theta);
             for idx = 1:length(AutoId.theta)
                 if is_parallel
                     
+                    % Start the parallel pool.
+                    if isempty(obj.pool) || ~isvalid(obj.pool) || ~obj.pool.Connected
+                        obj.pool = parpool('threads');
+                    end
+                    
+                    % Allocate memory.
+                    %f = parallel.FevalFuture.empty(2*length(AutoId.theta),0);
+                    
                     % Compute the alignment.
-                    f(idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), +1, annotated);
-                    f(length(AutoId.theta)+...
-                        idx) = parfeval(@AutoId.local_alignment, 3, col, pos, model, AutoId.theta(idx), -1, annotated);
+                    f(idx) = parfeval(obj.pool, @AutoId.local_alignment, ...
+                        3, col, pos, model, AutoId.theta(idx), +1, annotated);
+                    f(length(AutoId.theta) + idx) = ...
+                        parfeval(obj.pool, @AutoId.local_alignment, ...
+                        3, col, pos, model, AutoId.theta(idx), -1, annotated);
                 else
                     
                     % Compute the alignment.
@@ -575,11 +581,12 @@ classdef AutoId < handle
             % Wait for the computations to complete.
             if is_parallel
                 for idx=1:2*length(AutoId.theta)
-                    [job_idx,c,p,cc] = fetchNext(f);
+                    disp(idx)
+                    [job_idx,col_f,pos_f,cost_f] = fetchNext(f);
                     
-                    positions{job_idx}  = p;
-                    colors{job_idx}     = c;
-                    cost(job_idx)       = cc;
+                    positions{job_idx}  = pos_f;
+                    colors{job_idx}     = col_f;
+                    cost(job_idx)       = cost_f;
                     try
                         waitbar(idx/num_tests,wb, {file, ...
                             [num2str(round((100.0*idx/num_tests))),'%']}, ...
