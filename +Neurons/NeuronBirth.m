@@ -183,18 +183,18 @@ classdef NeuronBirth
             % Generate the embryonic times.
             stages(minutes < 1160) = {'Embryo'};
             times(minutes < 375) = {'Early'};
-            times(minutes >= 375 & minutes <= 435) = {'Middle'};
+            times(minutes >= 375 & minutes <= 435) = {'Mid'};
             times(minutes > 435 & minutes < 1160) = {'Late'};
             
             % Generate the L1 times.
             stages(minutes >= 1160 & minutes < 1730) = {'L1'};
-            times(minutes >= 1160 & minutes <= 1490) = {'Middle'};
+            times(minutes >= 1160 & minutes <= 1490) = {'Mid'};
             times(minutes > 1490 & minutes < 1730) = {'Late'};
             
             % Generate the L2 times.
             stages(minutes >= 1730 & minutes <= 2240) = {'L2'};
             times(minutes >= 1730 & minutes < 1880) = {'Early'};
-            times(minutes >= 1880 & minutes <= 2000) = {'Middle'};
+            times(minutes >= 1880 & minutes <= 2000) = {'Mid'};
             times(minutes > 2000 & minutes <= 2240) = {'Late'};
             
             % Correct the late-born neurons.
