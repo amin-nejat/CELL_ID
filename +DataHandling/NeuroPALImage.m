@@ -102,7 +102,7 @@ classdef NeuroPALImage
     properties (Constant, Access = private)
 
         % Default gamma values.
-        gamma_default = 1;
+        gamma_default = 0.8;
         CZI_gamma_default = 0.5;
     end
     
@@ -408,7 +408,7 @@ classdef NeuroPALImage
             colors = round(colors/max(colors(:)));
             info.RGBW = nan(4,1);
             info.GFP = nan;
-            for i = 1:size(colors,1)
+            for i = flip(1:size(colors,1))
                 switch char(colors(i,:))
                     case [1,0,0] % red
                         info.RGBW(1) = i;
