@@ -162,6 +162,12 @@ for i=1:size(imageData,1)
     %image.data(:,:,z,c) = imageData{i,1}';
     z = sscanf(zStr,'Z=%f');
     c = sscanf(cStr,'C=%f');
+    if isempty(z) || isnan(z)
+        z = 1;
+    end
+    if isempty(c) || isnan(c)
+        c = 1;
+    end
     image.data(:,:,z,c) = imageData{i,1}';
     
     % Debug the image assembly.

@@ -283,22 +283,22 @@ classdef NeuroPALImage
             % Open the file.
             np_file = [];
             [image_data, ~] = DataHandling.imreadCZI(czi_file);
+            data = image_data.data;
             
             % Check the image orientation.
-            data = image_data.data;
-            data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            %data_order = 1:ndims(data);
+            %if size(data,1) > size(data,2)
+            %    
+            %    % Fix the orientation.
+            %    data_order(1) = 2;
+            %    data_order(2) = 1;
+            %    data = permute(data, data_order);
+            %    
+            %    % Reorder the image scale.
+            %    scale = image_data.scale;
+            %    image_data.scale(1) = scale(2);
+            %    image_data.scale(2) = scale(1);
+            %end
             
             % Setup the NP file data.
             info.file = czi_file;
@@ -381,22 +381,23 @@ classdef NeuroPALImage
             % Open the file.
             np_file = [];
             [image_data, ~] = DataHandling.imreadND2(nd2_file);
+            data = image_data.data;
             
             % Check the image orientation.
-            data = image_data.data;
-            data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            %data = image_data.data;
+            %data_order = 1:ndims(data);
+            %if size(data,1) > size(data,2)
+            %    
+            %    % Fix the orientation.
+            %    data_order(1) = 2;
+            %    data_order(2) = 1;
+            %    data = permute(data, data_order);
+            %    
+            %    % Reorder the image scale.
+            %    scale = image_data.scale;
+            %    image_data.scale(1) = scale(2);
+            %    image_data.scale(2) = scale(1);
+            %end
             
             % Setup the NP file data.
             info.file = nd2_file;
@@ -485,22 +486,22 @@ classdef NeuroPALImage
             else
                 [image_data, ~] = DataHandling.imreadAny(any_file);
             end
+            data = image_data.data;
             
             % Check the image orientation.
-            data = image_data.data;
-            data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            %data_order = 1:ndims(data);
+            %if size(data,1) > size(data,2)
+            %    
+            %    % Fix the orientation.
+            %    data_order(1) = 2;
+            %    data_order(2) = 1;
+            %    data = permute(data, data_order);
+            %    
+            %    % Reorder the image scale.
+            %    scale = image_data.scale;
+            %    image_data.scale(1) = scale(2);
+            %    image_data.scale(2) = scale(1);
+            %end
             
             % Setup the NP file data.
             info.file = any_file;
