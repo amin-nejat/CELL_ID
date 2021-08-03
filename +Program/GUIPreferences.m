@@ -121,17 +121,9 @@ classdef GUIPreferences < handle
             obj.image_dir = prefs.image_dir;
             obj.GFP_color = prefs.GFP_color;
             obj.neuron_dot = prefs.neuron_dot;
-            
-            % Optional new preferences.
-            if isfield(prefs, 'is_show_birth_times')
-                obj.is_show_birth_times = prefs.is_show_birth_times;
-            end
-            if isfield(prefs, 'is_auto_name')
-                obj.is_auto_name = prefs.is_auto_name;
-            end
-            if isfield(prefs, 'is_autoID_updates')
-                obj.is_autoID_updates = prefs.is_autoID_updates;
-            end
+            obj.is_show_birth_times = prefs.is_show_birth_times;
+            obj.is_auto_name = prefs.is_auto_name;
+            obj.is_autoID_updates = prefs.is_autoID_updates;
         end
         
         function dot = inputNeuronDot()
