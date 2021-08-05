@@ -102,7 +102,7 @@ classdef NeuroPALImage
     properties (Constant, Access = private)
 
         % Default gamma values.
-        gamma_default = 1;
+        gamma_default = 0.8;
         CZI_gamma_default = 0.5;
     end
     
@@ -283,22 +283,18 @@ classdef NeuroPALImage
             % Open the file.
             np_file = [];
             [image_data, ~] = DataHandling.imreadCZI(czi_file);
-            
-            % Check the image orientation.
             data = image_data.data;
+            
+            % Fix the image orientation and scale.
+            % Note: image dimensions are different than matrix dimensions
+            % images = (height, width, depth) and matrices = (x,y,z). To
+            % convert between the two, we need to switch dimensions 1 and 2.
             data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            data_order(1) = 2;
+            data_order(2) = 1;
+            data = permute(data, data_order);
+            image_data.scale(1) = image_data.scale(2);
+            image_data.scale(2) = image_data.scale(2);
             
             % Setup the NP file data.
             info.file = czi_file;
@@ -381,22 +377,18 @@ classdef NeuroPALImage
             % Open the file.
             np_file = [];
             [image_data, ~] = DataHandling.imreadND2(nd2_file);
-            
-            % Check the image orientation.
             data = image_data.data;
+            
+            % Fix the image orientation and scale.
+            % Note: image dimensions are different than matrix dimensions
+            % images = (height, width, depth) and matrices = (x,y,z). To
+            % convert between the two, we need to switch dimensions 1 and 2.
             data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            data_order(1) = 2;
+            data_order(2) = 1;
+            data = permute(data, data_order);
+            image_data.scale(1) = image_data.scale(2);
+            image_data.scale(2) = image_data.scale(2);
             
             % Setup the NP file data.
             info.file = nd2_file;
@@ -408,7 +400,7 @@ classdef NeuroPALImage
             colors = round(colors/max(colors(:)));
             info.RGBW = nan(4,1);
             info.GFP = nan;
-            for i = 1:size(colors,1)
+            for i = flip(1:size(colors,1))
                 switch char(colors(i,:))
                     case [1,0,0] % red
                         info.RGBW(1) = i;
@@ -485,22 +477,18 @@ classdef NeuroPALImage
             else
                 [image_data, ~] = DataHandling.imreadAny(any_file);
             end
-            
-            % Check the image orientation.
             data = image_data.data;
+            
+            % Fix the image orientation and scale.
+            % Note: image dimensions are different than matrix dimensions
+            % images = (height, width, depth) and matrices = (x,y,z). To
+            % convert between the two, we need to switch dimensions 1 and 2.
             data_order = 1:ndims(data);
-            if size(data,1) > size(data,2)
-                
-                % Fix the orientation.
-                data_order(1) = 2;
-                data_order(2) = 1;
-                data = permute(data, data_order);
-                
-                % Reorder the image scale.
-                scale = image_data.scale;
-                image_data.scale(1) = scale(2);
-                image_data.scale(2) = scale(1);
-            end
+            data_order(1) = 2;
+            data_order(2) = 1;
+            data = permute(data, data_order);
+            image_data.scale(1) = image_data.scale(2);
+            image_data.scale(2) = image_data.scale(2);
             
             % Setup the NP file data.
             info.file = any_file;

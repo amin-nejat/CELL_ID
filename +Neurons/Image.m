@@ -742,6 +742,25 @@ classdef Image < handle
         end
         
         
+        %% MIRROR THE IMAGE OR NEURONS
+        
+        function mirror_image = mirror_image_Z(obj, mirror_image)
+            %MIRROR_IMAGE_Z Mirror an image around the z-axis
+            %   image: the image to mirror
+            %   rot_image: the image mirrored around the z-axis
+            mirror_image = mirror_image(:,:,end:-1:1,:,:);
+        end
+        
+        function mirror_neurons_Z(obj, mirror_image)
+            %MIRROR_NEURONS_Z Mirror the neurons around the z-axis
+            %   image: the image to mirror
+            for i=1:length(obj.neurons)
+                position =  obj.neurons(i).position;
+                obj.neurons(i).position(3) = size(mirror_image,3) - position(3) + 1;
+            end
+        end
+        
+                
         %% GUI DRAWING METHODS.
         
         function colors = get_marker_colors(obj)

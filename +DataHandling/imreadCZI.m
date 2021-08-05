@@ -114,18 +114,31 @@ for i=1:numChannels
     image.colors(i,2) = hex2dec(color((end - 3):(end - 2)));
     image.colors(i,3) = hex2dec(color((end - 1):end));
 end
-image.dicChannel = find(contains(image.channels, 'PMT'),1);
+
+% Extract the DIC channel.
+image.dicChannel = find(contains(image.channels, 'DIC'),1);
+if isempty(image.dicChannel)
+    image.dicChannel = find(contains(image.channels, 'PMT'),1);
+end
 
 % Did we find the DIC? If not, try Airyscan format.
 if isempty(image.dicChannel)
     image.dicChannel = find(contains(image.channels, 'ESID'),1);
 end
 
-% Initialize the image excitation/emission information.
+% Initialize the image excitation information.
 lasersI = find(contains(keys, ...
     'Information|Image|Channel|ExcitationWavelength'));
+
+% Initialize the image emission information.
+is_emission_band = true;
 emissionsI = find(contains(keys, ...
     'Information|Image|Channel|DetectionWavelength|Ranges'));
+if isempty(emissionsI)
+    is_emission_band = false;
+    emissionsI = find(contains(keys, ...
+        'Global Information|Image|Channel|EmissionWavelength'));
+end
 
 % Did we find enough excitation lasers? If not, try Airyscan format.
 is_DIC = ~isempty(image.dicChannel);
@@ -160,7 +173,13 @@ for i=1:numChannels
     
     % Get the emission band.
     emissionI = find(endsWith(emissionKeys, num2str(bandI)), 1);
-    image.emissions(i,:) = sscanf(emissionValues{emissionI}, '%f-%f');  
+    if is_emission_band
+        image.emissions(i,:) = sscanf(emissionValues{emissionI}, '%f-%f');
+        
+    % Get the emission peak.
+    else
+        image.emissions(i,1) = sscanf(emissionValues{emissionI}, '%f');
+    end
 end
 
 % Organize the image volume.

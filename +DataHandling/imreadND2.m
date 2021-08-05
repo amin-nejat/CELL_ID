@@ -54,11 +54,11 @@ image.scale = [ ...
     values{zScaleI}];
 
 % Initialize the channel information.
-numChannelsI = find(contains(keys, 'Global uiSampleCount'), 1);
+numChannelsI = find(contains(keys, 'Global Number of Picture Planes'), 1);
 channelsI = find(contains(keys, 'Global Name #'));
 
 % Extract the channel information.
-numChannels = values{numChannelsI};
+numChannels = round(str2double(values{numChannelsI}));
 channelKeys = keys(channelsI);
 channelValues = values(channelsI);
 image.channels = cell(numChannels,1);
@@ -84,31 +84,48 @@ for i = 4:numChannels
 end
 image.dicChannel = nan;
 
-% Initialize the image excitation/emission information.
-lasersI = find(contains(keys, ...
-    'Global m_uiMultiLaserLineWavelength0-0'));
-emissionsI = find(contains(keys, 'Lambda') & contains(keys, 'Filter'));
-
-% Extract the image excitation/emission information.
-laserKeys = keys(lasersI);
-laserValues = values(lasersI);
-emissionKeys = keys(emissionsI);
-emissionValues = values(emissionsI);
-image.lasers = nan(numChannels,1);
-image.emissions = cell(numChannels,1);
-for i=1:numChannels
+% Try using the channel names to determine their colors.
+for i = 1:length(image.channels)
+    wavelength = sscanf(image.channels{i}, '%f');
     
-    % Get the laser excitation.
-    laserI = find(endsWith(laserKeys, num2str(i-1)), 1);
-    image.lasers(i) = laserValues{laserI};
-    
-    % Get the emission filter.
-    emissionI = find(endsWith(emissionKeys, num2str(i)), 1);
-    image.emissions{i} = emissionValues{emissionI};  
+    % DIC.
+    if isempty(wavelength) || isnan(wavelength) || wavelength < 350
+        image.dicChannel = i;
+        image.colors(i,:) = white;
+    elseif wavelength < 440
+        image.colors(i,:) = blue;
+    elseif wavelength < 530
+        image.colors(i,:) = green;
+    else
+        image.colors(i,:) = red;
+    end
 end
 
-% % Use the lasers to determine the color channels.
-% % Note: assume initial color channel assignments take precedence.
+% Initialize the image excitation/emission information.
+% lasersI = find(contains(keys, ...
+%     'Global m_uiMultiLaserLineWavelength0-0'));
+% emissionsI = find(contains(keys, 'Lambda') & contains(keys, 'Filter'));
+
+% Extract the image excitation/emission information.
+% laserKeys = keys(lasersI);
+% laserValues = values(lasersI);
+% emissionKeys = keys(emissionsI);
+% emissionValues = values(emissionsI);
+% image.lasers = nan(numChannels,1);
+% image.emissions = cell(numChannels,1);
+% for i=1:numChannels
+%     
+%     % Get the laser excitation.
+%     laserI = find(endsWith(laserKeys, num2str(i-1)), 1);
+%     image.lasers(i) = laserValues{laserI};
+%     
+%     % Get the emission filter.
+%     emissionI = find(endsWith(emissionKeys, num2str(i)), 1);
+%     image.emissions{i} = emissionValues{emissionI};  
+% end
+
+% Use the lasers to determine the color channels.
+% Note: assume initial color channel assignments take precedence.
 % for i=flip(1:size(image.lasers,1))
 %     % mTagBFP2
 %     if image.lasers(i) < 440
@@ -145,6 +162,12 @@ for i=1:size(imageData,1)
     %image.data(:,:,z,c) = imageData{i,1}';
     z = sscanf(zStr,'Z=%f');
     c = sscanf(cStr,'C=%f');
+    if isempty(z) || isnan(z)
+        z = 1;
+    end
+    if isempty(c) || isnan(c)
+        c = 1;
+    end
     image.data(:,:,z,c) = imageData{i,1}';
     
     % Debug the image assembly.

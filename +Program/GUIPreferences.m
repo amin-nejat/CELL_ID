@@ -24,6 +24,9 @@ classdef GUIPreferences < handle
         % Display info.
         GFP_color = [1,1,0]; % GFP reporter color for GUI
         neuron_dot; % neuron dot info: (un)selected marker + line sizes
+        is_show_birth_times = false; % show the neuron birth times?
+        is_auto_name = true; % auto-complete neuron names?
+        is_autoID_updates = true; % auto-update neuron IDs?
     end
     
     % GUI public static methods.
@@ -118,6 +121,9 @@ classdef GUIPreferences < handle
             obj.image_dir = prefs.image_dir;
             obj.GFP_color = prefs.GFP_color;
             obj.neuron_dot = prefs.neuron_dot;
+            obj.is_show_birth_times = prefs.is_show_birth_times;
+            obj.is_auto_name = prefs.is_auto_name;
+            obj.is_autoID_updates = prefs.is_autoID_updates;
         end
         
         function dot = inputNeuronDot()
