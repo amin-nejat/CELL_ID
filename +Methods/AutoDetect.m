@@ -372,6 +372,7 @@ classdef AutoDetect < handle
         obj.supervoxels.positions = obj.supervoxels.positions/spatial_factor;
         obj.supervoxels.covariances = obj.supervoxels.covariances/spatial_factor;
         supervoxels = obj.supervoxels;
+        params.k = size(sp.color,1);
         end
         
         
