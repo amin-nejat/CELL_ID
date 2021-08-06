@@ -6,7 +6,62 @@ classdef Utils
     end
     
     methods(Static)
-          
+        
+        function neurons = removeNearbyNeurons(neurons, min_xy, min_z)
+        % REMOVENEARBYNEURONS Remove neurons that are too near each other
+        % (duplicate detections).
+        % Inputs:
+        %   neurons = the image with the list of neurons to check
+        %   min_xy  = the minimum distance allowed between neurons in x & y
+        %   min_z   = the minimum distance allowed between neurons in z
+        % Note: we use the L2 norm for x & y distances, and L1 norm for z.
+        % We do this because x & y often have ~3x better resolution than z.
+        import Neurons.*;
+        
+        % Get the neuron positions and colors.
+        pos = neurons.get_positions();
+        colors = neurons. get_colors_readout();
+        
+        % Scale the neuron positions.
+        pos(:,1) = pos(:,1) * neurons.scale(1);
+        pos(:,2) = pos(:,2) * neurons.scale(2);
+        pos(:,3) = pos(:,3) * neurons.scale(3);
+        
+        % Which neurons are too close?
+        sqr_min_xy = min_xy^2;
+        num_neurons = size(pos,1);
+        is_remove = false(num_neurons,1);
+        for i = 1:(num_neurons - 1)
+            
+            % Are any neurons too close?
+            dist_xy = sum((pos(i,1:2) - pos((i+1):end,1:2)).^2, 2);
+            dist_z = abs(pos(i,3) - pos((i+1):end,3));
+            close_i = find(dist_xy < sqr_min_xy & dist_z < min_z);
+            
+            % Which neuron is brighter?
+            % Note: we use the L2 norm to compare brightness.
+            remove_this_i = sum(colors(i,:).^2) < sum(colors(close_i,:).^2);
+            
+            % If we remove this neuron, the rest stay. We do this because
+            % this is the only neuron we know is near all the rest.
+            if any(remove_this_i)
+                is_remove(i) = true;
+                
+            % Remove the other nearby neurons.
+            else
+                is_remove(i+close_i) = true;
+            end
+        end
+        
+        % Remove duplicate neurons.
+        remove_i = find(is_remove);
+        for i = 1:length(remove_i)
+            
+            % Note: "-i - 1" adjusts the indices for deleted neurons.
+            neurons.del_neuron(remove_i(i) - i + 1);
+        end
+        end
+        
         function volume = simulate_gaussian(sz, mu, sigma, props, baseline, truncation)
         % Simulate a truncated Gaussian function for fitting procedure. This
         % function is used by matching pursuit algorithm.
