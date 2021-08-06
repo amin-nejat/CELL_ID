@@ -23,12 +23,42 @@ classdef NNDetect < handle
             obj.model = importKerasNetwork(file);
         end
         
-        function [pred_p] = predict_nn(obj,patches,pst_shape)
+        function [pred_p] = predict_nn(obj,patches,pst_shape, titlestr)
             import Methods.*;
             
+            % Setup the progress bar.
+            wait_title = 'Detecting Neurons';
+            wb = waitbar(0, {titlestr, 'Initializing ...'}, 'Name', wait_title);
+            wb.Children.Title.Interpreter = 'none';
+        
             pred = {};
-            for p=patches
+            num_patches = length(patches);
+            for i=1:num_patches
+                
+                % Update the progress bar.
+                try
+                    waitbar(i/num_patches, wb,...
+                        {titlestr, ...
+                        sprintf('%d%% completed ...', int16(100*i/num_patches))}, ...
+                        'Name', wait_title);
+                catch
+                    break;
+                end
+                
+                % Neural prediction.
+                p = patches(i);
                 pred{end+1} = predict(obj.model,p{1});
+            end
+            
+            % Done.
+            try
+                close(wb);
+            catch
+                warning('The detection was canceled.');
+                
+                % Amin, can we use any predictions if the user cancels early?
+                pred_p = [];
+                return;
             end
             
             pred_ = zeros([NNDetect.pst_shape(1:3),1]);
@@ -36,9 +66,9 @@ classdef NNDetect < handle
 
             for i=1:shape_(1)
                 for j=1:shape_(2)
-                        pred_(NNDetect.stride*(i-1)+1:(i-1)*NNDetect.stride+NNDetect.crop_size,...
-                              NNDetect.stride*(j-1)+1:(j-1)*NNDetect.stride+NNDetect.crop_size,...
-                              :,:) = pred{(i-1)*shape_(2)+j};
+                    pred_(NNDetect.stride*(i-1)+1:(i-1)*NNDetect.stride+NNDetect.crop_size,...
+                        NNDetect.stride*(j-1)+1:(j-1)*NNDetect.stride+NNDetect.crop_size,...
+                        :,:) = pred{(i-1)*shape_(2)+j};
                 end
             end
             
