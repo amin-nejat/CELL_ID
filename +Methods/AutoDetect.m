@@ -90,6 +90,7 @@ classdef AutoDetect < handle
            version = Program.ProgramInfo.version;
            mp_params = mp;
            neurons = Neurons.Image(sp, worm.body, 'scale', info.scale');
+           Methods.Utils.removeNearbyNeurons(neurons, 2, 2);
            save(id_file, 'version', 'neurons', 'mp_params');
        end
        

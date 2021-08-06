@@ -581,7 +581,6 @@ classdef AutoId < handle
             % Wait for the computations to complete.
             if is_parallel
                 for idx=1:2*length(AutoId.theta)
-                    disp(idx)
                     [job_idx,col_f,pos_f,cost_f] = fetchNext(f);
                     
                     positions{job_idx}  = pos_f;

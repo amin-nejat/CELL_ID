@@ -151,6 +151,69 @@ classdef NNDetect < handle
             params.exclusion_radius = 0; % microns
         end
         
+        function BatchDetect(file, num_neurons)
+            %BATCHDETECT Batch detect neurons.
+            
+            % Setup the conversion progress bar.
+            % Note: windows wants the interpreter off from the beginning.
+            wait_title = 'Converting Image';
+            wb = waitbar(0, 'Converting ...', 'Name', wait_title);
+            wb.Children.Title.Interpreter = 'none';
+            waitbar(0, wb, {file, 'Converting ...'}, 'Name', wait_title);
+            
+            % Open the image file.
+            try
+                [data, info, prefs, worm, mp, ~, ~, id_file] = ...
+                    DataHandling.NeuroPALImage.open(file);
+            catch
+                % For now, don't throw exceptions from threads.
+                warning('Cannot read: "%s"', file);
+                return;
+            end
+            
+            % Done converting.
+            try
+                close(wb);
+            catch
+                warning('Image conversion was canceled.');
+            end
+            
+            % Setup the preprocessing progress bar.
+            % Note: windows wants the interpreter off from the beginning.
+            wait_title = 'Preprocessing Image';
+            wb = waitbar(0, 'Preprocessing ...', 'Name', wait_title);
+            wb.Children.Title.Interpreter = 'none';
+            waitbar(0, wb, {file, 'Preprocessing ...'}, 'Name', wait_title);
+            
+            % Preprocess the colors.
+            data_RGBW = double(data(:,:,:,prefs.RGBW(~isnan(prefs.RGBW))));
+            data_zscored_raw = Methods.Preprocess.zscore_frame(double(data_RGBW));
+            
+            % Remove artifacts.
+            [~, mask] = Methods.Preprocess.filter_gut_lysosomes(data_zscored_raw);
+            mask = repmat(mask,1,1,1,length(prefs.RGBW(~isnan(prefs.RGBW))));
+            data_zscored = data_zscored_raw;
+            data_zscored(mask) = 0;
+            
+            % Done preprocessing.
+            try
+                close(wb);
+            catch
+                warning('Image preprocessing was canceled.');
+            end
+            
+            % Detect the neurons.
+            mp.k = num_neurons;
+            [sp, mp] = Methods.NNDetect.instance().detect(file, data_zscored);
+            
+            % Save the neurons.
+            version = Program.ProgramInfo.version;
+            mp_params = mp;
+            neurons = Neurons.Image(sp, worm.body, 'scale', info.scale');
+            Methods.Utils.removeNearbyNeurons(neurons, 2, 2);
+            save(id_file, 'version', 'neurons', 'mp_params');
+        end
+        
         function [data_zscored,patches] = prepare_image(file)
             import Methods.*;
             
