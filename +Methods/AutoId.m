@@ -603,6 +603,9 @@ classdef AutoId < handle
                 end
             end
             
+            % Terminate the existing parallel session.
+            delete(gcp('nocreate'));
+            
             % Done.
             try
                 close(wb);

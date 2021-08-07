@@ -27,6 +27,7 @@ classdef GUIPreferences < handle
         is_show_birth_times = false; % show the neuron birth times?
         is_auto_name = true; % auto-complete neuron names?
         is_autoID_updates = true; % auto-update neuron IDs?
+        is_MP_detect = true; % are we using MP to detect neurons?
     end
     
     % GUI public static methods.
@@ -121,9 +122,20 @@ classdef GUIPreferences < handle
             obj.image_dir = prefs.image_dir;
             obj.GFP_color = prefs.GFP_color;
             obj.neuron_dot = prefs.neuron_dot;
-            obj.is_show_birth_times = prefs.is_show_birth_times;
-            obj.is_auto_name = prefs.is_auto_name;
-            obj.is_autoID_updates = prefs.is_autoID_updates;
+            
+            % Check for new properties.
+            if isprop(prefs, 'is_show_birth_times')
+                obj.is_show_birth_times = prefs.is_show_birth_times;
+            end
+            if isprop(prefs, 'is_auto_name')
+                obj.is_auto_name = prefs.is_auto_name;
+            end
+            if isprop(prefs, 'is_autoID_updates')
+                obj.is_autoID_updates = prefs.is_autoID_updates;
+            end
+            if isprop(prefs, 'is_MP_detect')
+                obj.is_MP_detect = prefs.is_MP_detect;
+            end
         end
         
         function dot = inputNeuronDot()
