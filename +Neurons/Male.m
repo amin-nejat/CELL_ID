@@ -190,6 +190,12 @@ classdef Male
             neurons = neurons_data;
         end
 
+        function neurons = getVariableNeurons()
+            %GETVARIABLENEURONS Get a list of variable neurons.
+            import Neurons.*;
+            neurons = Male.variable_neurons;
+        end
+        
         function neurons = getNeuronsOrderedByGanglia()
             %GETNEURONSORDEREDBYGANGLIA Get a list of neurons ordered by
             % ganglia combining left & right ganglia.
@@ -408,7 +414,8 @@ classdef Male
             import Neurons.*;
             persistent num;
             if isempty(num)
-                num = length(Male.getPreAnalGanglion()) + ...
+                num = length(Male.getLeftPreAnalGanglion()) + ...
+                    length(Male.getRightPreAnalGanglion()) + ...
                     length(Male.getDorsoRectalGanglion()) + ...
                     length(Male.getLeftLumbarGanglion()) + ...
                     length(Male.getRightLumbarGanglion()) + ...
@@ -608,18 +615,30 @@ classdef Male
 
 
         %% Tail ganglia data.
-        function names = getPreAnalGanglion()
-            %GETPREANALGANGLION A list of pre-anal ganglion neurons.
+        function names = getLeftPreAnalGanglion()
+            %GETLEFTPREANALGANGLION A list of left pre-anal ganglion neurons.
             persistent neurons;
             if isempty(neurons)
                 ganglia = Neurons.Male.getGanglia();
                 i = find(strcmp(Neurons.Male.getGanglionNames(), ...
-                    'Pre-Anal Ganglion'), 1);
+                    'Pre-Anal Ganglion (Left)'), 1);
                 neurons = ganglia(i).neurons;
             end
             names = neurons;
         end
 
+        function names = getRightPreAnalGanglion()
+            %GETRIGHTPREANALGANGLION A list of right pre-anal ganglion neurons.
+            persistent neurons;
+            if isempty(neurons)
+                ganglia = Neurons.Male.getGanglia();
+                i = find(strcmp(Neurons.Male.getGanglionNames(), ...
+                    'Pre-Anal Ganglion (Right)'), 1);
+                neurons = ganglia(i).neurons;
+            end
+            names = neurons;
+        end
+        
         function names = getDorsoRectalGanglion()
             %GETDORSORECTALGANGLION A list of dorso-rectal ganglion neurons.
             persistent neurons;
@@ -716,6 +735,14 @@ classdef Male
             'HMC'
             'PHSO1L'
             'PHSO1R'
+            };
+        
+        % Variable neuronss.
+        variable_neurons = { ...
+            'DX3'
+            'DX4'
+            'EF3'
+            'EF4'
             };
         
         % Non-left/right neurons.
