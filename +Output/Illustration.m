@@ -10,7 +10,7 @@ classdef Illustration
     
    % Public methods.
     methods (Static)
-        function saveIDImage(file, data, neurons, um_scale)
+        function saveIDImage(file, data, neurons, um_scale, is_Z_flip)
             %SAVEIDIMAGE save an image with neuron IDs to a PDF.
             
             % Initialize.
@@ -78,6 +78,13 @@ classdef Illustration
                 font_size = 10;
             end
             
+            % Is Z flipped?
+            if is_Z_flip
+                user_start_z = start_z;
+                start_z = max_z - end_z + 1;
+                end_z = max_z - user_start_z + 1;
+            end
+            
             % Get the the screen size.
             screen_size = get(0, 'Screensize');
             
@@ -118,20 +125,23 @@ classdef Illustration
                 neuron_on = arrayfun(@(x) x.is_annotation_on, neurons);
             end
             
+            % Determine the Z MIPs.
+            Z_MIPs = start_z:z_MIP:end_z;
+            
             % Save the PDFs.
-            page = 1;
-            for i = start_z:z_MIP:end_z
+            for page = 1:length(Z_MIPs)
                 
                 % Stay in bounds.
-                if (i + z_MIP - 1) > end_z
-                    z_MIP = end_z - i + 1;
+                Z_i = Z_MIPs(page);
+                if (Z_i + z_MIP - 1) > end_z
+                    z_MIP = end_z - Z_i + 1;
                 end
                 
                 % Draw the image.
                 fig = figure('Visible', 'off', 'NumberTitle', 'off', 'Name', file);
                 fig.Position(1:2) = [0,screen_size(4)];
                 fig.Position(3:4) = [size(data,2),size(data,1)] * image_size;
-                z_slice = squeeze(max(data(:,:,i:(i+z_MIP-1),:),[],3));
+                z_slice = squeeze(max(data(:,:,Z_i:(Z_i+z_MIP-1),:),[],3));
                 if image_size ~= 1
                     z_slice = imresize(z_slice, image_size);
                 end
@@ -146,8 +156,8 @@ classdef Illustration
                 % Find the neurons in these z-slices.
                 neuron_z = [];
                 if z_ID_offset > 0 && ~isempty(neuron_pos)
-                    min_z_ID = i - z_ID_offset + 1;
-                    max_z_ID = i + z_MIP + z_ID_offset - 2;
+                    min_z_ID = Z_i - z_ID_offset + 1;
+                    max_z_ID = Z_i + z_MIP + z_ID_offset - 2;
                     neuron_z = find(neuron_pos(:,3) >= min_z_ID & ...
                         neuron_pos(:,3) <= max_z_ID);
                 end
@@ -198,13 +208,18 @@ classdef Illustration
                     'HorizontalAlignment', 'center', ...
                     'VerticalAlignment', 'bottom');
                 
+                % Compute the page number.
+                page_num = page;
+                if is_Z_flip
+                    page_num = length(Z_MIPs) - page + 1;
+                end
+                
                 % Save the file.
-                save_file = [file '_' num2str(page) '.pdf'];
+                save_file = [file '_' num2str(page_num) '.pdf'];
                 fig.Renderer = 'Painters';
                 orient(fig, 'landscape');
                 print(fig, '-dpdf', '-fillpage', save_file);
                 close(fig);
-                page = page + 1;
             end
         end
     end
