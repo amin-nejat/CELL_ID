@@ -32,11 +32,13 @@ classdef Illustration
             z_ID_str = ['Z-slice ID thickness ' range_z_ID_str];
             size_str = 'Image size (default = 1x)';
             font_str = 'Font size';
+            circle_weak_str = 'Circle Weak Neurons (yes/no)';
+            circle_all_str = 'Circle All Neurons (yes/no)';
             prompt = {start_z_str, end_z_str, z_MIP_str, z_ID_str, ...
-                size_str, font_str};
+                size_str, font_str, circle_weak_str, circle_all_str};
             title = 'Save ID Image';
             dims = [1 35];
-            definput = {'1', max_z_str, z_MIP_def, '1', '2', '4'};
+            definput = {'1', max_z_str, z_MIP_def, '1', '2', '4', 'y', 'y'};
             answer = inputdlg(prompt, title, dims, definput);
             if isempty(answer)
                 return;
@@ -49,6 +51,8 @@ classdef Illustration
             z_ID_offset = round(str2double(answer{4}));
             image_size = str2double(answer{5});
             font_size = round(str2double(answer{6}));
+            is_circle_weak = ~isempty(answer{7}) && lower(answer{7}(1)) == 'y';
+            is_circle_all = ~isempty(answer{8}) && lower(answer{8}(1)) == 'y';
             
             % Sanitize the input values.
             if start_z < 1 || start_z > max_z
@@ -100,6 +104,13 @@ classdef Illustration
             scale_bar_str_x = sum(scale_bar_x)/2;
             scale_bar_str_y = sum(scale_bar_y)/2;
             
+            % Setup circles to mark weakly-colored neurons.
+            weak_color_threshold = ones(1,3) / 4.0;
+            neuron_radius = (1.5 / um_scale(1)) * image_size;
+            neuron_line_width = 1;
+            neuron_line_style = '-';
+            neuron_line_color = ones(1,3) / 2.0;
+            
             % Take a minimal patch around the neuron center.
             % Note: we need to walk a thin line of being robust against
             % off-center dots, while not violating neighboring neurons.
@@ -111,11 +122,16 @@ classdef Illustration
                 
                 % Compute the neuron brightness for overlaying text.
                 neuron_brightness_thresh = 0.7;
-                image_brightness = data(:,:,:,2); % use the green channel
-                neuron_brightness = arrayfun(@(x) median( ...
+                %image_brightness = data(:,:,:,2); % use the green channel
+                %neuron_brightness = arrayfun(@(x) median( ...
+                %    Methods.Utils.subcube(image_brightness, ...
+                %    round(neuron_pos(x,:)), cube_size), 'all'), ...
+                %    1:size(neuron_pos,1));
+                image_brightness = data(:,:,:,1:3);
+                neuron_color = arrayfun(@(x) squeeze(median(...
                     Methods.Utils.subcube(image_brightness, ...
-                    round(neuron_pos(x,:)), cube_size), 'all'), ...
-                    1:size(neuron_pos,1));
+                    round(neuron_pos(x,:)), cube_size),1:3)), ...
+                    1:size(neuron_pos,1), 'UniformOutput', false);
                 
                 % Determine the neuron names, image coordinates, ID
                 % confidence, & ON/OFF annotations.
@@ -168,6 +184,27 @@ classdef Illustration
                     pos = neuron_pos(k,1:2);
                     name = neuron_name{k};
                     
+                    % Draw circles around neurons.
+                    if is_circle_weak || is_circle_all
+                        
+                        % Draw circles around weakly-colored neurons.
+                        if all(neuron_color{k} < weak_color_threshold)
+                            viscircles(fliplr(pos), neuron_radius, ...
+                                'LineWidth', neuron_line_width, ...
+                                'LineStyle', neuron_line_style, ...
+                                'Color', neuron_line_color, ...
+                                'EnhanceVisibility', false);
+                            
+                        % Draw circles around the remaining neurons.
+                        elseif is_circle_all
+                            viscircles(fliplr(pos), neuron_radius, ...
+                                'LineWidth', neuron_line_width, ...
+                                'LineStyle', neuron_line_style, ...
+                                'Color', neuron_color{k}, ...
+                                'EnhanceVisibility', false);
+                        end
+                    end
+                    
                     % Is the neuron ON/OFF?
                     if ~isnan(neuron_on(k))
                         if neuron_on(k)
@@ -184,7 +221,7 @@ classdef Illustration
                     
                     % Are we writing on a bright green background?
                     text_color = 'w';
-                    if neuron_brightness(k) > neuron_brightness_thresh
+                    if neuron_color{k}(2) > neuron_brightness_thresh
                         text_color = 'k';
                     end
                     
