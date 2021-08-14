@@ -38,21 +38,21 @@ classdef AutoId < handle
     
     methods(Static)
         
-        function obj = instance()
+        function obj = instance(varargin)
              persistent instance
              if isempty(instance)
-                obj = Methods.AutoId();
+                obj = Methods.AutoId(varargin{1});
                instance = obj;
              else
                obj = instance;
              end
         end
         
-        function [atlas, version] = getAtlas()
+        function [atlas, version] = getAtlas(sex)
             %GETATLAS get the atlas data.
             persistent data;
             if isempty(data)
-                data = load('atlas.mat');
+                data = load(['atlas_',sex,'_rgb.mat']);
             end
             atlas = data.atlas;
             version = data.version;
@@ -96,7 +96,7 @@ classdef AutoId < handle
             % mahalanobis distance between a set of points and the
             % components of a GMM
             D=zeros(size(X,1),size(Y,1));
-             if isempty(X)
+            if isempty(X)
                 return;
             end
             for i=1:size(Y,1)
@@ -322,9 +322,9 @@ classdef AutoId < handle
         
     
     methods
-        function obj = AutoId()
+        function obj = AutoId(sex)
             % load the statistical atlas
-            [obj.atlas, obj.atlas_version] = Methods.AutoId.getAtlas();
+            [obj.atlas, obj.atlas_version] = Methods.AutoId.getAtlas(sex);
         end
       
         function add_to_image(obj, im)
