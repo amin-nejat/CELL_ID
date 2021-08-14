@@ -139,6 +139,13 @@ classdef NNDetect < handle
             % Store the detected neuron colors.
             supervoxels.color = zeros(size(centers,1),4);
             supervoxels.color_readout = zeros(size(centers,1),4);
+
+            for n=1:size(centers,1)
+                pos = round(centers(n,:));
+                supervoxels.color(n,:) = data(pos(1),pos(2),pos(3),:);
+                supervoxels.color_readout(n,:) = data(pos(1),pos(2),pos(3),:);
+            end
+            
             supervoxels.baseline = zeros(size(centers,1),4);
             supervoxels.truncation = zeros(size(centers,1),1);
             

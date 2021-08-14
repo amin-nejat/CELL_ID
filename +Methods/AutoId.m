@@ -735,7 +735,6 @@ classdef AutoId < handle
                         
             % plot the result
             atlas_color = model.mu(:, [4 5 6]); atlas_color = (atlas_color)./(max(atlas_color));
-
             sizes = arrayfun(@(i) mean(eig(model.sigma([1,2,3],[1,2,3],i))), 1:size(model.sigma,3));
             sizes = 1000*sizes/max(sizes);
             
