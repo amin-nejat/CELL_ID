@@ -99,8 +99,9 @@ classdef AutoId < handle
             if isempty(X)
                 return;
             end
+            
             for i=1:size(Y,1)
-                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)).^2/2;
+                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)+eye(6)*1e-5).^2/2;
             end
         end
         
@@ -548,6 +549,7 @@ classdef AutoId < handle
             
             % Compute the alignment.
             num_tests = 2*length(AutoId.theta);
+
             for idx = 1:length(AutoId.theta)
                 if is_parallel
                     
