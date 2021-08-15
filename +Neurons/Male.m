@@ -172,7 +172,7 @@ classdef Male
             persistent names_data;
             persistent colors_data;
             if isempty(names_data)
-                load('NeuroPAL_herm_data.mat', 'colors');
+                load('NeuroPAL_male_data.mat', 'colors');
                 names_data = {colors.name}';
                 colors_data = {colors.RGB}';
             end
