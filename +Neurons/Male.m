@@ -737,11 +737,11 @@ classdef Male
             'PHSO1R'
             };
         
-        % Variable neuronss.
+        % Variable neurons.
         variable_neurons = { ...
-            'DX3'
+            'DX2'
             'DX4'
-            'EF3'
+            'EF2'
             'EF4'
             };
         
