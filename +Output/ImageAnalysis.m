@@ -115,7 +115,8 @@ classdef ImageAnalysis
                     'MaxNumChanges', 1, 'Statistic', 'linear');
                 change_thresh = nan;
                 change_i = round(change_point);
-                if change_i > 1 && change_i < length(GFP_sorted)
+                if ~isempty(change_i) && ...
+                        change_i > 1 && change_i < length(GFP_sorted)
                     change_thresh = GFP_sorted(change_i);
                 end
             end
