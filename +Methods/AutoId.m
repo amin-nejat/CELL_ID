@@ -407,7 +407,7 @@ classdef AutoId < handle
         function id(obj,file,im,worm)
             
             % Set the atlas version.
-            im.atlas_version = obj.atlas_version;
+            im.atlas_version = obj.atlas_version.(lower(worm.sex));
             
             % Get the model info.
             model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
