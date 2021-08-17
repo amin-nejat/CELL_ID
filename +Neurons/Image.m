@@ -4,7 +4,7 @@ classdef Image < handle
 
     properties
         neurons = Neurons.Neuron.empty; % a list of the instances of Neuron class -> see Neuron.m
-        bodypart % a string consisting the name of the worm's body part
+        bodypart = [] % a string consisting the name of the worm's body part - DEPRECATED,PLEASE USE "worm" INSTEAD!!!
         meta_data % key, value pairs for intermediate analysis
         scale = ones(1,3); % (x,y,z) scale
         atlas_version = []; % the atlas version used to ID the neurons
@@ -12,7 +12,7 @@ classdef Image < handle
 
     % Public methods.
     methods
-        function obj = Image(superpixels, bodypart, varargin)
+        function obj = Image(superpixels, varargin)
             %Image Construct an instance of this class.
             %   superpixel: Matlab struct superpixels with variables mean, cov,
             %   color, basline, and potentially ids, rank, probabilistic
@@ -24,7 +24,7 @@ classdef Image < handle
             %   meta_data: meta data
 
             % Initialize the data.
-            obj.bodypart = bodypart;
+            %obj.bodypart = bodypart; DEPRECATED
             
             % Set the scale.
             if any(strcmp(varargin, 'scale'))

@@ -649,6 +649,7 @@ classdef Hermaphrodite
         
         % Non-neuronal cells.
         non_neuronal_cells = { ...
+            'Artifact'
             'AMSOL'
             'AMSOR'
             'HMC'

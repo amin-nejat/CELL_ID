@@ -23,7 +23,7 @@ classdef AutoId < handle
         theta = 0: 0.25: 2*pi
     end
     
-    properties
+    properties(Access = private)
         atlas_version % the version for the atlas
         atlas % atlas data structure containing neuron names, positions, colors, and their covariances
         
@@ -38,32 +38,32 @@ classdef AutoId < handle
     
     methods(Static)
         
-        function obj = instance(varargin)
+        function obj = instance()
              persistent instance
              if isempty(instance)
-                obj = Methods.AutoId(varargin{1});
-               instance = obj;
-             else
-               obj = instance;
+                 
+                 % Create the single instantiation.
+                 instance = Methods.AutoId();
+                 
+                 % Load the hermaphrodite neuron models.
+                 model = load('atlas_xx_rgb.mat');
+                 instance.atlas_version.xx = model.version;
+                 instance.atlas.xx = model.atlas;
+                 
+                 % Load the male neuron models.
+                 model = load('atlas_xo_rgb.mat');
+                 instance.atlas_version.xo = model.version;
+                 instance.atlas.xo = model.atlas;
              end
+             obj = instance;
         end
         
-        function [atlas, version] = getAtlas(sex)
-            %GETATLAS get the atlas data.
-            persistent data;
-            if isempty(data)
-                data = load(['atlas_',sex,'_rgb.mat']);
-            end
-            atlas = data.atlas;
-            version = data.version;
-        end
-        
-        function BatchId(file, bodypart)
+        function BatchId(file, worm)
             % Batch ID neurons.
             
             % Open the image file.
             try
-                [~, ~, ~, worm, ~, neurons, np_file, id_file] = ...
+                [~, ~, ~, ~, ~, ~, np_file, id_file] = ...
                     DataHandling.NeuroPALImage.open(file);
             catch
                 % For now, don't throw exceptions from threads.
@@ -71,16 +71,13 @@ classdef AutoId < handle
                 return;
             end
             
-            % Update the body part.
-            worm.body = bodypart;
-            neurons.bodypart = bodypart;
-            
             % Save the auto ID'd neurons.
-            Methods.AutoId.instance().id(file, neurons);
+            Methods.AutoId.instance().id(file, worm);
             save(np_file, 'worm', '-append');
             save(id_file, 'neurons', '-append');
         end
         
+        %% Utility functions.
         function rotmat = rotmat(theta)
             rotmat = [cos(theta) -sin(theta);...
                       sin(theta) cos(theta)];
@@ -101,7 +98,7 @@ classdef AutoId < handle
             end
             
             for i=1:size(Y,1)
-                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)+eye(6)*1e-5).^2/2;
+                D(:,i)=pdist2(X,Y(i,:),'mahalanobis',Sigma(:,:,i)+eye(size(Sigma,1))*1e-5).^2/2;
             end
         end
         
@@ -111,7 +108,7 @@ classdef AutoId < handle
         end
         
 
-        
+        %% Algorithmic functions.
         function beta = MCR_solver(Y,X,sigma,lambda)
             % MCR - Multiple covariance regression solver
             % Y - Target (n x d)
@@ -216,6 +213,7 @@ classdef AutoId < handle
         end
         
         
+        %% Update ID functions.
         function [P,varargout] = update_permutation(colors, positions, model, known)
             import Methods.*;
             
@@ -257,6 +255,7 @@ classdef AutoId < handle
             end
         end
         
+        %% Alignment functions.
         function [col,pos,cost] = local_alignment(col,pos,model,theta,sgn,annotated)
             % local alignment between atlas and rotated points for given
             % theta
@@ -323,16 +322,14 @@ classdef AutoId < handle
         
     
     methods
-        function obj = AutoId(sex)
-            % load the statistical atlas
-            [obj.atlas, obj.atlas_version] = Methods.AutoId.getAtlas(sex);
-        end
       
-        function add_to_image(obj, im)
+        %% I have no idea what these functions do, maybe we can add more
+        % descriptive comments?- Ev
+        function add_to_image(obj, im, worm)
             % add_to_image  function simply updates some properties of the image
             % structure that depend on auto_id
             
-            neuron_names = obj.atlas.(lower(im.bodypart)).N;
+            neuron_names = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
             % convert assignment (probabilistic/deterministic) to neuron
             % names
             ids = repmat({'Artifact'}, size(obj.assignments,1),1);
@@ -407,13 +404,14 @@ classdef AutoId < handle
             
         end
         
-        function id(obj,file,im,varargin)
-            if any(strcmp(varargin, 'atlas'))
-                obj.atlas = varargin{find(strcmp(varargin, 'atlas'))+1};
-            end
+        function id(obj,file,im,worm)
             
             % Set the atlas version.
             im.atlas_version = obj.atlas_version;
+            
+            % Get the model info.
+            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
+            neurons = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
             
             % neurons that are already annotated
             annotations = im.get_annotations();
@@ -427,7 +425,7 @@ classdef AutoId < handle
             
             % find the annotated neurons in the atlas
             atlas_annotations = cellfun(@(x) ...
-                find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), ...
+                find(strcmp(neurons,x)), ...
                 annotations(annotated(:,1)), 'UniformOutput', false);
             
             % remove neurons that are not in the atlas
@@ -448,52 +446,51 @@ classdef AutoId < handle
             end
             
             % Check if we have an atlas for this body part.
-            bodypart = lower(im.bodypart);
-            if ~isfield(obj.atlas, bodypart)
-                warning(['No atlas for "' bodypart '". Cannot ID neurons.']);
-                return;
+            sex_atlas = obj.atlas.(lower(worm.sex));
+            if ~isfield(sex_atlas, lower(worm.body))
+                error(['No atlas for "' worm.body '". Cannot ID neurons.']);
             end
             
             % align the image to statistical atlas
-            aligned = obj.global_alignment(file, colors, im.get_positions().*im.scale, ...
-                               obj.atlas.(bodypart).model, annotated);  
+            aligned = obj.global_alignment(file, colors, ...
+                im.get_positions().*im.scale, model, annotated);  
             for neuron=1:length(im.neurons)
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
             end
             
             % update the log likelihood
-            obj.update_log_likelihood(im);
+            obj.update_log_likelihood(im,worm);
             
             % compute probabilistic/deterministic assignments
             obj.compute_assignments();
             
             % convert the assignments to names and update the information
             % in the image
-            obj.add_to_image(im);
+            obj.add_to_image(im,worm);
         end
         
-        function update_id(obj, im)
+        function update_id(obj, im, worm)
             % update_auto_id changes the properties of auto_id given human has given 
             % the identity neuron to the neuron_i-th neuron (with the mp order).
             % it also updates the image object accordingly.
             
             % Update the log likelihood.
-            obj.update_log_likelihood(im);
+            obj.update_log_likelihood(im, worm);
             
             obj.compute_assignments();
             
             % convert the assignments to names and update the information
             % in the image
-            obj.add_to_image(im);
+            obj.add_to_image(im,worm);
         end
         
-        function update_confidences(obj, im)
+        function update_confidences(obj, im, worm)
             % update_confidences updates the confidence calculations of
             % each manually annotated neuron, according to current
             % alignments
             
-            model = obj.atlas.(lower(im.bodypart)).model;
-            N = obj.atlas.(lower(im.bodypart)).N;
+            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
+            neurons =  obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
             aligned = im.get_aligned_xyzRGBs();
             
             % Are the neurons alignes?
@@ -505,7 +502,7 @@ classdef AutoId < handle
                 im.neurons(neuron).aligned_xyzRGB = aligned(neuron,:);
                 
                 if(~isempty(im.neurons(neuron).annotation))
-                    neuron_index = find(strcmp(N, im.neurons(neuron).annotation));
+                    neuron_index = find(strcmp(neurons, im.neurons(neuron).annotation));
                     if(~isempty(neuron_index))
                         
                         mu = model.mu(neuron_index,:);
@@ -623,9 +620,10 @@ classdef AutoId < handle
             aligned = [pos col];
         end
         
-        function update_log_likelihood(obj, im)
+        function update_log_likelihood(obj, im, worm)
             % read the model and aligned information
-            model = obj.atlas.(lower(im.bodypart)).model;
+            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
+            neurons = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
             aligned = im.get_aligned_xyzRGBs();
             
             % the case where new neurons added without running AutoID
@@ -672,8 +670,8 @@ classdef AutoId < handle
             
             % find the annotated neurons in the atlas
             atlas_annotations = cellfun(@(x) ...
-                find(strcmp(obj.atlas.(lower(im.bodypart)).N,x)), ...
-                annotations(annotated(:,1)), 'UniformOutput', false);
+                find(strcmp(neurons,x)), annotations(annotated(:,1)), ...
+                'UniformOutput', false);
             
             % remove neurons that are not in the atlas
             remove_i = cellfun(@isempty, atlas_annotations);
@@ -694,14 +692,15 @@ classdef AutoId < handle
             
         end
         
-        function visualize(obj,im,varargin)
+        function visualize(obj,im,worm,varargin)
             if ~any(strcmp(varargin,'ax'))
                 clf; hold on;
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
             end
             
             % original data
-            model = obj.atlas.(lower(im.bodypart)).model;
+            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
+            neurons = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             det_ids = im.get_deterministic_ids();
@@ -742,7 +741,7 @@ classdef AutoId < handle
             
             if ~any(strcmp(varargin,'ax'))
                 scatter3(model.mu(:,1),model.mu(:,2),model.mu(:,3), sizes, atlas_color, 'o', 'LineWidth', 3);
-                text(model.mu(:,1),model.mu(:,2),model.mu(:,3), obj.atlas.(lower(im.bodypart)).N, 'Color', 'r', 'fontsize', 10);
+                text(model.mu(:,1),model.mu(:,2),model.mu(:,3), neurons, 'Color', 'r', 'fontsize', 10);
                 scatter3(pos(:,1),pos(:,2),pos(:,3), 100, col./max(col), '.');
                 text(pos(:,1),pos(:,2),pos(:,3), det_ids, 'Color', 'b', 'fontsize', 10);
 
@@ -756,13 +755,17 @@ classdef AutoId < handle
                 current_z_indices = mu_pixels(:,3)>z-1.5 & mu_pixels(:,3)<z+1.5;
                 scatter(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),...
                     sizes(current_z_indices), atlas_color(current_z_indices,:), 'o', 'LineWidth', 3);
-                text(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),obj.atlas.(lower(im.bodypart)).N(current_z_indices), 'Color', 'r');
+                text(ax,mu_pixels(current_z_indices,2),mu_pixels(current_z_indices,1),neurons(current_z_indices), 'Color', 'r');
                 
             end
         end
-
     end
     
-    
+    methods(Access = private)
+        
+        % Hide the constructor.
+        function AutoID(obj)
+        end
+    end
 end
 
