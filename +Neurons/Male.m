@@ -730,7 +730,7 @@ classdef Male
         
         % Non-neuronal cells.
         non_neuronal_cells = { ...
-            'Artifact'
+            'ARTIFACT'
             'AMSOL'
             'AMSOR'
             'HMC'
