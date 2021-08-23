@@ -22,7 +22,20 @@ classdef NNDetect < handle
             %       obj : an instance of this class
             
             % Load Neural Net Model.
-            obj.model = importKerasNetwork(file);
+            % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
+            msgbox(['Here 1: which(importKerasNetwork) = ' which('importKerasNetwork')]);
+            msgbox(['Here 1: ' file ' exists ' num2str(exist(file,'file'))]);
+            try
+                file = 'digitsDAGnet.h5';
+                obj.model = importKerasNetwork(file);
+            catch ME
+                % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
+                msgbox(['Here 2: ' ME.identifier]);
+                msgbox(['Here 2: ' ME.message]);
+                rethrow(ME);
+            end
+            % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
+            msgbox('Here 3');
         end
         
         function [pred_p] = predict_nn(obj,patches,pst_shape, titlestr)
