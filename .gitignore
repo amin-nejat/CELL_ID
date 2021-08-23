@@ -91,13 +91,14 @@ octave-core
 visualize_light_prefs.mat
 External_Dependencies
 visualize
-*.prj
+# *.prj - keep this
 .NeuroPAL_ID_prefs.mat
 visualize_resources/icon.icns
 Backup
-M_visualize*
-mac_visualize*
-win_visualize*
+mac_visualize/*
+mac_visualize_*
+win_visualize/*
+win_visualize_*
 NeuroPAL_ID_resources
 win_visualize/for_redistribution_files_only/NeuroPAL_ID.exe
 win_visualize/for_testing/NeuroPAL_ID.exe
