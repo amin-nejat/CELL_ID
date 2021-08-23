@@ -144,21 +144,25 @@ classdef Illustration
             
             % Determine the Z MIPs.
             Z_MIPs = start_z:z_MIP:end_z;
+            if Z_MIPs(end) < end_z
+                Z_MIPs = [Z_MIPs, end_z];
+            end
+            if is_Z_flip
+                Z_MIPs = end_z - fliplr(Z_MIPs) + 1; 
+            end
             
             % Save the PDFs.
-            for page = 1:length(Z_MIPs)
+            for page = 1:(length(Z_MIPs) - 1)
                 
-                % Stay in bounds.
-                Z_i = Z_MIPs(page);
-                if (Z_i + z_MIP - 1) > end_z
-                    z_MIP = end_z - Z_i + 1;
-                end
+                % Determine the Z slices to show.
+                Z_start = Z_MIPs(page);
+                Z_end = Z_MIPs(page + 1);
                 
                 % Draw the image.
                 fig = figure('Visible', 'off', 'NumberTitle', 'off', 'Name', file);
                 fig.Position(1:2) = [0,screen_size(4)];
                 fig.Position(3:4) = [size(data,2),size(data,1)] * image_size;
-                z_slice = squeeze(max(data(:,:,Z_i:(Z_i+z_MIP-1),:),[],3));
+                z_slice = squeeze(max(data(:,:,Z_start:Z_end,:),[],3));
                 if image_size ~= 1
                     z_slice = imresize(z_slice, image_size);
                 end
@@ -173,8 +177,8 @@ classdef Illustration
                 % Find the neurons in these z-slices.
                 neuron_z = [];
                 if z_ID_offset > 0 && ~isempty(neuron_pos)
-                    min_z_ID = Z_i - z_ID_offset + 1;
-                    max_z_ID = Z_i + z_MIP + z_ID_offset - 2;
+                    min_z_ID = Z_start - z_ID_offset + 0.5;
+                    max_z_ID = Z_end + z_ID_offset - 0.5;
                     neuron_z = find(neuron_pos(:,3) >= min_z_ID & ...
                         neuron_pos(:,3) <= max_z_ID);
                 end
@@ -254,7 +258,7 @@ classdef Illustration
                 % Compute the page number.
                 page_num = page;
                 if is_Z_flip
-                    page_num = length(Z_MIPs) - page + 1;
+                    page_num = length(Z_MIPs) - page;
                 end
                 
                 % Save the file.
