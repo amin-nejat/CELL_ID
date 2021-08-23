@@ -134,11 +134,12 @@ classdef Illustration
                     1:size(neuron_pos,1), 'UniformOutput', false);
                 
                 % Determine the neuron names, image coordinates, ID
-                % confidence, & ON/OFF annotations.
+                % confidence, ON/OFF annotations, & emphasis.
                 neuron_name = arrayfun(@(x) x.annotation, neurons, 'UniformOutput' , false);
                 neuron_pos(:,1:2) = neuron_pos(:,1:2) * image_size;
                 neuron_conf = arrayfun(@(x) x.annotation_confidence, neurons);
                 neuron_on = arrayfun(@(x) x.is_annotation_on, neurons);
+                neuron_emphasized = arrayfun(@(x) x.is_emphasized, neurons);
             end
             
             % Determine the Z MIPs.
@@ -217,6 +218,11 @@ classdef Illustration
                     % Is the user confident about the ID?
                     if neuron_conf(k) < 1
                         name = [name '?'];
+                    end
+                    
+                    % Is the neuron emphasized?
+                    if neuron_emphasized(k)
+                        name = [name '!'];
                     end
                     
                     % Are we writing on a bright green background?

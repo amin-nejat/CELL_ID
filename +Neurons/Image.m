@@ -379,14 +379,52 @@ classdef Image < handle
 
         function [neuron, i] = find_user_id_neuron(obj, name)
             %FIND_USER_ID find a neuron by user ID name
+            % Note: since this method only returns one neuron, it ignores
+            % artifacts, mutations, and emphasized neurons as these can
+            % exist as duplicates. Please use find_user_id_neurons to
+            % search for multiple neurons.
+            
+            % Ignore artifacts and mutations.
+            i = [];
             neuron = [];
+            if strcmp(name, 'ARTIFACT') || strcmp(name, 'MUTATION')
+                return;
+            end
+            
+            % Find the neuron.
             for i = 1:length(obj.neurons)
-                if strncmp(name, obj.neurons(i).annotation, length(name))
+                if ~obj.neurons(i).is_emphasized && ...
+                        strncmp(name, obj.neurons(i).annotation, length(name))
                     neuron = obj.neurons(i);
                     return;
                 end
             end
             i = [];
+        end
+        
+        function [neurons, neurons_i] = find_user_id_neurons(obj, name, varargin)
+            %FIND_USER_ID find multiple neurons by user ID name
+            % Inputs:
+            %  name = the name of the neuron to find
+            %  [is_emphasized] = find emphasized neurons too?
+            %                    default: false
+            neurons = [];
+            neurons_i = [];
+            for i = 1:length(obj.neurons)
+                if strncmp(name, obj.neurons(i).annotation, length(name))
+                    neurons(end + 1) = obj.neurons(i);
+                    neurons_i(end + 1) = i;
+                end
+            end
+            
+            % Remove emphasized neurons.
+            % Note: emphasized neurons are used to emphasize mutations and
+            % can exist as duplicates.
+            if isempty(varargin) || ~varargin{1}
+                remove_i = vertcat(neurons.is_emphasized);
+                neurons = neurons(remove_i);
+                neurons_i = neurons_i(remove_i);
+            end
         end
         
         function annotations = get_annotations(obj)
@@ -415,6 +453,15 @@ classdef Image < handle
                 return;
             end
             annotation_confidences = vertcat(obj.neurons.annotation_confidence);
+        end
+        
+        function is_emphasized = get_is_emphasized(obj)
+            %GET_IS_EMPHASIZED getter of neuron is_emphasized.
+            is_emphasized = [];
+            if isempty(obj.neurons)
+                return;
+            end
+            is_emphasized = vertcat(obj.neurons.is_emphasized);
         end
         
         function flipLR_annotations(obj)

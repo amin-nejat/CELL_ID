@@ -20,6 +20,7 @@ classdef Neuron < handle
         annotation = '' % neuron user selected annotation
         is_annotation_on = nan; % is the neuron's annotation ON, OFF, or neither (empty)
         annotation_confidence = -1; % user confidence about annotation
+        is_emphasized = false; % user emphasis (e.g., for mutations)
         
         % Auto neuron ID.
         deterministic_id  % neuron ID assigned by the deterministic model
@@ -87,17 +88,21 @@ classdef Neuron < handle
     end
     
     methods
-        function annotate(obj, name, confidence, is_on, atlas)
+        function annotate(obj, name, confidence, is_on, atlas, varargin)
             
             % ANNOTATE annotate the neuron.
             %   name: the neuron name
             %   confidence: the user confidence
+            %   is_on: is the neuron's annotation ON or OFF?
+            %   atlas: the statistical atlas of neuron properties
+            %   [is_emphasized]: did the user emphasize this neuron?
 
             % Remove the user annotation.
             if isempty(name)
                 obj.annotation = '';
                 obj.annotation_confidence = -1;
                 obj.is_annotation_on = nan;
+                obj.is_emphasized = false;
 
             % Annotate the neuron.
             else
@@ -117,6 +122,9 @@ classdef Neuron < handle
                 end
                 obj.annotation_confidence = confidence;
                 obj.is_annotation_on = is_on;
+                if ~isempty(varargin)
+                    obj.is_emphasized = varargin{1};
+                end
             end
         end
 

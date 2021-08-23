@@ -435,7 +435,8 @@ classdef AutoId < handle
             % neurons that are already annotated
             annotations = im.get_annotations();
             annotation_confidences = im.get_annotation_confidences();
-            [annotations{annotation_confidences<=0.5}] = deal('');
+            is_emphasized = im.get_is_emphasized();
+            [annotations{annotation_confidences<=0.5 & is_emphasized}] = deal('');
             
             % find the annotated neurons
             nempty_annotations = find(cellfun(@(x) ~isempty(x), annotations));
@@ -681,7 +682,8 @@ classdef AutoId < handle
             % find the already annotated neurons
             annotations = im.get_annotations();
             annotation_confidences = im.get_annotation_confidences();
-            [annotations{annotation_confidences<=0.5}] = deal('');
+            is_emphasized = im.get_is_emphasized();
+            [annotations{annotation_confidences<=0.5 & is_emphasized}] = deal('');
             
             % find the annotated neurons
             annotated = [];
