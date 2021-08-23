@@ -1,12 +1,12 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="946654052" file="/Users/ev/Documents/GitHub/CELL_ID/MacOS.prj" location="/Users/ev/Documents/GitHub/CELL_ID" name="MacOS" preferred-package-location="/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_redistribution" preferred-package-type="package.type.app" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="831701663" file="/Users/ev/Documents/GitHub/CELL_ID/mac_visualize.prj" location="/Users/ev/Documents/GitHub/CELL_ID" name="mac_visualize" preferred-package-location="/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_redistribution" preferred-package-type="package.type.app" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>NeuroPAL_ID</param.appname>
-    <param.icon>${PROJECT_ROOT}/MacOS_resources/icon.icns</param.icon>
+    <param.icon>${PROJECT_ROOT}/mac_visualize_resources/icon.icns</param.icon>
     <param.icons>
-      <file>${PROJECT_ROOT}/MacOS_resources/icon_48.png</file>
-      <file>${PROJECT_ROOT}/MacOS_resources/icon_32.png</file>
-      <file>${PROJECT_ROOT}/MacOS_resources/icon_24.png</file>
-      <file>${PROJECT_ROOT}/MacOS_resources/icon_16.png</file>
+      <file>${PROJECT_ROOT}/mac_visualize_resources/icon_48.png</file>
+      <file>${PROJECT_ROOT}/mac_visualize_resources/icon_32.png</file>
+      <file>${PROJECT_ROOT}/mac_visualize_resources/icon_24.png</file>
+      <file>${PROJECT_ROOT}/mac_visualize_resources/icon_16.png</file>
     </param.icons>
     <param.version>1.5</param.version>
     <param.authnamewatermark>Amin Nejatbakhsh, Eviatar Yemini, et al.</param.authnamewatermark>
@@ -43,10 +43,10 @@ MR/v910/runtime/maci64:MR/v910/sys/os/maci64:MR/v910/bin/maci64
 If it is defined, set it to the following:
 
 ${DYLD_LIBRARY_PATH}:MR/v910/runtime/maci64:MR/v910/sys/os/maci64:MR/v910/bin/maci64</param.target.install.notes>
-    <param.intermediate>${PROJECT_ROOT}/MacOS/for_testing</param.intermediate>
-    <param.files.only>${PROJECT_ROOT}/MacOS/for_redistribution_files_only</param.files.only>
-    <param.output>${PROJECT_ROOT}/MacOS/for_redistribution</param.output>
-    <param.logdir>${PROJECT_ROOT}/MacOS</param.logdir>
+    <param.intermediate>${PROJECT_ROOT}/mac_visualize/for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}/mac_visualize/for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}/mac_visualize/for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}/mac_visualize</param.logdir>
     <param.enable.clean.build>false</param.enable.clean.build>
     <param.user.defined.mcr.options />
     <param.target.type>subtarget.standalone</param.target.type>
@@ -157,10 +157,10 @@ ${DYLD_LIBRARY_PATH}:MR/v910/runtime/maci64:MR/v910/sys/os/maci64:MR/v910/bin/ma
       <file>${PROJECT_ROOT}/External_Dependencies/mlapptools-develop/mlapptools.m</file>
     </fileset.depfun>
     <build-deliverables>
-      <file location="${PROJECT_ROOT}/MacOS/for_testing" name="readme.txt" optional="true">/Users/ev/Documents/GitHub/CELL_ID/MacOS/for_testing/readme.txt</file>
-      <file location="${PROJECT_ROOT}/MacOS/for_testing" name="splash.png" optional="false">/Users/ev/Documents/GitHub/CELL_ID/MacOS/for_testing/splash.png</file>
-      <file location="${PROJECT_ROOT}/MacOS/for_testing" name="run_NeuroPAL_ID.sh" optional="false">/Users/ev/Documents/GitHub/CELL_ID/MacOS/for_testing/run_NeuroPAL_ID.sh</file>
-      <file location="${PROJECT_ROOT}/MacOS/for_testing" name="NeuroPAL_ID.app" optional="false">/Users/ev/Documents/GitHub/CELL_ID/MacOS/for_testing/NeuroPAL_ID.app</file>
+      <file location="${PROJECT_ROOT}/mac_visualize/for_testing" name="readme.txt" optional="true">/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_testing/readme.txt</file>
+      <file location="${PROJECT_ROOT}/mac_visualize/for_testing" name="splash.png" optional="false">/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_testing/splash.png</file>
+      <file location="${PROJECT_ROOT}/mac_visualize/for_testing" name="NeuroPAL_ID.app" optional="false">/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_testing/NeuroPAL_ID.app</file>
+      <file location="${PROJECT_ROOT}/mac_visualize/for_testing" name="run_NeuroPAL_ID.sh" optional="false">/Users/ev/Documents/GitHub/CELL_ID/mac_visualize/for_testing/run_NeuroPAL_ID.sh</file>
     </build-deliverables>
     <workflow />
     <matlab>

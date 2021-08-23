@@ -30,7 +30,7 @@ classdef AutoDetect < handle
            end
        end
        
-       function BatchDetect(file, num_neurons)
+       function BatchDetect(file, worm, num_neurons)
            %BATCHDETECT Batch detect neurons.
            
            % Setup the conversion progress bar.
@@ -42,11 +42,11 @@ classdef AutoDetect < handle
             
            % Open the image file.
            try
-               [data, info, prefs, worm, mp, ~, ~, id_file] = ...
+               [data, info, prefs, ~, mp, ~, np_file, id_file] = ...
                    DataHandling.NeuroPALImage.open(file);
            catch
                % For now, don't throw exceptions from threads.
-                warning('Cannot read: "%s"', file);
+               warning('Cannot read: "%s"', file);
                return;
            end
            
@@ -56,6 +56,9 @@ classdef AutoDetect < handle
            catch
                warning('Image conversion was canceled.');
            end
+           
+           % Save the worm info.
+           save(np_file, 'worm', '-append');
            
            % Setup the preprocessing progress bar.
            % Note: windows wants the interpreter off from the beginning.
@@ -85,7 +88,7 @@ classdef AutoDetect < handle
            mp.k = num_neurons;
            [sp, mp] = Methods.AutoDetect.instance().detect(file, data_zscored, ...
                 mp.k, mp.min_eig_thresh, info.scale', worm, mp.exclusion_radius);
-                
+           
            % Save the neurons.
            version = Program.ProgramInfo.version;
            mp_params = mp;

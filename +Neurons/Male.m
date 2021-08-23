@@ -326,7 +326,7 @@ classdef Male
             num_neurons = [];
             switch lower(strtrim(body))
                 case 'whole worm'
-                    num_neurons = 300;
+                    num_neurons = 387;
                 case 'head'
                     num_neurons = Neurons.Male.numHeadNeurons();
                 case 'midbody'

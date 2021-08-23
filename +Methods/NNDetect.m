@@ -23,19 +23,25 @@ classdef NNDetect < handle
             
             % Load Neural Net Model.
             % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-            msgbox(['Here 1: which(importKerasNetwork) = ' which('importKerasNetwork')]);
-            msgbox(['Here 1: ' file ' exists ' num2str(exist(file,'file'))]);
+            if isdeployed
+                msgbox(['Here 1: which(importKerasNetwork) = ' which('importKerasNetwork')]);
+                msgbox(['Here 1: ' file ' exists ' num2str(exist(file,'file'))]);
+            end
             try
-                file = 'digitsDAGnet.h5';
+                %file = 'digitsDAGnet.h5';
                 obj.model = importKerasNetwork(file);
             catch ME
                 % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-                msgbox(['Here 2: ' ME.identifier]);
-                msgbox(['Here 2: ' ME.message]);
+                if isdeployed
+                    msgbox(['Here 2: ' ME.identifier]);
+                    msgbox(['Here 2: ' ME.message]);
+                end
                 rethrow(ME);
             end
             % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-            msgbox('Here 3');
+            if isdeployed
+                msgbox('Here 3');
+            end
         end
         
         function [pred_p] = predict_nn(obj,patches,pst_shape, titlestr)
@@ -171,7 +177,7 @@ classdef NNDetect < handle
             params.exclusion_radius = 0; % microns
         end
         
-        function BatchDetect(file, num_neurons)
+        function BatchDetect(file, worm, num_neurons)
             %BATCHDETECT Batch detect neurons.
             
             % Setup the conversion progress bar.
@@ -183,7 +189,7 @@ classdef NNDetect < handle
             
             % Open the image file.
             try
-                [data, info, prefs, worm, mp, ~, ~, id_file] = ...
+                [data, info, prefs, ~, mp, ~, np_file, id_file] = ...
                     DataHandling.NeuroPALImage.open(file);
             catch
                 % For now, don't throw exceptions from threads.
@@ -198,6 +204,9 @@ classdef NNDetect < handle
                 warning('Image conversion was canceled.');
             end
             
+            % Save the worm info.
+            save(np_file, 'worm', '-append');
+           
             % Setup the preprocessing progress bar.
             % Note: windows wants the interpreter off from the beginning.
             wait_title = 'Preprocessing Image';

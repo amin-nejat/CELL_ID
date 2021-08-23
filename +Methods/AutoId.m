@@ -58,12 +58,23 @@ classdef AutoId < handle
              obj = instance;
         end
         
+        function is_ID = isBodyID(sex, body)
+            %ISBODYID Can we ID this body part?
+            % Input:
+            %  sex   = the sex of the worm
+            %  body  = the body part we want to ID
+            % Output:
+            %  is_ID = can we ID this body part?
+            obj = Methods.AutoId.instance();
+            is_ID = isfield(obj.atlas.(lower(sex)), lower(body)); 
+        end
+        
         function BatchId(file, worm)
             % Batch ID neurons.
             
             % Open the image file.
             try
-                [~, ~, ~, ~, ~, ~, np_file, id_file] = ...
+                [~, ~, ~, ~, ~, neurons, ~, id_file] = ...
                     DataHandling.NeuroPALImage.open(file);
             catch
                 % For now, don't throw exceptions from threads.
@@ -72,8 +83,7 @@ classdef AutoId < handle
             end
             
             % Save the auto ID'd neurons.
-            Methods.AutoId.instance().id(file, worm);
-            save(np_file, 'worm', '-append');
+            Methods.AutoId.instance().id(file, neurons, worm);
             save(id_file, 'neurons', '-append');
         end
         
@@ -406,12 +416,21 @@ classdef AutoId < handle
         
         function id(obj,file,im,worm)
             
+            % We don't have age-specific atlases yet. For now, use the
+            % hermaphrodite ID model to approximate anything younger adult.
+            sex = lower(worm.sex);
+            body = lower(worm.body);
+            if ~contains(lower(worm.age), 'adult')
+                worm.sex = 'XX';
+                sex = lower(worm.sex);
+            end
+            
             % Set the atlas version.
-            im.atlas_version = obj.atlas_version.(lower(worm.sex));
+            im.atlas_version = obj.atlas_version.(sex);
             
             % Get the model info.
-            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
-            neurons = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
+            model = obj.atlas.(sex).(body).model;
+            neurons = obj.atlas.(sex).(body).N;
             
             % neurons that are already annotated
             annotations = im.get_annotations();
@@ -446,8 +465,8 @@ classdef AutoId < handle
             end
             
             % Check if we have an atlas for this body part.
-            sex_atlas = obj.atlas.(lower(worm.sex));
-            if ~isfield(sex_atlas, lower(worm.body))
+            sex_atlas = obj.atlas.(sex);
+            if ~isfield(sex_atlas, body)
                 error(['No atlas for "' worm.body '". Cannot ID neurons.']);
             end
             
