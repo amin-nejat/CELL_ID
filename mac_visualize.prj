@@ -98,7 +98,7 @@ ${DYLD_LIBRARY_PATH}:MR/v910/runtime/maci64:MR/v910/sys/os/maci64:MR/v910/bin/ma
       <file>${PROJECT_ROOT}/Data/Documents/About.png</file>
       <file>${PROJECT_ROOT}/Data/Documents/Instructions.png</file>
       <file>${PROJECT_ROOT}/Data/Documents/Keyboard.png</file>
-      <file>${PROJECT_ROOT}/Data/Models/VanillaUnet_model.10.h5</file>
+      <file>${PROJECT_ROOT}/Data/Models/NN_model.mat</file>
       <file>${PROJECT_ROOT}/Data/Models/atlas_xo_rgb.mat</file>
       <file>${PROJECT_ROOT}/Data/Models/atlas_xo_rgbw.mat</file>
       <file>${PROJECT_ROOT}/Data/Models/atlas_xx_rgb.mat</file>

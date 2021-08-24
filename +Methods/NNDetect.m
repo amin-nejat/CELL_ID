@@ -2,46 +2,27 @@ classdef NNDetect < handle
     %NNDETECT Detection of neural centers using neural nets
     
     properties(Constant)
-        NN_model = 'VanillaUnet_model.10.h5';
+        NN_model = 'NN_model.mat';
         stride = 128;
         crop_size = 128;
         pst_shape = [384,1024,48,4];
     end
     
     properties
+        model_version
         model
     end
     
     methods
-        function obj = NNDetect(file)
+        function obj = NNDetect()
             %NNDETECT Construct an instance of this class
-            %   Inputs:
-            %       file : file address of the pre-trained tensorflow model
-            %
             %   Outputs:
             %       obj : an instance of this class
             
             % Load Neural Net Model.
-            % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-            if isdeployed
-                msgbox(['Here 1: which(importKerasNetwork) = ' which('importKerasNetwork')]);
-                msgbox(['Here 1: ' file ' exists ' num2str(exist(file,'file'))]);
-            end
-            try
-                %file = 'digitsDAGnet.h5';
-                obj.model = importKerasNetwork(file);
-            catch ME
-                % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-                if isdeployed
-                    msgbox(['Here 2: ' ME.identifier]);
-                    msgbox(['Here 2: ' ME.message]);
-                end
-                rethrow(ME);
-            end
-            % *REMOVE ME WHEN FIXED: debugging for standalone compilation.
-            if isdeployed
-                msgbox('Here 3');
-            end
+            NN = load(Methods.NNDetect.NN_model);
+            obj.model_version = NN.version;
+            obj.model = NN.model;
         end
         
         function [pred_p] = predict_nn(obj,patches,pst_shape, titlestr)
@@ -100,10 +81,9 @@ classdef NNDetect < handle
     methods(Static)
         
         function obj = instance()
-            import Methods.NNDetect;
             persistent instance
             if isempty(instance)
-                obj = NNDetect(NNDetect.NN_model);
+                obj = Methods.NNDetect();
                 instance = obj;
             else
                 obj = instance;
