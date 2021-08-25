@@ -27,7 +27,7 @@ classdef GUIPreferences < handle
         is_show_birth_times = false; % show the neuron birth times?
         is_auto_name = true; % auto-complete neuron names?
         is_autoID_updates = true; % auto-update neuron IDs?
-        is_MP_detect = false; % are we using MP (or NN) to detect neurons?
+        is_MP_detect = true; % are we using MP (or NN) to detect neurons?
     end
     
     % GUI public static methods.
