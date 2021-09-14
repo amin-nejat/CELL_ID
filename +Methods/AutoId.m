@@ -719,9 +719,18 @@ classdef AutoId < handle
                 set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
             end
             
+            % We don't have age-specific atlases yet. For now, use the
+            % hermaphrodite ID model to approximate anything younger adult.
+            sex = lower(worm.sex);
+            body = lower(worm.body);
+            if ~contains(lower(worm.age), 'adult')
+                worm.sex = 'XX';
+                sex = lower(worm.sex);
+            end
+            
             % original data
-            model = obj.atlas.(lower(worm.sex)).(lower(worm.body)).model;
-            neurons = obj.atlas.(lower(worm.sex)).(lower(worm.body)).N;
+            model = obj.atlas.(sex).(body).model;
+            neurons = obj.atlas.(sex).(body).N;
             col = im.get_colors_readout(); col = col(:,[1 2 3]);
             pos = im.get_positions().*im.scale;
             det_ids = im.get_deterministic_ids();
