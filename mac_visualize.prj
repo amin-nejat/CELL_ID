@@ -8,7 +8,7 @@
       <file>${PROJECT_ROOT}/mac_visualize_resources/icon_24.png</file>
       <file>${PROJECT_ROOT}/mac_visualize_resources/icon_16.png</file>
     </param.icons>
-    <param.version>1.7</param.version>
+    <param.version>1.8</param.version>
     <param.authnamewatermark>Amin Nejatbakhsh, Eviatar Yemini, et al.</param.authnamewatermark>
     <param.email />
     <param.company>Columbia University</param.company>
